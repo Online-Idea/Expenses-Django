@@ -1,0 +1,119 @@
+{% extends 'statsapp/base.html' %}
+
+{% block content %}
+<script>
+                $(function() {
+                  $('input[name="daterange"]').daterangepicker({
+                    opens: 'left',
+                    "showDropdowns": true,
+                    "minYear": 2016,
+                    "maxYear": 2050,
+                    "autoApply": true,
+                    "locale": {
+                        "format": "DD.MM.YYYY",
+                        "separator": " - ",
+                        "applyLabel": "Apply",
+                        "cancelLabel": "Cancel",
+                        "fromLabel": "From",
+                        "toLabel": "To",
+                        "customRangeLabel": "Custom",
+                        "weekLabel": "Н",
+                        "daysOfWeek": [
+                            "Вс",
+                            "Пн",
+                            "Вт",
+                            "Ср",
+                            "Чт",
+                            "Пт",
+                            "Сб"
+                        ],
+                        "monthNames": [
+                            "Январь",
+                            "Февраль",
+                            "Март",
+                            "Апрель",
+                            "Май",
+                            "Июнь",
+                            "Июль",
+                            "Август",
+                            "Сентябрь",
+                            "Октябрь",
+                            "Ноябрь",
+                            "Декабрь"
+                        ],
+                        "firstDay": 1,
+                    },
+                    "startDate": "{{ datefrom }}",
+                    "endDate": "{{ dateto }}",
+                    "drops": "right"
+                },  function(start, end, label) {
+                    console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+                  });
+                });
+                </script>
+
+<div class="container">
+    <div class="row">
+        <div class="col-xl-12">
+            <h3 class="logo"><a href="{% url 'home' %}">Себестоимость звонков</a></h3>
+            <p><em>сейчас только авто.ру</em></p>
+
+            <!--Выбор периода-->
+            <form method="POST" class="period">
+                {% csrf_token %}
+                {{ form.daterange }}
+                <button type="submit" class="btn btn-primary">Показать</button>
+                <!--Список клиентов-->
+                <details>
+                  <!--Отмечает ранее выбранных клиентов-->
+                  {% if clients_checked %}
+                    <summary onclick="selected_clients({{ clients_checked }})">Клиенты</summary>
+                  {% else %}
+                    <summary>Клиенты</summary>
+                  {% endif %}
+                  <div class="content">
+                      <ul>
+                          <li><input type="checkbox" onClick="toggle(this)" checked/> Выбрать все</li>
+                          {{ form.client_checkbox }}
+                      </ul>
+                  </div>
+                </details>
+            </form>
+
+            <!--Таблица себестоимости-->
+            {% if stats %}
+            <table class="table table-bordered table-striped table-responsive-stack"  id="tableOne">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Клиент</th>
+                        <th>Приход с площадки</th>
+                        <th>Траты на площадку</th>
+                        <th>Траты на звонки</th>
+                        <th>Траты на услуги</th>
+                        <th>Звонки с площадки</th>
+                        <th>Цена звонка</th>
+                        <th>Цена клиента</th>
+                        <th>Маржа</th>
+                        <th>Заработок</th>
+                    </tr>
+                </thead>
+                {% for stat in stats %}
+                    <tr>
+                        <td>{{ stat.name }}</td>
+                        <td>{{ stat.teleph_calls_sum }}</td>
+                        <td>{{ stat.platform }}</td>
+                        <td>{{ stat.calls_sum }}</td>
+                        <td>{{ stat.products_sum }}</td>
+                        <td>{{ stat.teleph_target }}</td>
+                        <td>{{ stat.call_cost }}</td>
+                        <td>{{ stat.client_cost }}</td>
+                        <td>{{ stat.margin }}</td>
+                        <td>{{ stat.profit }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

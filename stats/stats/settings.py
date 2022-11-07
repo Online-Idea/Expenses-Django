@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 
+live_deploy = True
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,11 +24,40 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-2spgh)!diys!#=oo$)6agbumu7+-n9i8l(e!3q6jhw6biqwzfz'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+if live_deploy:
+    # SECURITY WARNING: don't run with debug turned on in production!
+    DEBUG = False
 
-ALLOWED_HOSTS = []
+    ALLOWED_HOSTS = ['89.108.81.17', '2a00:f940:2:4:2::25c4', '89-108-81-17.cloudvps.regruhosting.ru']
 
+    # Database
+    # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'django_project_db',
+            'USER': 'django',
+            'PASSWORD': 'phea9xaCheH7',
+            'HOST': 'localhost',
+            'PORT': '',
+        }
+    }
+
+elif not live_deploy:
+    DEBUG = True
+
+    ALLOWED_HOSTS = []
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'calls_cost',
+            'USER': 'postgres',
+            'PASSWORD': 'auto123',
+            'HOST': 'localhost',
+            'PORT': 5432,
+        }
+    }
 
 # Application definition
 
@@ -71,19 +102,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'stats.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'calls_cost',
-        'USER': 'postgres',
-        'PASSWORD': 'auto123',
-        'HOST': 'localhost',
-        'PORT': 5432,
-    }
-}
 
 # DATABASES = {
 #     'default': {

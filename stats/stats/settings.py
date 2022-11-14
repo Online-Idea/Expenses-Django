@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 
-live_deploy = True
+live_deploy = False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +25,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-2spgh)!diys!#=oo$)6agbumu7+-n9i8l(e!3q6jhw6biqwzfz'
 
 if live_deploy:
-    # SECURITY WARNING: don't run with debug turned on in production!
     DEBUG = False
 
     ALLOWED_HOSTS = ['89.108.81.17', '2a00:f940:2:4:2::25c4', '89-108-81-17.cloudvps.regruhosting.ru']
@@ -68,6 +67,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_celery_beat',
     'statsapp.apps.StatsappConfig',
 ]
 
@@ -136,7 +136,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
@@ -148,7 +148,26 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+if live_deploy:
+    STATIC_ROOT = '/home/django/django_venv/src/staticfiles/'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Celery settings
+if live_deploy:
+    CELERY_BROKER_URL = 'redis://89.108.81.17:6379'
+    CELERY_RESULT_BACKEND = 'redis://89.108.81.17:6379'
+
+elif not live_deploy:
+    CELERY_BROKER_URL = 'redis://localhost:6379'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+
+# CELERY_BEAT_SCHEDULE = {
+#     'scheduled_task': {
+#         'task': 'statsapp.tasks.test_task',
+#         'schedule': 5.0,
+#     }
+# }

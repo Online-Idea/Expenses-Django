@@ -9,10 +9,13 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-
+import environ
 from pathlib import Path
 
 live_deploy = False
+
+env = environ.Env()
+environ.Env.read_env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,22 +25,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-2spgh)!diys!#=oo$)6agbumu7+-n9i8l(e!3q6jhw6biqwzfz'
+SECRET_KEY = env('DJANGO_SECRET_KEY')
 
 if live_deploy:
     DEBUG = False
 
-    ALLOWED_HOSTS = ['89.108.81.17', '2a00:f940:2:4:2::25c4', '89-108-81-17.cloudvps.regruhosting.ru']
+    ALLOWED_HOSTS = env('ALLOWED_HOSTS_LIVE').split(' ')
 
     # Database
     # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'django_project_db',
-            'USER': 'django',
-            'PASSWORD': 'phea9xaCheH7',
-            'HOST': 'localhost',
+            'NAME': env('DB_NAME_LIVE'),
+            'USER': env('DB_USER_LIVE'),
+            'PASSWORD': env('DB_PASSWORD_LIVE'),
+            'HOST': env('DB_HOST_LIVE'),
             'PORT': '',
         }
     }
@@ -50,11 +53,11 @@ elif not live_deploy:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'calls_cost',
-            'USER': 'postgres',
-            'PASSWORD': 'auto123',
-            'HOST': 'localhost',
-            'PORT': 5432,
+            'NAME': env('DB_NAME_DEV'),
+            'USER': env('DB_USER_DEV'),
+            'PASSWORD': env('DB_PASSWORD_DEV'),
+            'HOST': env('DB_HOST_DEV'),
+            'PORT': env('DB_PORT_DEV'),
         }
     }
 
@@ -102,16 +105,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'stats.wsgi.application'
 
 
-
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
@@ -156,14 +149,15 @@ if live_deploy:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 # Celery settings
 if live_deploy:
-    CELERY_BROKER_URL = 'redis://89.108.81.17:6379'
-    CELERY_RESULT_BACKEND = 'redis://89.108.81.17:6379'
+    CELERY_BROKER_URL = env('CELERY_BROKER_URL_LIVE')
+    CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND_LIVE')
 
 elif not live_deploy:
-    CELERY_BROKER_URL = 'redis://localhost:6379'
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+    CELERY_BROKER_URL = env('CELERY_BROKER_URL_DEV')
+    CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND_DEV')
 
 # CELERY_BEAT_SCHEDULE = {
 #     'scheduled_task': {

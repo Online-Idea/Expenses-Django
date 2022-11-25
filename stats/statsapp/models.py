@@ -7,9 +7,9 @@ class Clients(models.Model):
     manager = models.CharField(max_length=255, null=True, verbose_name='Менеджер')
     active = models.BooleanField(default='1', verbose_name='Активен')
     teleph_id = models.CharField(max_length=255, null=True, unique=True, verbose_name='Имя в телефонии')
-    autoru_id = models.IntegerField(null=True, unique=True, verbose_name='id авто.ру')
-    avito_id = models.IntegerField(null=True, unique=True, verbose_name='id авито')
-    drom_id = models.IntegerField(null=True, unique=True, verbose_name='id drom')
+    autoru_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авто.ру')
+    avito_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авито')
+    drom_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id drom')
 
     def __str__(self):
         return self.name

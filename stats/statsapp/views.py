@@ -75,12 +75,12 @@ def home(request):
             client['teleph_target'] = teleph_target
             client['platform'] = calls_sum + products_sum
             if teleph_target > 0:
-                client['call_cost'] = round(client['platform'] / teleph_target, 2)
-                client['client_cost'] = round(teleph_calls_sum / teleph_target, 2)
+                client['call_cost'] = round(client['platform'] / teleph_target, 0)
+                client['client_cost'] = round(teleph_calls_sum / teleph_target, 0)
             else:
                 client['call_cost'] = client['client_cost'] = 0
-            client['margin'] = round(client['client_cost'] - client['call_cost'], 2)
-            client['profit'] = round(client['margin'] * teleph_target, 2)
+            client['margin'] = round(client['client_cost'] - client['call_cost'], 0)
+            client['profit'] = round(client['margin'] * teleph_target, 0)
         # Конец таблицы себестоимости
 
         context = {
@@ -100,7 +100,7 @@ def home(request):
     year = today.year
     month = today.month
     datefrom = datetime.date(year, month, 1).strftime('%d.%m.%Y')
-    dateto = datetime.date(year, month, calendar.monthrange(year, month)[1]).strftime('%d.%m.%Y')
+    dateto = datetime.date(year, month, today.day - 1).strftime('%d.%m.%Y')
     context = {
         'form': form,
         'datefrom': datefrom,

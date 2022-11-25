@@ -91,4 +91,13 @@ ul {
       width:100%;
    }
 }
+
+.client-name {
+    word-break: break-word;
+}
+
+.negative {
+    color: red;
+}
+
 /*---------------------------------------------------*/

@@ -8,9 +8,10 @@ from django.db.models import Q
 ENDPOINT = 'https://apiauto.ru/1.0'
 
 TOTAL_REQUESTS = 0
+REQUESTS_LIMIT = 200
 
 # Список id клиентов на новом агентском аккаунте
-clients_newcard = [50793, 50877, 51128, 50048, 47554, 25832, 48572]
+clients_newcard = [48572, 50793, 50877, 51128, 50048, 47554, 53443, 39014, 25832]
 
 API_KEY = {
     'x-authorization': env('AUTORU_API_KEY'),
@@ -77,8 +78,8 @@ def get_autoru_products(from_, to, client_id):
         for product_type in product_types:
             start = time.perf_counter()
             TOTAL_REQUESTS += 1
-            if TOTAL_REQUESTS % 290 == 0:
-                print('290ый запрос. Жду минуту')
+            if TOTAL_REQUESTS % REQUESTS_LIMIT == 0:
+                print(f'{REQUESTS_LIMIT}ый запрос. Жду минуту')
                 time.sleep(60)
             product_params = {
                 'service': 'autoru',
@@ -120,11 +121,18 @@ def add_autoru_products(data):
             total = sum * count
             if total > 0:  # Добавляю только те услуги за которые списали средства
                 ad_id = offer['offer']['id']
-                vin = offer['offer']['documents']['vin']
+                try:
+                    vin = offer['offer']['documents']['vin']
+                except KeyError:
+                    vin = 'null'
                 client_id = int(offer['offer']['user_ref'].split(':')[1])
                 date = offer['stats'][stat]['date']
-                mark = offer['offer']['car_info']['mark_info']['name']
-                model = offer['offer']['car_info']['model_info']['name']
+                try:
+                    mark = offer['offer']['car_info']['mark_info']['name']
+                    model = offer['offer']['car_info']['model_info']['name']
+                except KeyError:
+                    mark = offer['offer']['truck_info']['mark_info']['name']
+                    model = offer['offer']['truck_info']['model_info']['name']
                 product = offer['stats'][stat]['product']
                 # Проверяю есть ли уже эта запись
                 record_exists_check = AutoruProducts.objects.filter(
@@ -139,7 +147,7 @@ def add_autoru_products(data):
 
 def delete_autoru_products(from_, to, client_id):
     # Удаляю записи
-    AutoruProducts.objects.filter(date__gt=from_, date__lt=to, client_id=client_id).delete()
+    AutoruProducts.objects.filter(date__gte=from_, date__lte=to, client_id=client_id).delete()
 
 
 # ---------------------------------------------------------------------------
@@ -162,8 +170,8 @@ def get_autoru_daily(from_, to, client_id):
         'pageSize': 1000
     }
     TOTAL_REQUESTS += 1
-    if TOTAL_REQUESTS % 290 == 0:
-        print('290ый запрос. Жду минуту')
+    if TOTAL_REQUESTS % REQUESTS_LIMIT == 0:
+        print(f'{REQUESTS_LIMIT}ый запрос. Жду минуту')
         time.sleep(60)
     wallet_response = requests.get(url=f'{ENDPOINT}{wallet}', headers=dealer_headers, params=wallet_params).json()
     # Отдельной функцией добавляю в базу списания за размещения
@@ -303,7 +311,10 @@ def add_autoru_calls(data, client):
         target = call['target']['raw']
         datetime = moscow_time(call['timestamp'])
         if billing_state == 'PAID':
-            billing_cost = int(call['billing']['cost']['amount']) / 100
+            try:
+                billing_cost = int(call['billing']['cost']['amount']) / 100
+            except KeyError:
+                billing_cost = 0
         elif billing_state == 'FREE':
             billing_cost = 0
 
@@ -318,26 +329,7 @@ def add_autoru_calls(data, client):
 
 
 def delete_autoru_calls(from_, to, client_id):
-    AutoruCalls.objects.filter(datetime__gt=from_, datetime__lt=to, client_id=client_id).delete()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    AutoruCalls.objects.filter(datetime__gte=from_, datetime__lte=to, client_id=client_id).delete()
 
 
 session_id = autoru_authenticate(env('AUTORU_LOGIN'), env('AUTORU_PASSWORD'))

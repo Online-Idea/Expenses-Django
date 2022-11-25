@@ -70,4 +70,4 @@ def add_teleph_calls(data, client_id):
 
 
 def delete_teleph_calls(from_, to, client_id):
-    TelephCalls.objects.filter(datetime__gt=from_, datetime__lt=to, client_id=client_id).delete()
+    TelephCalls.objects.filter(datetime__gte=from_, datetime__lte=to, client_id=client_id).delete()

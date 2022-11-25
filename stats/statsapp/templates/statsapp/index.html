@@ -99,16 +99,24 @@
                 </thead>
                 {% for stat in stats %}
                     <tr>
-                        <td>{{ stat.name }}</td>
-                        <td>{{ stat.teleph_calls_sum }}</td>
-                        <td>{{ stat.platform }}</td>
-                        <td>{{ stat.calls_sum }}</td>
-                        <td>{{ stat.products_sum }}</td>
+                        <td class="client-name">{{ stat.name }}</td>
+                        <td>{{ stat.teleph_calls_sum|floatformat:"0" }}</td>
+                        <td>{{ stat.platform|floatformat:"0" }}</td>
+                        <td>{{ stat.calls_sum|floatformat:"0" }}</td>
+                        <td>{{ stat.products_sum|floatformat:"0" }}</td>
                         <td>{{ stat.teleph_target }}</td>
-                        <td>{{ stat.call_cost }}</td>
-                        <td>{{ stat.client_cost }}</td>
-                        <td>{{ stat.margin }}</td>
-                        <td>{{ stat.profit }}</td>
+                        <td>{{ stat.call_cost|floatformat:"0" }}</td>
+                        <td>{{ stat.client_cost|floatformat:"0" }}</td>
+                        {% if stat.margin < 0 %}
+                            <td class="negative">{{ stat.margin|floatformat:"0" }}</td>
+                        {% else %}
+                            <td>{{ stat.margin|floatformat:"0" }}</td>
+                        {% endif %}
+                        {% if stat.profit < 0 %}
+                            <td class="negative">{{ stat.profit|floatformat:"0" }}</td>
+                        {% else %}
+                            <td>{{ stat.profit|floatformat:"0" }}</td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
             </table>

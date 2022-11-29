@@ -2,6 +2,7 @@
 
 {% block content %}
 <script>
+<!--Выбор периода-->
                 $(function() {
                   $('input[name="daterange"]').daterangepicker({
                     opens: 'left',
@@ -51,7 +52,51 @@
                   });
                 });
                 </script>
-
+<script>
+<!--Сортировка таблицы по заголовку-->
+<!--https://www.w3schools.com/howto/howto_js_sort_table.asp-->
+function sortTable(n) {
+  var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+  table = document.getElementById("tableOne");
+  switching = true;
+  dir = "asc";
+  while (switching) {
+    switching = false;
+    rows = table.rows;
+    for (i = 1; i < (rows.length - 2); i++) {
+      shouldSwitch = false;
+      if (n == 0) {
+        x = rows[i].getElementsByTagName("TD")[n].childNodes[2].textContent;
+        y = rows[i + 1].getElementsByTagName("TD")[n].childNodes[2].textContent;
+      } else {
+        x = Number(rows[i].getElementsByTagName("TD")[n].childNodes[2].textContent);
+        y = Number(rows[i + 1].getElementsByTagName("TD")[n].childNodes[2].textContent);
+      }
+      if (dir == "asc") {
+        if (x > y) {
+          shouldSwitch = true;
+          break;
+        }
+      } else if (dir == "desc") {
+        if (x < y) {
+          shouldSwitch = true;
+          break;
+        }
+      }
+    }
+    if (shouldSwitch) {
+      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+      switching = true;
+      switchcount ++;
+    } else {
+      if (switchcount == 0 && dir == "asc") {
+        dir = "desc";
+        switching = true;
+      }
+    }
+  }
+}
+</script>
 <div class="container">
     <div class="row">
         <div class="col-xl-12">
@@ -85,18 +130,19 @@
             <table class="table table-bordered table-striped table-responsive-stack"  id="tableOne">
                 <thead class="thead-dark">
                     <tr>
-                        <th>Клиент</th>
-                        <th>Приход с площадки</th>
-                        <th>Траты на площадку</th>
-                        <th>Траты на звонки</th>
-                        <th>Траты на услуги</th>
-                        <th>Звонки с площадки</th>
-                        <th>Цена звонка</th>
-                        <th>Цена клиента</th>
-                        <th>Маржа</th>
-                        <th>Заработок</th>
+                        <th onclick="sortTable(0)">Клиент</th>
+                        <th onclick="sortTable(1)">Приход с площадки</th>
+                        <th onclick="sortTable(2)">Траты на площадку</th>
+                        <th onclick="sortTable(3)">Траты на звонки</th>
+                        <th onclick="sortTable(4)">Траты на услуги</th>
+                        <th onclick="sortTable(5)">Звонки с площадки</th>
+                        <th onclick="sortTable(6)">Цена звонка</th>
+                        <th onclick="sortTable(7)">Цена клиента</th>
+                        <th onclick="sortTable(8)">Маржа</th>
+                        <th onclick="sortTable(9)">Заработок</th>
                     </tr>
                 </thead>
+                <tbody>
                 {% for stat in stats %}
                     <tr>
                         <td class="client-name">{{ stat.name }}</td>
@@ -119,9 +165,33 @@
                         {% endif %}
                     </tr>
                 {% endfor %}
+                </tbody>
+                <tfoot class="tfoot-dark">
+                    <tr>
+                        <td>Всего</td>
+                        <td>{{ subtotal.teleph_calls_sum|floatformat:"0" }}</td>
+                        <td>{{ subtotal.platform|floatformat:"0" }}</td>
+                        <td>{{ subtotal.calls_sum|floatformat:"0" }}</td>
+                        <td>{{ subtotal.products_sum|floatformat:"0" }}</td>
+                        <td>{{ subtotal.teleph_target }}</td>
+                        <td>{{ subtotal.calls_cost|floatformat:"0" }}</td>
+                        <td>{{ subtotal.client_cost|floatformat:"0" }}</td>
+                        {% if subtotal.margin < 0 %}
+                            <td class="negative">{{ subtotal.margin|floatformat:"0" }}</td>
+                        {% else %}
+                            <td>{{ subtotal.margin|floatformat:"0" }}</td>
+                        {% endif %}
+                        {% if subtotal.profit < 0 %}
+                            <td class="negative">{{ subtotal.profit|floatformat:"0" }}</td>
+                        {% else %}
+                            <td>{{ subtotal.profit|floatformat:"0" }}</td>
+                        {% endif %}
+                    </tr>
+                </tfoot>
             </table>
             {% endif %}
         </div>
     </div>
 </div>
+
 {% endblock %}

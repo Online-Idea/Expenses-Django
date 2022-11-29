@@ -25,6 +25,7 @@ def home(request):
         clients_checked = [c for c in request.POST.getlist('client_checkbox')]
 
         # Таблица себестоимости
+        # Беру данные из базы
         stats = Clients.objects \
             .values('id', 'name', 'autoru_id', 'teleph_id') \
             .filter(id__in=clients_checked)
@@ -53,6 +54,7 @@ def home(request):
             telephcalls_dict[row['client_id']] = {'teleph_calls_sum': row['teleph_calls_sum'],
                                                   'teleph_target': row['teleph_target']}
 
+        # Форматирую для вывода
         for client in stats:
             try:
                 calls_sum = autorucalls_dict[client['autoru_id']]['calls_sum']
@@ -69,18 +71,41 @@ def home(request):
                 teleph_calls_sum = 0
                 teleph_target = 0
 
-            client['calls_sum'] = calls_sum
-            client['products_sum'] = products_sum
-            client['teleph_calls_sum'] = teleph_calls_sum
-            client['teleph_target'] = teleph_target
-            client['platform'] = calls_sum + products_sum
+            client['calls_sum'] = calls_sum  # Траты на звонки
+            client['products_sum'] = products_sum  # Траты на услуги
+            client['teleph_calls_sum'] = teleph_calls_sum  # Приход с площадки
+            client['teleph_target'] = teleph_target  # Звонки с площадки
+            client['platform'] = calls_sum + products_sum  # Траты на площадку
             if teleph_target > 0:
-                client['call_cost'] = round(client['platform'] / teleph_target, 0)
-                client['client_cost'] = round(teleph_calls_sum / teleph_target, 0)
+                client['call_cost'] = round(client['platform'] / teleph_target, 2)  # Цена звонка
+                client['client_cost'] = round(teleph_calls_sum / teleph_target, 2)  # Цена клиента
             else:
                 client['call_cost'] = client['client_cost'] = 0
-            client['margin'] = round(client['client_cost'] - client['call_cost'], 0)
-            client['profit'] = round(client['margin'] * teleph_target, 0)
+            client['margin'] = round(client['client_cost'] - client['call_cost'], 2)  # Маржа
+            client['profit'] = round(client['margin'] * teleph_target, 2)  # Заработок
+
+        # Суммы столбцов
+        subtotal = {
+            'teleph_calls_sum': 0,
+            'platform': 0,
+            'calls_sum': 0,
+            'products_sum': 0,
+            'teleph_target': 0,
+            'calls_cost': 0,
+            'client_cost': 0,
+            'margin': 0,
+            'profit': 0
+        }
+        for client in stats:
+            subtotal['teleph_calls_sum'] += client['teleph_calls_sum']
+            subtotal['platform'] += client['platform']
+            subtotal['calls_sum'] += client['calls_sum']
+            subtotal['products_sum'] += client['products_sum']
+            subtotal['teleph_target'] += client['teleph_target']
+        subtotal['calls_cost'] = round(subtotal['platform'] / subtotal['teleph_target'], 2)
+        subtotal['client_cost'] = round(subtotal['teleph_calls_sum'] / subtotal['teleph_target'], 2)
+        subtotal['margin'] = round(subtotal['client_cost'] - subtotal['calls_cost'], 2)
+        subtotal['profit'] = round(subtotal['margin'] * subtotal['teleph_target'], 2)
         # Конец таблицы себестоимости
 
         context = {
@@ -89,6 +114,7 @@ def home(request):
             'datefrom': date_start,
             'dateto': date_end,
             'stats': stats,
+            'subtotal': subtotal,
         }
         return render(request, 'statsapp/index.html', context)
 

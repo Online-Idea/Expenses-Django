@@ -5,12 +5,12 @@ from .models import *
 
 # Register your models here.
 class ClientsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'manager', 'active', 'teleph_id', 'autoru_id', 'avito_id', 'drom_id')
+    list_display = ('id', 'name', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'avito_id', 'drom_id')
     list_display_links = ('id', 'name')
     search_fields = ('name', 'manager')
     list_editable = ('active',)
-    list_filter = ('manager', 'active')
-    fields = ('id', 'name', 'manager', 'active', 'teleph_id', 'autoru_id', 'avito_id', 'drom_id')
+    list_filter = ('manager', 'active', 'charge_type')
+    fields = ('id', 'name', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'avito_id', 'drom_id')
     readonly_fields = ('id',)
     save_on_top = True
 

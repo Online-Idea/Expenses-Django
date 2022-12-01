@@ -1,4 +1,5 @@
 {% extends 'statsapp/base.html' %}
+{% load static %}
 
 {% block content %}
 <script>
@@ -52,51 +53,30 @@
                   });
                 });
                 </script>
+<!-- DataTables.net -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.13.1/fc-4.2.1/fh-3.3.1/r-2.4.0/sl-1.5.0/datatables.min.css"/>
+
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.13.1/fc-4.2.1/fh-3.3.1/r-2.4.0/sl-1.5.0/datatables.min.js"></script>
 <script>
-<!--Сортировка таблицы по заголовку-->
-<!--https://www.w3schools.com/howto/howto_js_sort_table.asp-->
-function sortTable(n) {
-  var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-  table = document.getElementById("tableOne");
-  switching = true;
-  dir = "asc";
-  while (switching) {
-    switching = false;
-    rows = table.rows;
-    for (i = 1; i < (rows.length - 2); i++) {
-      shouldSwitch = false;
-      if (n == 0) {
-        x = rows[i].getElementsByTagName("TD")[n].childNodes[2].textContent;
-        y = rows[i + 1].getElementsByTagName("TD")[n].childNodes[2].textContent;
-      } else {
-        x = Number(rows[i].getElementsByTagName("TD")[n].childNodes[2].textContent);
-        y = Number(rows[i + 1].getElementsByTagName("TD")[n].childNodes[2].textContent);
-      }
-      if (dir == "asc") {
-        if (x > y) {
-          shouldSwitch = true;
-          break;
-        }
-      } else if (dir == "desc") {
-        if (x < y) {
-          shouldSwitch = true;
-          break;
-        }
-      }
-    }
-    if (shouldSwitch) {
-      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-      switching = true;
-      switchcount ++;
-    } else {
-      if (switchcount == 0 && dir == "asc") {
-        dir = "desc";
-        switching = true;
-      }
-    }
-  }
-}
+    $(document).ready(function() {
+        $('#tableOne').DataTable( {
+            fixedHeader: {
+                header: true,
+                footer: true
+            },
+            select: {
+                toggleable: true,
+                info: false
+            },
+            responsive: true,
+            language: {
+                url: '{% static 'statsapp/js/datatables-ru.json' %}'
+            }
+        } );
+    } );
 </script>
+
+
 <div class="container">
     <div class="row">
         <div class="col-xl-12">
@@ -127,19 +107,19 @@ function sortTable(n) {
 
             <!--Таблица себестоимости-->
             {% if stats %}
-            <table class="table table-bordered table-striped table-responsive-stack"  id="tableOne">
+            <table id="tableOne" class="row-border hover order-column stripe compact">
                 <thead class="thead-dark">
                     <tr>
-                        <th onclick="sortTable(0)">Клиент</th>
-                        <th onclick="sortTable(1)">Приход с площадки</th>
-                        <th onclick="sortTable(2)">Траты на площадку</th>
-                        <th onclick="sortTable(3)">Траты на звонки</th>
-                        <th onclick="sortTable(4)">Траты на услуги</th>
-                        <th onclick="sortTable(5)">Звонки с площадки</th>
-                        <th onclick="sortTable(6)">Цена звонка</th>
-                        <th onclick="sortTable(7)">Цена клиента</th>
-                        <th onclick="sortTable(8)">Маржа</th>
-                        <th onclick="sortTable(9)">Заработок</th>
+                        <th>Клиент</th>
+                        <th>Приход с площадки</th>
+                        <th>Траты на площадку</th>
+                        <th>Траты на звонки</th>
+                        <th>Траты на услуги</th>
+                        <th>Звонки с площадки</th>
+                        <th>Цена звонка</th>
+                        <th>Цена клиента</th>
+                        <th>Маржа</th>
+                        <th>Заработок</th>
                     </tr>
                 </thead>
                 <tbody>

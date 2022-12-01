@@ -3,10 +3,20 @@ from django.db import models
 
 # Create your models here.
 class Clients(models.Model):
+    CALLS = 'звонки'
+    COMMISSION_PERCENT = 'комиссия процент'
+    COMMISSION_SUM = 'комиссия сумма'
+    CHARGE_TYPE_CHOICES = [
+        (CALLS, 'звонки'),
+        (COMMISSION_PERCENT, 'комиссия процент'),
+        (COMMISSION_SUM, 'комиссия сумма'),
+    ]
     name = models.CharField(max_length=255, verbose_name='Имя')
     manager = models.CharField(max_length=255, null=True, verbose_name='Менеджер')
     active = models.BooleanField(default='1', verbose_name='Активен')
-    teleph_id = models.CharField(max_length=255, null=True, unique=True, verbose_name='Имя в телефонии')
+    charge_type = models.CharField(max_length=255, choices=CHARGE_TYPE_CHOICES, default='звонки', verbose_name='Тип')
+    commission_size = models.FloatField(null=True, blank=True, verbose_name='Размер комиссии')
+    teleph_id = models.CharField(max_length=255, null=True, blank=True, unique=True, verbose_name='Имя в телефонии')
     autoru_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авто.ру')
     avito_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авито')
     drom_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id drom')

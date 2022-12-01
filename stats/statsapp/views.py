@@ -27,7 +27,7 @@ def home(request):
         # Таблица себестоимости
         # Беру данные из базы
         stats = Clients.objects \
-            .values('id', 'name', 'autoru_id', 'teleph_id') \
+            .values('id', 'name', 'charge_type', 'commission_size', 'autoru_id', 'teleph_id') \
             .filter(id__in=clients_checked)
         autorucalls = AutoruCalls.objects \
             .values('client_id') \
@@ -64,25 +64,43 @@ def home(request):
                 products_sum = autoruproducts_dict[client['autoru_id']]['products_sum']
             except KeyError:
                 products_sum = 0
+            platform = calls_sum + products_sum
+
+            if client['charge_type'] == Clients.CALLS:  # звонки
+                try:
+                    teleph_calls_sum = telephcalls_dict[client['teleph_id']]['teleph_calls_sum']
+                except KeyError:
+                    teleph_calls_sum = 0
+            elif client['charge_type'] == Clients.COMMISSION_PERCENT:  # комиссия процент
+                teleph_calls_sum = platform + (platform * client['commission_size'] / 100)
+            elif client['charge_type'] == Clients.COMMISSION_SUM:  # комиссия сумма
+                teleph_calls_sum = platform + client['commission_size']
+            else:
+                teleph_calls_sum = 0
+
             try:
-                teleph_calls_sum = telephcalls_dict[client['teleph_id']]['teleph_calls_sum']
                 teleph_target = telephcalls_dict[client['teleph_id']]['teleph_target']
             except KeyError:
-                teleph_calls_sum = 0
                 teleph_target = 0
 
             client['calls_sum'] = calls_sum  # Траты на звонки
             client['products_sum'] = products_sum  # Траты на услуги
             client['teleph_calls_sum'] = teleph_calls_sum  # Приход с площадки
             client['teleph_target'] = teleph_target  # Звонки с площадки
-            client['platform'] = calls_sum + products_sum  # Траты на площадку
+            client['platform'] = platform  # Траты на площадку
             if teleph_target > 0:
                 client['call_cost'] = round(client['platform'] / teleph_target, 2)  # Цена звонка
                 client['client_cost'] = round(teleph_calls_sum / teleph_target, 2)  # Цена клиента
             else:
                 client['call_cost'] = client['client_cost'] = 0
-            client['margin'] = round(client['client_cost'] - client['call_cost'], 2)  # Маржа
-            client['profit'] = round(client['margin'] * teleph_target, 2)  # Заработок
+
+            if client['charge_type'] == Clients.CALLS:
+                client['margin'] = round(client['client_cost'] - client['call_cost'], 2)  # Маржа
+                client['profit'] = round(client['margin'] * teleph_target, 2)  # Заработок
+            elif client['charge_type'] == Clients.COMMISSION_PERCENT:
+                client['margin'] = client['profit'] = platform * client['commission_size'] / 100
+            elif client['charge_type'] == Clients.COMMISSION_SUM:
+                client['margin'] = client['profit'] = client['commission_size']
 
         # Суммы столбцов
         subtotal = {
@@ -126,7 +144,8 @@ def home(request):
     year = today.year
     month = today.month
     datefrom = datetime.date(year, month, 1).strftime('%d.%m.%Y')
-    dateto = datetime.date(year, month, today.day - 1).strftime('%d.%m.%Y')
+    dayto = today.day - 1 if today.day > 1 else 1
+    dateto = datetime.date(year, month, dayto).strftime('%d.%m.%Y')
     context = {
         'form': form,
         'datefrom': datefrom,

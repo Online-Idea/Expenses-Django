@@ -119,12 +119,12 @@ document.querySelectorAll('details').forEach((el) => {
 
 // Чекбокс выбрать всех клиентов
 function toggle(source) {
-  checkboxes = document.getElementsByName('client_checkbox');
-  for(var i=0, n=checkboxes.length;i<n;i++) {
-    checkboxes[i].checked = source.checked;
-  }
+    var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i] != source)
+            checkboxes[i].checked = source.checked;
+    }
 }
-
 // Отмечает тех клиентов которые были ранее выбраны
 function selected_clients(clients) {
     checkboxes = document.getElementsByName('client_checkbox');

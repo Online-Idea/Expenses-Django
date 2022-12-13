@@ -1,4 +1,7 @@
+import json
 from django.db import models
+from django.db.models import Q
+from slugify import slugify
 
 
 # Create your models here.
@@ -12,6 +15,7 @@ class Clients(models.Model):
         (COMMISSION_SUM, 'комиссия сумма'),
     ]
     name = models.CharField(max_length=255, verbose_name='Имя')
+    slug = models.SlugField(max_length=300, allow_unicode=True, db_index=True, verbose_name='Slug')
     manager = models.CharField(max_length=255, null=True, verbose_name='Менеджер')
     active = models.BooleanField(default='1', verbose_name='Активен')
     charge_type = models.CharField(max_length=255, choices=CHARGE_TYPE_CHOICES, default='звонки', verbose_name='Тип')
@@ -23,6 +27,16 @@ class Clients(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
+        self.slug = slugify(self.name)
+        if not self.slug:
+            slug_str = f'{self.name}'
+            self.slug = slugify(slug_str)
+        slug_exists = Clients.objects.filter(~Q(id=self.id), slug=self.slug)
+        if slug_exists.count() > 0:
+            self.slug = f'{self.slug}-2'
+        super(Clients, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Клиенты'
@@ -127,3 +141,60 @@ class TelephCalls(models.Model):
         verbose_name = 'Телефония звонки'
         verbose_name_plural = 'Телефония звонки'
         ordering = ['datetime']
+
+
+class ConverterTask(models.Model):
+    client = models.ForeignKey(to='Clients', on_delete=models.SET_NULL, null=True, verbose_name='Клиент')
+    name = models.CharField(max_length=500, verbose_name='Название')
+    stock = models.URLField(verbose_name='Сток')
+    active = models.BooleanField(default=True, verbose_name='Активна')
+    photos_folder = models.ForeignKey(to='PhotoFolder', on_delete=models.SET_NULL, null=True,
+                                      verbose_name='Папка с фото')
+    front = models.IntegerField(default=10, verbose_name='Начало')
+    back = models.IntegerField(default=10, verbose_name='Конец')
+    interior = models.IntegerField(default=10, verbose_name='Фото интерьеров', blank=True, null=True)
+    salon_only = models.BooleanField(verbose_name='Только фото салона', default=False)
+    template = models.URLField(verbose_name='Шаблон')
+    configuration = models.ForeignKey(to='Configuration', on_delete=models.SET_NULL, blank=True, null=True,
+                                      verbose_name='Конфигурация')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Задача конвертера'
+        verbose_name_plural = 'Задачи конвертера'
+        ordering = ['name']
+
+
+class PhotoFolder(models.Model):
+    folder = models.CharField(max_length=500, unique=True, verbose_name='Папка с фото')
+
+    def __str__(self):
+        return self.folder
+
+    class Meta:
+        verbose_name = 'Папка с фото'
+        verbose_name_plural = 'Папки с фото'
+        ordering = ['folder']
+
+
+class Configuration(models.Model):
+    DEFAULT = json.dumps([{"file": [{"column": "mark"}], "base": [{"column": "mark"}]},
+                          {"file": [{"column": "model"}], "base": [{"column": "model"}]},
+                          {"file": [{"column": "complectation"}], "base": [{"column": "complectation"}],
+                           "intersection": True, "ifExists": True},
+                          {"file": [{"column": "body"}], "base": [{"column": "body"}]},
+                          {"file": [{"column": "color"}], "base": [{"column": "color"}]}])
+
+    converter_id = models.IntegerField(unique=True, verbose_name='id в конвертере')
+    name = models.CharField(max_length=500, verbose_name='Название')
+    configuration = models.JSONField(verbose_name='Настройки')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Конфигурация'
+        verbose_name_plural = 'Конфигурации'
+        ordering = ['name']

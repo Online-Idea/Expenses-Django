@@ -168,3 +168,5 @@ elif not live_deploy:
 #         'schedule': 5.0,
 #     }
 # }
+
+ALLOW_UNICODE_SLUGS = True

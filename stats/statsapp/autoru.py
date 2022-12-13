@@ -7,11 +7,9 @@ from django.db.models import Q
 
 ENDPOINT = 'https://apiauto.ru/1.0'
 
-TOTAL_REQUESTS = 0
-REQUESTS_LIMIT = 200
 
 # Список id клиентов на новом агентском аккаунте
-clients_newcard = [48572, 50793, 50877, 51128, 50048, 47554, 53443, 39014, 25832]
+clients_newcard = [48572, 50793, 50877, 51128, 50048, 47554, 53443, 39014, 25832, 26648]
 
 API_KEY = {
     'x-authorization': env('AUTORU_API_KEY'),
@@ -33,6 +31,18 @@ def moscow_time(dt):
         no_tz = datetime.strptime(dt, '%Y-%m-%dT%H:%M:%SZ')
     moscow_tz = no_tz + timedelta(hours=3)
     return moscow_tz
+
+
+def too_many_requests(data):
+    try:
+        error = data['error']
+    except KeyError:
+        return False
+    else:
+        if error == 'TOO_MANY_REQUESTS':
+            print('Достигнут лимит авто.ру, жду минуту')
+            time.sleep(60)
+            return True
 
 
 def autoru_authenticate(login, password):
@@ -61,7 +71,6 @@ def get_autoru_products(from_, to, client_id):
     # Возвращает статистику по активации услуги у объявлений за указанную дату.
     # https://yandex.ru/dev/autoru/doc/reference/dealer-wallet-product-activations-offer-stats.html
     # GET /dealer/wallet/product/{productName}/activations/offer-stats
-    global TOTAL_REQUESTS
 
     # Удаляю текущие записи чтобы вместо них добавить записи с актуальными данными
     delete_autoru_products(from_, to, client_id)
@@ -77,10 +86,6 @@ def get_autoru_products(from_, to, client_id):
         product_types = get_autoru_daily(date_for_daily, date_for_daily, client_id)
         for product_type in product_types:
             start = time.perf_counter()
-            TOTAL_REQUESTS += 1
-            if TOTAL_REQUESTS % REQUESTS_LIMIT == 0:
-                print(f'{REQUESTS_LIMIT}ый запрос. Жду минуту')
-                time.sleep(60)
             product_params = {
                 'service': 'autoru',
                 'date': f'{current_date:%Y-%m-%d}',
@@ -90,7 +95,8 @@ def get_autoru_products(from_, to, client_id):
             product_response = requests.get(
                 url=f'{ENDPOINT}/dealer/wallet/product/{product_type}/activations/offer-stats',
                 headers=dealer_headers, params=product_params).json()
-
+            if too_many_requests(product_response):
+                get_autoru_products(from_, to, client_id)
             # Добавляю
             try:
                 if product_response['offer_product_activations_stats']:
@@ -107,7 +113,7 @@ def get_autoru_products(from_, to, client_id):
             except KeyError:
                 continue
             finally:
-                print(f'Клиент {client_id} | дата {current_date} | услуга {product_type:25} | запрос {TOTAL_REQUESTS:4} | {time.perf_counter() - start:.3f}')
+                print(f'Клиент {client_id} | дата {current_date} | услуга {product_type:25} | {time.perf_counter() - start:.3f}')
         current_date += timedelta(days=1)
 
 
@@ -155,7 +161,6 @@ def get_autoru_daily(from_, to, client_id):
     # Списание с кошелька за звонки и активацию услуг
     # https://yandex.ru/dev/autoru/doc/reference/dealer-wallet-product-activations-daily-stats.html
     # GET /dealer/wallet/product/activations/daily-stats
-    global TOTAL_REQUESTS
     wallet = '/dealer/wallet/product/activations/daily-stats'
     if client_id not in clients_newcard:
         dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
@@ -169,11 +174,10 @@ def get_autoru_daily(from_, to, client_id):
         'pageNum': 1,
         'pageSize': 1000
     }
-    TOTAL_REQUESTS += 1
-    if TOTAL_REQUESTS % REQUESTS_LIMIT == 0:
-        print(f'{REQUESTS_LIMIT}ый запрос. Жду минуту')
-        time.sleep(60)
     wallet_response = requests.get(url=f'{ENDPOINT}{wallet}', headers=dealer_headers, params=wallet_params).json()
+    if too_many_requests(wallet_response):
+        get_autoru_daily(from_, to, client_id)
+
     # Отдельной функцией добавляю в базу списания за размещения
     add_autoru_daily(wallet_response, client_id)
 
@@ -260,6 +264,9 @@ def get_autoru_calls(from_, to, client_id):
         }
     }
     calls_response = requests.post(url=f'{ENDPOINT}/{calltracking}', headers=dealer_headers, json=calls_body).json()
+    if too_many_requests(calls_response):
+        get_autoru_calls(from_, to, client_id)
+
     try:
         if calls_response['status'] == 'error':  # Пропускаю клиента если доступ запрещён
             print(f'Клиент {client_id} пропущен. Отказано в доступе')

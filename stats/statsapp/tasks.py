@@ -6,6 +6,7 @@ from celery import shared_task
 from stats.celery import app
 from statsapp.autoru import get_autoru_clients, get_autoru_products, get_autoru_daily, get_autoru_calls
 from statsapp.teleph import get_teleph_clients, get_teleph_calls
+from statsapp.converter import get_converter_tasks, converter_template
 
 
 def last_30_days():
@@ -44,3 +45,11 @@ def teleph_calls():
     from_, to = last_30_days()
     for client in active_teleph_clients:
         get_teleph_calls(from_, to, client)
+
+
+@shared_task
+def converter_price():
+    tasks = get_converter_tasks()
+    for task in tasks:
+        converter_template(task)
+

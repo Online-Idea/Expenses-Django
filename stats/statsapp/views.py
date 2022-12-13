@@ -8,9 +8,9 @@ import calendar
 
 from .models import *
 from .forms import *
+from .converter import *
+from .autoru import get_autoru_products, autoru_authenticate
 
-
-# Create your views here.
 def home(request):
     if request.method == 'POST':
         form = ClientsChooseForm(request.POST)
@@ -153,3 +153,36 @@ def home(request):
         'clients': clients,
     }
     return render(request, 'statsapp/index.html', context)
+
+
+# def autoru_products(request, from_, to, client):
+#     print(f'{request.GET["from_"]}, {request.GET["to"]}, {request.GET["client"]}')
+#     r = request.GET
+#     from_ = datetime.datetime.strptime(r['from_'], '%Y-%m-%d')
+#     to = datetime.datetime.strptime(r['to'], '%Y-%m-%d')
+#     get_autoru_products(from_, to, r['client'])
+#     return redirect('home')
+
+
+def photo_folders(request):
+    get_photo_folders()
+    return redirect('home')
+
+
+def configurations(request):
+    get_configurations()
+    return redirect('home')
+
+
+def converter_testing(request):
+    task = ConverterTask.objects.get(pk=1)
+    client = task.client.slug
+    process_id = converter_post(task)
+    print(process_id)
+    progress = converter_process_step(process_id)
+    print(progress)
+    if progress == 100:
+        price = converter_process_result(process_id, client)
+        print(price)
+    return redirect('home')
+

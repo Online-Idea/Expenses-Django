@@ -155,6 +155,7 @@ class ConverterTask(models.Model):
     interior = models.IntegerField(default=10, verbose_name='Фото интерьеров', blank=True, null=True)
     salon_only = models.BooleanField(verbose_name='Только фото салона', default=False)
     template = models.URLField(verbose_name='Шаблон')
+    stock_fields = models.ForeignKey(to='StockFields', on_delete=models.CASCADE, verbose_name='Поля стока')
     configuration = models.ForeignKey(to='Configuration', on_delete=models.SET_NULL, blank=True, null=True,
                                       verbose_name='Конфигурация')
 
@@ -164,6 +165,38 @@ class ConverterTask(models.Model):
     class Meta:
         verbose_name = 'Задача конвертера'
         verbose_name_plural = 'Задачи конвертера'
+        ordering = ['name']
+
+
+class StockFields(models.Model):
+    name = models.CharField(max_length=500, verbose_name='Название')
+    car_tag = models.CharField(max_length=500, verbose_name='Тег автомобиля')
+    modification_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Код модификации')
+    color_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Код цвета')
+    interior_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Код интерьера')
+    options_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Опции и пакеты')
+    price = models.CharField(max_length=500, blank=True, null=True, verbose_name='Цена')
+    year = models.CharField(max_length=500, blank=True, null=True, verbose_name='Год выпуска')
+    vin = models.CharField(max_length=500, blank=True, null=True, verbose_name='Исходный VIN')
+    id_from_client = models.CharField(max_length=500, blank=True, null=True, verbose_name='ID от клиента')
+    modification_explained = models.CharField(max_length=500, blank=True, null=True, verbose_name='Расш. модификации')
+    color_explained = models.CharField(max_length=500, blank=True, null=True, verbose_name='Расш. цвета')
+    interior_explained = models.CharField(max_length=500, blank=True, null=True, verbose_name='Расш. интерьера')
+    description = models.CharField(max_length=500, blank=True, null=True, verbose_name='Описание')
+    trade_in = models.CharField(max_length=500, blank=True, null=True, verbose_name='Трейд-ин')
+    credit = models.CharField(max_length=500, blank=True, null=True, verbose_name='Кредит')
+    insurance = models.CharField(max_length=500, blank=True, null=True, verbose_name='Страховка')
+    max_discount = models.CharField(max_length=500, blank=True, null=True, verbose_name='Максималка')
+    availability = models.CharField(max_length=500, blank=True, null=True, verbose_name='Наличие')
+    run = models.CharField(max_length=500, blank=True, null=True, verbose_name='Пробег')
+    images = models.CharField(max_length=500, blank=True, null=True, verbose_name='Фото клиента')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Поля стока'
+        verbose_name_plural = 'Поля стоков'
         ordering = ['name']
 
 

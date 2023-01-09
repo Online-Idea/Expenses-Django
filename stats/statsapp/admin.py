@@ -7,7 +7,7 @@ from .models import *
 class ClientsAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'avito_id', 'drom_id')
     list_display_links = ('id', 'name')
-    search_fields = ('name', 'manager')
+    search_fields = ('name', 'manager', 'teleph_id', 'autoru_id', 'avito_id', 'drom_id')
     list_editable = ('active',)
     list_filter = ('manager', 'active', 'charge_type')
     fields = ('id', 'name', 'slug', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'avito_id', 'drom_id')
@@ -38,11 +38,22 @@ class ModelsAdmin(admin.ModelAdmin):
 class ConverterTaskAdmin(admin.ModelAdmin):
     list_display = ('id', 'client', 'name', 'active', 'photos_folder', 'configuration')
     list_display_links = ('id', 'client', 'name')
+    list_editable = ('active', )
     search_fields = ('client', 'name')
     list_filter = ('client', 'active')
     fields = ('id', 'client', 'name', 'stock', 'active', 'photos_folder',
-              'front', 'back', 'interior', 'salon_only', 'template', 'configuration')
+              'front', 'back', 'interior', 'salon_only', 'template', 'stock_fields', 'configuration')
     readonly_fields = ('id', 'template')
+    save_on_top = True
+
+
+class StockFieldsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+    list_display_links = ('id', 'name')
+    search_fields = ('name', )
+    fields = ('name', 'car_tag', 'modification_code', 'color_code', 'interior_code', 'options_code', 'price', 'year',
+              'vin', 'id_from_client', 'modification_explained', 'color_explained', 'interior_explained', 'description',
+              'trade_in', 'credit', 'insurance', 'max_discount', 'availability', 'run', 'images')
     save_on_top = True
 
 
@@ -66,5 +77,6 @@ admin.site.register(Clients, ClientsAdmin)
 admin.site.register(Marks, MarksAdmin)
 admin.site.register(Models, ModelsAdmin)
 admin.site.register(ConverterTask, ConverterTaskAdmin)
+admin.site.register(StockFields, StockFieldsAdmin)
 admin.site.register(PhotoFolder, PhotoFolderAdmin)
 admin.site.register(Configuration, ConfigurationAdmin)

@@ -176,6 +176,7 @@ def configurations(request):
 
 def converter_testing(request):
     task = ConverterTask.objects.get(pk=1)
+    converter_template(task)
     client = task.client.slug
     process_id = converter_post(task)
     print(process_id)

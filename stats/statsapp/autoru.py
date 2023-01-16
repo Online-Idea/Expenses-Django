@@ -33,7 +33,7 @@ def moscow_time(dt):
     return moscow_tz
 
 
-def too_many_requests(data):
+def autoru_errors(data):
     try:
         error = data['error']
     except KeyError:
@@ -42,6 +42,12 @@ def too_many_requests(data):
         if error == 'TOO_MANY_REQUESTS':
             print('Достигнут лимит авто.ру, жду минуту')
             time.sleep(60)
+            return True
+        elif error == 'NO_AUTH':
+            print('Слетела авторизация, захожу повторно')
+            global session_id, session_id2
+            session_id = autoru_authenticate(env('AUTORU_LOGIN'), env('AUTORU_PASSWORD'))
+            session_id2 = autoru_authenticate(env('AUTORU_LOGIN2'), env('AUTORU_PASSWORD2'))
             return True
 
 
@@ -95,7 +101,7 @@ def get_autoru_products(from_, to, client_id):
             product_response = requests.get(
                 url=f'{ENDPOINT}/dealer/wallet/product/{product_type}/activations/offer-stats',
                 headers=dealer_headers, params=product_params).json()
-            if too_many_requests(product_response):
+            if autoru_errors(product_response):
                 get_autoru_products(from_, to, client_id)
             # Добавляю
             try:
@@ -175,7 +181,7 @@ def get_autoru_daily(from_, to, client_id):
         'pageSize': 1000
     }
     wallet_response = requests.get(url=f'{ENDPOINT}{wallet}', headers=dealer_headers, params=wallet_params).json()
-    if too_many_requests(wallet_response):
+    if autoru_errors(wallet_response):
         get_autoru_daily(from_, to, client_id)
 
     # Отдельной функцией добавляю в базу списания за размещения
@@ -264,7 +270,7 @@ def get_autoru_calls(from_, to, client_id):
         }
     }
     calls_response = requests.post(url=f'{ENDPOINT}/{calltracking}', headers=dealer_headers, json=calls_body).json()
-    if too_many_requests(calls_response):
+    if autoru_errors(calls_response):
         get_autoru_calls(from_, to, client_id)
 
     try:

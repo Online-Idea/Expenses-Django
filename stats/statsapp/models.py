@@ -4,8 +4,15 @@ from django.db.models import Q
 from slugify import slugify
 
 
-# Create your models here.
-class Clients(models.Model):
+# Чтобы PyCharm не подчеркивал objects в MyClass.objects.filter
+class BaseModel(models.Model):
+    objects = models.Manager()
+
+    class Meta:
+        abstract = True
+
+
+class Clients(BaseModel):
     CALLS = 'звонки'
     COMMISSION_PERCENT = 'комиссия процент'
     COMMISSION_SUM = 'комиссия сумма'
@@ -44,7 +51,7 @@ class Clients(models.Model):
         ordering = ['name']
 
 
-class Marks(models.Model):
+class Marks(BaseModel):
     mark = models.CharField(max_length=255, unique=True, verbose_name='Марка')
     teleph = models.CharField(max_length=255, null=True, unique=True, verbose_name='Телефония')
     autoru = models.CharField(max_length=255, null=True, unique=True, verbose_name='Авто.ру')
@@ -61,7 +68,7 @@ class Marks(models.Model):
         ordering = ['mark']
 
 
-class Models(models.Model):
+class Models(BaseModel):
     mark = models.ForeignKey('Marks', on_delete=models.PROTECT, verbose_name='Марка')
     model = models.CharField(max_length=255, verbose_name='Модель')
     teleph = models.CharField(max_length=255, null=True, verbose_name='Телефония')
@@ -79,7 +86,7 @@ class Models(models.Model):
         ordering = ['model']
 
 
-class AutoruCalls(models.Model):
+class AutoruCalls(BaseModel):
     ad_id = models.CharField(max_length=255, null=True, verbose_name='id объявления')
     vin = models.CharField(max_length=17, null=True, verbose_name='VIN')
     client = models.ForeignKey('Clients', to_field='autoru_id', on_delete=models.PROTECT, verbose_name='id клиента')
@@ -101,7 +108,7 @@ class AutoruCalls(models.Model):
         ordering = ['datetime']
 
 
-class AutoruProducts(models.Model):
+class AutoruProducts(BaseModel):
     ad_id = models.CharField(max_length=255, null=True, verbose_name='id объявления')
     vin = models.CharField(max_length=17, null=True, verbose_name='VIN')
     client = models.ForeignKey('Clients', to_field='autoru_id', on_delete=models.PROTECT, verbose_name='id клиента')
@@ -122,7 +129,7 @@ class AutoruProducts(models.Model):
         ordering = ['date']
 
 
-class TelephCalls(models.Model):
+class TelephCalls(BaseModel):
     client = models.ForeignKey('Clients', to_field='teleph_id', on_delete=models.PROTECT, verbose_name='id клиента')
     datetime = models.DateTimeField(verbose_name='Дата и время')
     num_from = models.CharField(max_length=255, verbose_name='Исходящий')
@@ -143,10 +150,18 @@ class TelephCalls(models.Model):
         ordering = ['datetime']
 
 
-class ConverterTask(models.Model):
+class ConverterTask(BaseModel):
+    STOCK_SOURCE_CHOICES = [
+        ('Ссылка', 'Ссылка'),
+        ('POST-запрос', 'POST-запрос'),
+    ]
     client = models.ForeignKey(to='Clients', on_delete=models.SET_NULL, null=True, verbose_name='Клиент')
     name = models.CharField(max_length=500, verbose_name='Название')
-    stock = models.URLField(verbose_name='Сток')
+    stock_source = models.CharField(max_length=500, choices=STOCK_SOURCE_CHOICES, verbose_name='Источник стока')
+    stock_url = models.URLField(blank=True, null=True, verbose_name='Ссылка стока')
+    stock_post_host = models.URLField(blank=True, null=True, verbose_name='POST-запрос Хост')
+    stock_post_login = models.CharField(max_length=500, blank=True, null=True, verbose_name='POST-запрос Логин')
+    stock_post_password = models.CharField(max_length=500, blank=True, null=True, verbose_name='POST-запрос Пароль')
     active = models.BooleanField(default=True, verbose_name='Активна')
     photos_folder = models.ForeignKey(to='PhotoFolder', on_delete=models.SET_NULL, null=True,
                                       verbose_name='Папка с фото')
@@ -168,13 +183,32 @@ class ConverterTask(models.Model):
         ordering = ['name']
 
 
-class StockFields(models.Model):
+class StockFields(BaseModel):
+    TEMPLATE_COL = {  # Номер столбца для xlsx шаблона
+        'modification_code': 0,
+        'color_code': 2,
+        'interior_code': 3,
+        'options_code': 4,
+        'price': 5,
+        'year': 8,
+        'vin': 9,
+        'id_from_client': 10,
+        'trade_in': 11,
+        'credit': 12,
+        'insurance': 13,
+        'max_discount': 14,
+        'images': 15,
+    }
+    multi_tags_help = 'Если тег с детьми то пиши только тег, например options. Если тег несколько раз повторяется и из него нужен атрибут то пиши тег@атрибут, например option@code'
+
     name = models.CharField(max_length=500, verbose_name='Название')
+    encoding = models.CharField(max_length=500, default='UTF-8', verbose_name='Кодировка')
     car_tag = models.CharField(max_length=500, verbose_name='Тег автомобиля')
     modification_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Код модификации')
     color_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Код цвета')
     interior_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Код интерьера')
-    options_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Опции и пакеты')
+    options_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Опции и пакеты',
+                                    help_text=multi_tags_help)
     price = models.CharField(max_length=500, blank=True, null=True, verbose_name='Цена')
     year = models.CharField(max_length=500, blank=True, null=True, verbose_name='Год выпуска')
     vin = models.CharField(max_length=500, blank=True, null=True, verbose_name='Исходный VIN')
@@ -189,7 +223,8 @@ class StockFields(models.Model):
     max_discount = models.CharField(max_length=500, blank=True, null=True, verbose_name='Максималка')
     availability = models.CharField(max_length=500, blank=True, null=True, verbose_name='Наличие')
     run = models.CharField(max_length=500, blank=True, null=True, verbose_name='Пробег')
-    images = models.CharField(max_length=500, blank=True, null=True, verbose_name='Фото клиента')
+    images = models.CharField(max_length=500, blank=True, null=True, verbose_name='Фото клиента',
+                              help_text=multi_tags_help)
 
     def __str__(self):
         return self.name
@@ -200,7 +235,7 @@ class StockFields(models.Model):
         ordering = ['name']
 
 
-class PhotoFolder(models.Model):
+class PhotoFolder(BaseModel):
     folder = models.CharField(max_length=500, unique=True, verbose_name='Папка с фото')
 
     def __str__(self):
@@ -212,7 +247,7 @@ class PhotoFolder(models.Model):
         ordering = ['folder']
 
 
-class Configuration(models.Model):
+class Configuration(BaseModel):
     DEFAULT = json.dumps([{"file": [{"column": "mark"}], "base": [{"column": "mark"}]},
                           {"file": [{"column": "model"}], "base": [{"column": "model"}]},
                           {"file": [{"column": "complectation"}], "base": [{"column": "complectation"}],

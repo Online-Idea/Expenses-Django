@@ -41,8 +41,9 @@ class ConverterTaskAdmin(admin.ModelAdmin):
     list_editable = ('active', )
     search_fields = ('client', 'name')
     list_filter = ('client', 'active')
-    fields = ('id', 'client', 'name', 'stock', 'active', 'photos_folder',
-              'front', 'back', 'interior', 'salon_only', 'template', 'stock_fields', 'configuration')
+    fields = ('id', 'client', 'name', 'stock_source', 'stock_url', 'stock_post_host', 'stock_post_login',
+              'stock_post_password', 'active', 'photos_folder', 'front', 'back', 'interior', 'salon_only', 'template',
+              'stock_fields', 'configuration')
     readonly_fields = ('id', 'template')
     save_on_top = True
 
@@ -51,7 +52,7 @@ class StockFieldsAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     list_display_links = ('id', 'name')
     search_fields = ('name', )
-    fields = ('name', 'car_tag', 'modification_code', 'color_code', 'interior_code', 'options_code', 'price', 'year',
+    fields = ('name', 'encoding', 'car_tag', 'modification_code', 'color_code', 'interior_code', 'options_code', 'price', 'year',
               'vin', 'id_from_client', 'modification_explained', 'color_explained', 'interior_explained', 'description',
               'trade_in', 'credit', 'insurance', 'max_discount', 'availability', 'run', 'images')
     save_on_top = True

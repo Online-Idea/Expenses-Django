@@ -47,20 +47,26 @@ def get_price(task):
 
 def converter_template(task):
     # Сохраняю xml сток клиента, делаю по нему шаблон для конвертера
-    # TODO этот вариант для РОЛЬФ, сделать универсальный либо под клиента
     xlsx_headers = ['Код модификации', 'Код комплектации', 'Код цвета', 'Код интерьера', 'Опции и пакеты', 'Цена',
                     'Цена по акции 1', 'Цена по акции 2', 'Год', 'Исходный VIN', 'ID от клиента', 'Трейд-ин', 'Кредит',
-                    'Страховка', 'Максималка']
+                    'Страховка', 'Максималка', 'Фото клиента']
 
     slug = task.client.slug
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
 
     # XML root
-    url = task.stock
-    response = requests.get(url).text
+    if task.stock_source == 'Ссылка':
+        response = requests.get(url=task.stock_url).text
+    elif task.stock_source == 'POST-запрос':
+        data = {
+            'login': task.stock_post_login,
+            'password': task.stock_post_password,
+        }
+        response = requests.post(url=task.stock_post_host, data=data).text
+
     stock_path = f'converter/{slug}/stocks/stock_{slug}_{file_date}.xml'
     os.makedirs(os.path.dirname(stock_path), exist_ok=True)
-    with open(stock_path, mode='w', encoding='ISO-8859-1') as file:
+    with open(stock_path, mode='w', encoding=task.stock_fields.encoding) as file:
         file.write(response)
     save_on_ftp(stock_path)
     tree = ET.parse(stock_path)
@@ -78,24 +84,56 @@ def converter_template(task):
     for i, header in enumerate(xlsx_headers):
         sheet.write(0, i, header)
 
-    # TODO отделить в функцию которая использует данные из StockFields
     # Данные шаблона
-    for i, car in enumerate(root.iter('car')):
+    fields = task.stock_fields
+    template_col = StockFields.TEMPLATE_COL
+    exception_col = ['modification_code', 'options_code', 'images']
+    for i, car in enumerate(root.iter(fields.car_tag)):
         # sheet.write(y, x, cell_data)  # Пример заполнения ячейки xlsx
-        sheet.write(i + 1, 0, f"{car.findtext('folder_id')} | {car.findtext('modification_id')} | "
-                              f"{car.findtext('complectation')}")  # Код модификации
-        sheet.write(i + 1, 2, car.findtext('color'))  # Код цвета
-        sheet.write(i + 1, 5, int(car.findtext('price')))  # Цена
-        sheet.write(i + 1, 8, int(car.findtext('year')))  # Год
-        sheet.write(i + 1, 9, car.findtext('vin'))  # Исходный VIN
-        sheet.write(i + 1, 10, int(car.findtext('idveh')))  # ID от клиента
-        sheet.write(i + 1, 11, int(car.findtext('tradein_discount')))  # Трейд-ин
-        sheet.write(i + 1, 12, int(car.findtext('credit_discount')))  # Кредит
-        sheet.write(i + 1, 13, int(car.findtext('insurance_discount')))  # Страховка
-        sheet.write(i + 1, 14, int(car.findtext('max_discount')))  # Максималка
+        # Обычные поля
+        for field in fields._meta.fields:
+            field_val = getattr(fields, field.name)
+            # Если не пусто И поле в полях шаблона И поле НЕ в исключениях
+            if field_val and field.name in template_col and field.name not in exception_col:
+                cell = car.findtext(field_val)
+                if cell.isnumeric():
+                    cell = int(cell)
+                sheet.write(i + 1, template_col[field.name], cell)
+
+        # Поля-исключения
+        if ',' in fields.modification_code:  # Код модификации
+            mod = [car.findtext(f) for f in fields.modification_code.split(', ')]
+            sheet.write(i + 1, template_col['modification_code'], ' | '.join(mod))
+        else:
+            sheet.write(i + 1, template_col['modification_code'], car.findtext(fields.modification_code))
+
+        if fields.options_code:
+            options = multi_tags(fields.options_code, car)  # Опции
+            sheet.write(i + 1, template_col['options_code'], options)
+
+        if fields.images:
+            images = multi_tags(fields.images, car)  # Фото клиента
+            sheet.write(i + 1, template_col['images'], images)
 
     xlsx_template.close()
     save_on_ftp(template_path)
+
+
+def multi_tags(field, element):
+    """
+    Обрабатывает поля для которых данные собираются из нескольких тегов
+    :param field: поле
+    :param element: элемент из xml
+    :return: готовые данные для шаблона
+    """
+    if '@' in field:  # Если есть @, значит у тега взять значение из атрибута (до @ это тег, после атрибут)
+        field_split = field.split('@')
+        result = [tag.attrib[field_split[1]] for tag in element.findall(field_split[0])]
+    elif len(element.findall(field)) == 1:  # Если тег встречается 1 раз, значит взять значения из тегов-детей
+        result = [tag.text for tag in element.find(field)]
+    elif len(element.findall(field)) > 1:  # Если тег встречается больше одного раза, значит взять значения из всех
+        result = [tag.text for tag in element.findall(field)]
+    return ' '.join(result)
 
 
 def converter_post(task):

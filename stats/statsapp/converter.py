@@ -31,7 +31,7 @@ def get_price(task):
     Полный цикл для одного клиента.
     :param task: строка из таблицы Задачи конвертера
     """
-    converter_template(task)
+    template = converter_template(task)
     client = task.client.slug
     process_id = converter_post(task)
     print(f'Клиент {client}, pid: {process_id}')
@@ -40,7 +40,7 @@ def get_price(task):
         print(progress)
         progress = converter_process_step(process_id)
     converter_process_result(process_id, client)
-    converter_logs(task, process_id)
+    converter_logs(task, process_id, template)
     print(f'Клиент {client} - прайс готов')
     return
 
@@ -49,7 +49,7 @@ def converter_template(task):
     # Сохраняю xml сток клиента, делаю по нему шаблон для конвертера
     xlsx_headers = ['Код модификации', 'Код комплектации', 'Код цвета', 'Код интерьера', 'Опции и пакеты', 'Цена',
                     'Цена по акции 1', 'Цена по акции 2', 'Год', 'Исходный VIN', 'ID от клиента', 'Трейд-ин', 'Кредит',
-                    'Страховка', 'Максималка', 'Фото клиента']
+                    'Страховка', 'Максималка', 'Фото клиента', 'Расш. модификации', 'Расш. цвета', 'Расш. интерьера']
 
     slug = task.client.slug
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
@@ -87,7 +87,7 @@ def converter_template(task):
     # Данные шаблона
     fields = task.stock_fields
     template_col = StockFields.TEMPLATE_COL
-    exception_col = ['modification_code', 'options_code', 'images']
+    exception_col = ['modification_code', 'options_code', 'images', 'modification_explained']
     for i, car in enumerate(root.iter(fields.car_tag)):
         # sheet.write(y, x, cell_data)  # Пример заполнения ячейки xlsx
         # Обычные поля
@@ -102,7 +102,8 @@ def converter_template(task):
 
         # Поля-исключения
         if ',' in fields.modification_code:  # Код модификации
-            mod = [car.findtext(f) for f in fields.modification_code.split(', ')]
+            # Разделяет по запятой в список если есть значение. Убирает запятую из данных стока
+            mod = [car.findtext(f).replace(',', '') for f in fields.modification_code.split(', ') if car.findtext(f)]
             sheet.write(i + 1, template_col['modification_code'], ' | '.join(mod))
         else:
             sheet.write(i + 1, template_col['modification_code'], car.findtext(fields.modification_code))
@@ -115,8 +116,15 @@ def converter_template(task):
             images = multi_tags(fields.images, car)  # Фото клиента
             sheet.write(i + 1, template_col['images'], images)
 
+        if ',' in fields.modification_explained:  # Расш. модификации
+            mod = [car.findtext(f) for f in fields.modification_explained.split(', ') if car.findtext(f)]
+            sheet.write(i + 1, template_col['modification_explained'], ' | '.join(mod))
+        else:
+            sheet.write(i + 1, template_col['modification_explained'], car.findtext(fields.modification_explained))
+
     xlsx_template.close()
     save_on_ftp(template_path)
+    return pd.read_excel(template_path)
 
 
 def multi_tags(field, element):
@@ -126,13 +134,20 @@ def multi_tags(field, element):
     :param element: элемент из xml
     :return: готовые данные для шаблона
     """
-    if '@' in field:  # Если есть @, значит у тега взять значение из атрибута (до @ это тег, после атрибут)
-        field_split = field.split('@')
-        result = [tag.attrib[field_split[1]] for tag in element.findall(field_split[0])]
-    elif len(element.findall(field)) == 1:  # Если тег встречается 1 раз, значит взять значения из тегов-детей
-        result = [tag.text for tag in element.find(field)]
-    elif len(element.findall(field)) > 1:  # Если тег встречается больше одного раза, значит взять значения из всех
-        result = [tag.text for tag in element.findall(field)]
+    if '/' in field:
+        parent = field.split('/')[0]
+        if '@' not in field:  # Если тег с детьми и нужно значение детей
+            result = [tag.text for tag in element.find(parent)]
+        else:  # Если тег с детьми и из детей нужен атрибут
+            attribute = field.split('@')[1]
+            result = [tag.attrib[attribute] for tag in element.find(parent)]
+    else:
+        if '@' not in field:  # Если тег несколько раз повторяется и нужно значение
+            result = [tag.text for tag in element.findall(field)]
+        else:  # Если тег несколько раз повторяется и из него нужен атрибут
+            tag_name, attribute = field.split('@')
+            result = [tag.attrib[attribute] for tag in element.findall(tag_name)]
+
     return ' '.join(result)
 
 
@@ -203,25 +218,62 @@ def converter_process_result(process_id, client):
     return
 
 
-def converter_logs(task, process_id):
+def converter_logs(task, process_id, template):
     """
     Логи конвертера
     :param task: task (запись) из таблицы Задачи конвертера
     :param process_id: из converter_post
+    :param template: шаблон как pandas dataframe из converter_template
     """
+    lookup_cols = {
+        # База из лога: (Имя столбца с кодом, Имя столбца с расшифровкой)
+        'Модификации': ('Код модификации', 'Расш. модификации'),
+        'Цвета': ('Код цвета', 'Расш. цвета'),
+        'Интерьеры': ('Код интерьера', 'Расш. интерьера'),
+        'Комплектации': ('Код модификации', 'Расш. модификации'),
+        # 'Опции': в логи идут только коды, без расшифровки
+        # 'Фото': только количество без фото
+    }
+
     url = 'http://151.248.118.19/Api/Log/GetByProcessId'
     payload = {'processId': process_id}
     response = requests.post(url=url, json=payload)
     logs = response.json()['log']
+    lines = logs.split('\n')[:-1]
+    logs_dict = {}
+    for line in lines:
+        key = line.split('"')[1]
+        start = line.index(':') + 1
+        end = line.index(';')
+        value = []
+        for v in line[start:end].split(','):
+            v = v.strip()
+            if v.isnumeric():
+                v = int(v)
+            value.append(v)
+
+        if key in ['Опции', 'Фото']:
+            logs_dict[key] = pd.Series(value, name=key)
+        else:
+            df2 = pd.Series(value, name='Код')
+            joined = pd.merge(template, df2, left_on=lookup_cols[key][0], right_on='Код')
+            joined.drop_duplicates(subset=[lookup_cols[key][0]], inplace=True)
+            joined = joined[[lookup_cols[key][0], lookup_cols[key][1]]]
+            logs_dict[key] = joined
+
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
-    save_path = f'converter/{task.client.slug}/logs/log_{task.client.slug}_{file_date}.txt'
+    save_path = f'converter/{task.client.slug}/logs/log_{task.client.slug}_{file_date}.xlsx'
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    with open(save_path, mode='w', encoding='utf8') as file:
-        file.write(logs)
+
+    with pd.ExcelWriter(save_path) as writer:
+        for key, value in logs_dict.items():
+            df = pd.DataFrame(value)
+            # Такой длинный вариант чтобы убрать форматирование заголовков которое pandas применяет по умолчанию
+            df.T.reset_index().T.to_excel(writer, sheet_name=key, header=False, index=False)
+
     save_on_ftp(save_path)
     os.remove(save_path)
     return
-
 
 
 def save_on_ftp(save_path):

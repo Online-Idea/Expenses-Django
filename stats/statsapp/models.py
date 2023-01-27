@@ -198,8 +198,14 @@ class StockFields(BaseModel):
         'insurance': 13,
         'max_discount': 14,
         'images': 15,
+        'modification_explained': 16,
+        'color_explained': 17,
+        'interior_explained': 18,
     }
-    multi_tags_help = 'Если тег с детьми то пиши только тег, например options. Если тег несколько раз повторяется и из него нужен атрибут то пиши тег@атрибут, например option@code'
+    multi_tags_help = 'Если тег с детьми и нужно значение детей то пиши тег/дети, например options/option. ' \
+                      'Если тег с детьми и из детей нужен атрибут то пиши тег/дети@атрибут, например options/option@code. ' \
+                      'Если тег несколько раз повторяется и нужно значение то пиши тег, например option. ' \
+                      'Если тег несколько раз повторяется и из него нужен атрибут то пиши тег@атрибут, например option@code.'
 
     name = models.CharField(max_length=500, verbose_name='Название')
     encoding = models.CharField(max_length=500, default='UTF-8', verbose_name='Кодировка')
@@ -266,3 +272,15 @@ class Configuration(BaseModel):
         verbose_name = 'Конфигурация'
         verbose_name_plural = 'Конфигурации'
         ordering = ['name']
+
+
+class ConverterLogsBotData(BaseModel):
+    chat_id = models.CharField(max_length=500, verbose_name='id чата в телеграме')
+
+    def __str__(self):
+        return self.chat_id
+
+    class Meta:
+        verbose_name = 'Логи конвертера'
+        verbose_name_plural = 'Логи конвертера'
+        ordering = ['chat_id']

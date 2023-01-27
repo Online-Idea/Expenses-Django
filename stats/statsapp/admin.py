@@ -74,6 +74,14 @@ class ConfigurationAdmin(admin.ModelAdmin):
     readonly_fields = ('id', )
 
 
+class ConverterLogsBotDataAdmin(admin.ModelAdmin):
+    list_display = ('id', 'chat_id')
+    list_display_links = ('id', 'chat_id')
+    search_fields = ('chat_id', )
+    fields = ('id', 'chat_id')
+    readonly_fields = ('id', )
+
+
 admin.site.register(Clients, ClientsAdmin)
 admin.site.register(Marks, MarksAdmin)
 admin.site.register(Models, ModelsAdmin)
@@ -81,3 +89,4 @@ admin.site.register(ConverterTask, ConverterTaskAdmin)
 admin.site.register(StockFields, StockFieldsAdmin)
 admin.site.register(PhotoFolder, PhotoFolderAdmin)
 admin.site.register(Configuration, ConfigurationAdmin)
+admin.site.register(ConverterLogsBotData, ConverterLogsBotDataAdmin)

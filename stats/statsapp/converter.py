@@ -7,10 +7,11 @@ import datetime
 import xml.etree.ElementTree as ET
 import xlsxwriter
 import pandas as pd
+from telebot.types import InputFile
 
 from stats.settings import env
 from statsapp.models import *
-
+from statsapp.management.commands.bot import bot
 
 # Список Конфигураций: POST http://151.248.118.19/Api/Configurations/GetList
 # Список Папок с фото: POST http://151.248.118.19/Api/Stock/GetClients
@@ -235,10 +236,13 @@ def converter_logs(task, process_id, template):
         # 'Фото': только количество без фото
     }
 
+    # Логи которые присылает конвертер
     url = 'http://151.248.118.19/Api/Log/GetByProcessId'
     payload = {'processId': process_id}
     response = requests.post(url=url, json=payload)
     logs = response.json()['log']
+
+    # Переделываю логи в словарь
     lines = logs.split('\n')[:-1]
     logs_dict = {}
     for line in lines:
@@ -252,9 +256,9 @@ def converter_logs(task, process_id, template):
                 v = int(v)
             value.append(v)
 
-        if key in ['Опции', 'Фото']:
+        if key in ['Опции', 'Фото']:  # Опции без расшифровки, Фото только количество
             logs_dict[key] = pd.Series(value, name=key)
-        else:
+        else:  # Остальные это pandas dataframe в виде Кода и Расшифровки
             df2 = pd.Series(value, name='Код')
             joined = pd.merge(template, df2, left_on=lookup_cols[key][0], right_on='Код')
             joined.drop_duplicates(subset=[lookup_cols[key][0]], inplace=True)
@@ -265,11 +269,18 @@ def converter_logs(task, process_id, template):
     save_path = f'converter/{task.client.slug}/logs/log_{task.client.slug}_{file_date}.xlsx'
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
+    # Готовые логи в xlsx
     with pd.ExcelWriter(save_path) as writer:
         for key, value in logs_dict.items():
             df = pd.DataFrame(value)
             # Такой длинный вариант чтобы убрать форматирование заголовков которое pandas применяет по умолчанию
             df.T.reset_index().T.to_excel(writer, sheet_name=key, header=False, index=False)
+
+    # Отправка логов через бота телеграма
+    chat_ids = ConverterLogsBotData.objects.all()
+    for chat_id in chat_ids:
+        bot.send_message(chat_id.chat_id, f'🔵 {task.client.name}\n\n{logs}')
+        bot.send_document(chat_id.chat_id, InputFile(save_path))
 
     save_on_ftp(save_path)
     os.remove(save_path)

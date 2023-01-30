@@ -66,7 +66,7 @@ def converter_template(task):
         response = requests.post(url=task.stock_post_host, data=data).text
 
     stock_path = f'converter/{slug}/stocks/stock_{slug}_{file_date}.xml'
-    os.makedirs(os.path.dirname(stock_path), exist_ok=True)
+    os.makedirs(os.path.dirname(stock_path), mode=0o755, exist_ok=True)
     with open(stock_path, mode='w', encoding=task.stock_fields.encoding) as file:
         file.write(response)
     save_on_ftp(stock_path)

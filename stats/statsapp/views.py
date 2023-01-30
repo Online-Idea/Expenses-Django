@@ -1,7 +1,9 @@
+from django.contrib.messages.views import SuccessMessageMixin
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, FormView
+from django.views.generic import ListView, FormView, DetailView
 from django.db.models import *
+from django.contrib import messages
 
 import datetime
 import calendar
@@ -162,6 +164,26 @@ def home(request):
 #     to = datetime.datetime.strptime(r['to'], '%Y-%m-%d')
 #     get_autoru_products(from_, to, r['client'])
 #     return redirect('home')
+
+
+class ConverterManual(SuccessMessageMixin, FormView):
+    template_name = 'statsapp/converter_manual.html'
+    ordering = ['client']
+    form_class = ConverterManualForm
+    success_url = 'converter'
+    success_message = 'Готово, файлы на FTP, логи в телеграме'
+
+    def form_valid(self, form):
+        tasks = self.request.POST.get('task_checkbox')
+        for task in tasks:
+            get_price(ConverterTask.objects.get(pk=int(task)))
+            return super().form_valid(form)
+        # return render(self.request, 'statsapp/converter_manual.html',
+        #               context={'msg': 'Готово, файлы на FTP, логи в телеграме'})
+
+    # def get_success_url(self):
+    #     messages.add_message(self.request, messages.INFO, 'Готовооо')
+    #     return
 
 
 def photo_folders(request):

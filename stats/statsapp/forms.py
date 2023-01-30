@@ -9,3 +9,11 @@ class ClientsChooseForm(forms.Form):
         queryset=Clients.objects.filter(active=True),
         widget=forms.CheckboxSelectMultiple(attrs={'checked': True}),
     )
+
+
+class ConverterManualForm(forms.Form):
+    task_checkbox = forms.ModelMultipleChoiceField(
+        queryset=ConverterTask.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        label='Задачи'
+    )

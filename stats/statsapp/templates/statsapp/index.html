@@ -1,7 +1,17 @@
 {% extends 'statsapp/base.html' %}
 {% load static %}
 
-{% block content %}
+{% block headcontent %}
+<title>Себестоимость звонков</title>
+
+<!-- Для таблицы себестоимости -->
+<script type="text/javascript" src="{% static 'statsapp/js/main_table.js' %}"></script>
+
+<!-- Date Range Picker -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 <script>
 <!--Выбор периода-->
                 $(function() {
@@ -53,6 +63,7 @@
                   });
                 });
                 </script>
+
 <!-- DataTables.net -->
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.13.1/fc-4.2.1/fh-3.3.1/r-2.4.0/sl-1.5.0/datatables.min.css"/>
 
@@ -76,7 +87,9 @@
     } );
 </script>
 
+{% endblock %}
 
+{% block content %}
 <div class="container">
     <div class="row">
         <div class="col-xl-12">

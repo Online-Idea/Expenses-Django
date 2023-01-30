@@ -178,12 +178,6 @@ class ConverterManual(SuccessMessageMixin, FormView):
         for task in tasks:
             get_price(ConverterTask.objects.get(pk=int(task)))
             return super().form_valid(form)
-        # return render(self.request, 'statsapp/converter_manual.html',
-        #               context={'msg': 'Готово, файлы на FTP, логи в телеграме'})
-
-    # def get_success_url(self):
-    #     messages.add_message(self.request, messages.INFO, 'Готовооо')
-    #     return
 
 
 def photo_folders(request):

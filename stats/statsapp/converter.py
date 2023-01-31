@@ -125,7 +125,7 @@ def converter_template(task):
 
     xlsx_template.close()
     save_on_ftp(template_path)
-    return pd.read_excel(template_path)
+    return pd.read_excel(template_path, decimal=',')
 
 
 def multi_tags(field, element):
@@ -207,12 +207,12 @@ def converter_process_result(process_id, client):
         file.write(response.content)
     save_on_ftp(save_path_date)
     save_path = f'converter/{client}/prices/price_{client}.csv'
-    read_file = pd.read_excel(save_path_date)
+    read_file = pd.read_excel(save_path_date, decimal=',')
     # Убираю автомобили которые не расшифрованы (пустые столбцы Марка, Цвет либо Фото)
     read_file = read_file[(~read_file['Марка'].isnull()) &
                           (~read_file['Цвет'].isnull()) &
                           (~read_file['Фото'].isnull())]
-    read_file.to_csv(save_path, sep=';', header=True, encoding='cp1251', index=False)
+    read_file.to_csv(save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
     save_on_ftp(save_path)
     os.remove(save_path_date)
     os.remove(save_path)

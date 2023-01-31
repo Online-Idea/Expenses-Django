@@ -194,3 +194,14 @@ window.onresize = function(event) {
 });
 
 /*---------------------------------------------------*/
+
+/*----------------Автоконвертер--------------*/
+// Показывает гифку загрузки, отключает кнопку Запустить
+function showLoading() {
+    const converterSubmit = document.getElementById('converter-submit');
+    const spinner = document.getElementById('loading-spinner');
+    converterSubmit.setAttribute('disabled', '');
+    spinner.classList.remove('d-none');
+    return 0;
+}
+/*---------------------------------------------------*/

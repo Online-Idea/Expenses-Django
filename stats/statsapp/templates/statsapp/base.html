@@ -12,6 +12,10 @@
     <!-- Favicon -->
     <link rel="shortcut icon" href="{% static 'statsapp/img/table-icon.png' %}">
 
+    <!-- Javascript -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="{% static 'statsapp/js/main_table.js' %}"></script>
+
 {% block headcontent %}
 {% endblock %}
 
@@ -26,7 +30,7 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
         <div class="navbar-nav">
-          <a class="nav-item nav-link" href="{% url 'home' %}">Себестоимость<span class="sr-only">(current)</span></a>
+          <a class="nav-item nav-link" href="{% url 'home' %}">Себестоимость</a>
           <a class="nav-item nav-link" href="{% url 'converter_manual' %}">Автоконвертер</a>
         </div>
       </div>
@@ -37,6 +41,14 @@
 
 {% block content %}
 {% endblock %}
-
+<script>
+<!-- Navbar, выделяет текущую страницу активной -->
+    document.querySelectorAll(".nav-link").forEach((link) => {
+        if (link.href === window.location.href) {
+            link.classList.add("active");
+            link.setAttribute("aria-current", "page");
+        }
+    });
+</script>
 </body>
 </html>

@@ -171,13 +171,13 @@ class ConverterManual(SuccessMessageMixin, FormView):
     ordering = ['client']
     form_class = ConverterManualForm
     success_url = 'converter'
-    success_message = 'Готово, файлы на FTP, логи в телеграме'
+    success_message = 'Готово, файлы на ftp, логи в телеграме'
 
     def form_valid(self, form):
-        tasks = self.request.POST.get('task_checkbox')
+        tasks = form.cleaned_data['task_checkbox']
         for task in tasks:
-            get_price(ConverterTask.objects.get(pk=int(task)))
-            return super().form_valid(form)
+            get_price(ConverterTask.objects.get(pk=task.id))
+        return super().form_valid(form)
 
 
 def photo_folders(request):

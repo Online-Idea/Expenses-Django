@@ -40,8 +40,8 @@ def get_price(task):
     while progress < 100:
         print(progress)
         progress = converter_process_step(process_id)
-    converter_process_result(process_id, client)
-    converter_logs(task, process_id, template)
+    price = converter_process_result(process_id, client)
+    converter_logs(task, process_id, template, price)
     print(f'Клиент {client} - прайс готов')
     return
 
@@ -216,15 +216,16 @@ def converter_process_result(process_id, client):
     save_on_ftp(save_path)
     os.remove(save_path_date)
     os.remove(save_path)
-    return
+    return read_file
 
 
-def converter_logs(task, process_id, template):
+def converter_logs(task, process_id, template, price):
     """
     Логи конвертера
     :param task: task (запись) из таблицы Задачи конвертера
     :param process_id: из converter_post
     :param template: шаблон как pandas dataframe из converter_template
+    :param price: готовый прайс как pandas dataframe из converter_process_result
     """
     lookup_cols = {
         # База из лога: (Имя столбца с кодом, Имя столбца с расшифровкой)
@@ -266,24 +267,31 @@ def converter_logs(task, process_id, template):
             logs_dict[key] = joined
 
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
-    save_path = f'converter/{task.client.slug}/logs/log_{task.client.slug}_{file_date}.xlsx'
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    logs_save_path = f'converter/{task.client.slug}/logs/log_{task.client.slug}_{file_date}.xlsx'
+    os.makedirs(os.path.dirname(logs_save_path), exist_ok=True)
 
     # Готовые логи в xlsx
-    with pd.ExcelWriter(save_path) as writer:
+    with pd.ExcelWriter(logs_save_path) as writer:
         for key, value in logs_dict.items():
             df = pd.DataFrame(value)
             # Такой длинный вариант чтобы убрать форматирование заголовков которое pandas применяет по умолчанию
             df.T.reset_index().T.to_excel(writer, sheet_name=key, header=False, index=False)
 
-    # Отправка логов через бота телеграма
+    # Прайс в csv
+    price_save_path = f'converter/{task.client.slug}/prices/price_{task.client.slug}_{file_date}.csv'
+    price.to_csv(price_save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
+
+    # Отправка логов и прайса через бота телеграма
     chat_ids = ConverterLogsBotData.objects.all()
     for chat_id in chat_ids:
         bot.send_message(chat_id.chat_id, f'🔵 {task.client.name}\n\n{logs}')
-        bot.send_document(chat_id.chat_id, InputFile(save_path))
+        bot.send_document(chat_id.chat_id, InputFile(logs_save_path))
+        bot.send_document(chat_id.chat_id, InputFile(price_save_path))
 
-    save_on_ftp(save_path)
-    os.remove(save_path)
+    save_on_ftp(logs_save_path)
+    os.remove(logs_save_path)
+    os.remove(price_save_path)
+
     return
 
 

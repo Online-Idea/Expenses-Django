@@ -1,6 +1,7 @@
 from django.contrib.messages.views import SuccessMessageMixin
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
+from django.utils.html import format_html
 from django.views.generic import ListView, FormView, DetailView
 from django.db.models import *
 from django.contrib import messages
@@ -171,7 +172,7 @@ class ConverterManual(SuccessMessageMixin, FormView):
     ordering = ['client']
     form_class = ConverterManualForm
     success_url = 'converter'
-    success_message = 'Готово, файлы на ftp, логи в телеграме'
+    success_message = format_html('Готово, файлы на ftp, логи в <a href="https://t.me/ConverterLogsBot">телеграме</a>')
 
     def form_valid(self, form):
         tasks = form.cleaned_data['task_checkbox']

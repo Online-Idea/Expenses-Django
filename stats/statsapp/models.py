@@ -185,22 +185,26 @@ class ConverterTask(BaseModel):
 
 class StockFields(BaseModel):
     TEMPLATE_COL = {  # Номер столбца для xlsx шаблона
-        'modification_code': 0,
-        'color_code': 2,
-        'interior_code': 3,
-        'options_code': 4,
-        'price': 5,
-        'year': 8,
-        'vin': 9,
-        'id_from_client': 10,
-        'trade_in': 11,
-        'credit': 12,
-        'insurance': 13,
-        'max_discount': 14,
-        'images': 15,
-        'modification_explained': 16,
-        'color_explained': 17,
-        'interior_explained': 18,
+        # 'имя поля из StockFields': ('имя столбца для шаблона', номер столбца для шаблона)
+        'modification_code': ('Код модификации', 0),
+        'complectation_code': ('Код комплектации', 1),
+        'color_code': ('Код цвета', 2),
+        'interior_code': ('Код интерьера', 3),
+        'options_code': ('Опции и пакеты', 4),
+        'price': ('Цена', 5),
+        'price_sale_1': ('Цена по акции 1', 6),
+        'price_sale_2': ('Цена по акции 2', 7),
+        'year': ('Год', 8),
+        'vin': ('Исходный VIN', 9),
+        'id_from_client':  ('ID от клиента', 10),
+        'trade_in':  ('Трейд-ин', 11),
+        'credit':  ('Кредит', 12),
+        'insurance':  ('Страховка', 13),
+        'max_discount':  ('Максималка', 14),
+        'images':  ('Фото клиента', 15),
+        'modification_explained':  ('Расш. модификации', 16),
+        'color_explained':  ('Расш. цвета', 17),
+        'interior_explained':  ('Расш. интерьера', 18),
     }
     multi_tags_help = 'Если тег с детьми и нужно значение детей то пиши тег/дети, например options/option. ' \
                       'Если тег с детьми и из детей нужен атрибут то пиши тег/дети@атрибут, например options/option@code. ' \
@@ -209,7 +213,7 @@ class StockFields(BaseModel):
 
     name = models.CharField(max_length=500, verbose_name='Название')
     encoding = models.CharField(max_length=500, default='UTF-8', verbose_name='Кодировка')
-    car_tag = models.CharField(max_length=500, verbose_name='Тег автомобиля')
+    car_tag = models.CharField(max_length=500, blank=True, null=True, verbose_name='Тег автомобиля')
     modification_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Код модификации')
     color_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Код цвета')
     interior_code = models.CharField(max_length=500, blank=True, null=True, verbose_name='Код интерьера')

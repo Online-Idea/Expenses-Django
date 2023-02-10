@@ -54,47 +54,72 @@ def get_price(task):
 
 
 def converter_template(task):
-    # Сохраняю xml сток клиента, делаю по нему шаблон для конвертера
-    xlsx_headers = ['Код модификации', 'Код комплектации', 'Код цвета', 'Код интерьера', 'Опции и пакеты', 'Цена',
-                    'Цена по акции 1', 'Цена по акции 2', 'Год', 'Исходный VIN', 'ID от клиента', 'Трейд-ин', 'Кредит',
-                    'Страховка', 'Максималка', 'Фото клиента', 'Расш. модификации', 'Расш. цвета', 'Расш. интерьера']
-
+    # Сохраняю сток клиента, делаю по нему шаблон для конвертера
     slug = task.client.slug
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
+    stock_path = f'converter/{slug}/stocks/stock_{slug}_{file_date}'
 
-    # XML root
+    # Получаю сток
     if task.stock_source == 'Ссылка':
-        response = requests.get(url=task.stock_url).text
+        response = requests.get(url=task.stock_url)
     elif task.stock_source == 'POST-запрос':
         data = {
             'login': task.stock_post_login,
             'password': task.stock_post_password,
         }
-        response = requests.post(url=task.stock_post_host, data=data).text
+        response = requests.post(url=task.stock_post_host, data=data)
 
-    stock_path = f'converter/{slug}/stocks/stock_{slug}_{file_date}.xml'
+    # Получаю тип файла стока
+    content_type = response.headers['content-type']
+    if 'text/xml' in content_type or 'application/xml' in content_type:
+        stock_path += '.xml'
+        content_type = 'xml'
+    elif 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in content_type:
+        stock_path += '.xlsx'
+        content_type = 'xlsx'
+
+    # Сохраняю сток на ftp
     os.makedirs(os.path.dirname(stock_path), mode=0o755, exist_ok=True)
-    with open(stock_path, mode='w', encoding=task.stock_fields.encoding) as file:
-        file.write(response)
+    with open(stock_path, mode='wb') as file:
+        file.write(response.content)
+    # with open(stock_path, mode='w', encoding=task.stock_fields.encoding) as file:
+    #     file.write(response.text)
     save_on_ftp(stock_path)
-    tree = ET.parse(stock_path)
-    root = tree.getroot()
-    os.remove(stock_path)
 
-    # XLSX шаблон
+    # Путь шаблона
     template_path = f'converter/{slug}/templates/template_{slug}_{file_date}.xlsx'
     os.makedirs(os.path.dirname(template_path), exist_ok=True)
     task.template = template_path
     task.save()
+
+    # Разные функции в зависимости от типа файла стока
+    if content_type == 'xml':
+        template = template_xml(stock_path, template_path, task)
+    elif content_type == 'xlsx':
+        template = template_xlsx(stock_path, template_path, task)
+
+    save_on_ftp(template_path)
+    os.remove(stock_path)
+
+    return template
+
+
+def template_xml(stock_path, template_path, task):
+    # XML tree
+    tree = ET.parse(stock_path)
+    root = tree.getroot()
+
+    # XLSX шаблон
     xlsx_template = xlsxwriter.Workbook(template_path)
     sheet = xlsx_template.add_worksheet('Шаблон')
+
     # Заголовки шаблона
-    for i, header in enumerate(xlsx_headers):
-        sheet.write(0, i, header)
+    template_col = StockFields.TEMPLATE_COL
+    for k, col in template_col.items():
+        sheet.write(0, col[1], col[0])
 
     # Данные шаблона
     fields = task.stock_fields
-    template_col = StockFields.TEMPLATE_COL
     exception_col = ['modification_code', 'options_code', 'images', 'modification_explained']
     for i, car in enumerate(root.iter(fields.car_tag)):
         # sheet.write(y, x, cell_data)  # Пример заполнения ячейки xlsx
@@ -106,33 +131,60 @@ def converter_template(task):
                 cell = car.findtext(field_val)
                 if cell.isnumeric():
                     cell = int(cell)
-                sheet.write(i + 1, template_col[field.name], cell)
+                sheet.write(i + 1, template_col[field.name][1], cell)
 
         # Поля-исключения
         if ',' in fields.modification_code:  # Код модификации
             # Разделяет по запятой в список если есть значение. Убирает запятую из данных стока
             mod = [car.findtext(f).replace(',', '') for f in fields.modification_code.split(', ') if car.findtext(f)]
-            sheet.write(i + 1, template_col['modification_code'], ' | '.join(mod))
+            sheet.write(i + 1, template_col['modification_code'][1], ' | '.join(mod))
         else:
-            sheet.write(i + 1, template_col['modification_code'], car.findtext(fields.modification_code))
+            sheet.write(i + 1, template_col['modification_code'][1], car.findtext(fields.modification_code))
 
         if fields.options_code:
             options = multi_tags(fields.options_code, car)  # Опции
-            sheet.write(i + 1, template_col['options_code'], options)
+            sheet.write(i + 1, template_col['options_code'][1], options)
 
         if fields.images:
             images = multi_tags(fields.images, car)  # Фото клиента
-            sheet.write_string(i + 1, template_col['images'], images)
+            sheet.write_string(i + 1, template_col['images'][1], images)
 
         if ',' in fields.modification_explained:  # Расш. модификации
             mod = [car.findtext(f) for f in fields.modification_explained.split(', ') if car.findtext(f)]
-            sheet.write(i + 1, template_col['modification_explained'], ' | '.join(mod))
+            sheet.write(i + 1, template_col['modification_explained'][1], ' | '.join(mod))
         else:
-            sheet.write(i + 1, template_col['modification_explained'], car.findtext(fields.modification_explained))
+            sheet.write(i + 1, template_col['modification_explained'][1], car.findtext(fields.modification_explained))
 
     xlsx_template.close()
-    save_on_ftp(template_path)
+
     return pd.read_excel(template_path, decimal=',')
+
+
+def template_xlsx(stock_path, template_path, task):
+    df_stock = pd.read_excel(stock_path, decimal=',')
+
+    fields = StockFields.objects.filter(pk=task.stock_fields.id)
+    fields = fields.values()[0]
+    template_col = StockFields.TEMPLATE_COL
+
+    # Меняю имена столбцов
+    swapped_cols = {v: template_col[k][0] for k, v in fields.items() if k in template_col}
+    df_stock.rename(columns=swapped_cols, inplace=True)
+
+    # Добавляю недостающие столбцы
+    cur_cols = list(df_stock.columns.values)
+    for k, col in template_col.items():
+        if col[0] not in cur_cols:
+            df_stock[col[0]] = ''
+
+    # Оставляю только нужные столбцы в том порядке как в template_col
+    df_stock = df_stock[[v[0] for k, v in template_col.items()]]
+    # В Опции и пакеты заменяю переносы строк на пробел
+    df_stock['Опции и пакеты'].replace(r'\n', ' ', regex=True, inplace=True)
+
+    df_stock.T.reset_index().T.to_excel(template_path, sheet_name='Шаблон', header=False, index=False)
+
+    return df_stock
 
 
 def multi_tags(field, element):
@@ -167,7 +219,7 @@ def converter_post(task):
     """
     url = 'http://151.248.118.19/Api/Stock/StartProcess'
 
-    configuration = task.configuration if task.configuration is not None else Configuration.DEFAULT
+    configuration = task.configuration.configuration if task.configuration is not None else Configuration.DEFAULT
     payload = {
         'client': task.photos_folder.folder,
         'configuration': configuration,
@@ -219,6 +271,7 @@ def converter_process_result(process_id, client):
     read_file = read_file[(~read_file['Марка'].isnull()) &
                           (~read_file['Цвет'].isnull()) &
                           (~read_file['Фото'].isnull())]
+    read_file.replace(r'\,0$', '', regex=True, inplace=True)
     read_file.to_csv(save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
     save_on_ftp(save_path)
     os.remove(save_path_date)
@@ -274,7 +327,7 @@ def logs_to_xlsx(logs, template, client):
         if key in ['Опции', 'Фото']:  # Опции без расшифровки, Фото только количество
             logs_dict[key] = pd.Series(value, name=key)
         else:  # Остальные это pandas dataframe в виде Кода и Расшифровки
-            df2 = pd.Series(value, name='Код')
+            df2 = pd.Series(value, name='Код', dtype='string')
             joined = pd.merge(template, df2, left_on=lookup_cols[key][0], right_on='Код')
             joined.drop_duplicates(subset=[lookup_cols[key][0]], inplace=True)
             joined = joined[[lookup_cols[key][0], lookup_cols[key][1]]]
@@ -310,7 +363,11 @@ def bot_messages(logs, logs_xlsx, price, client_slug, client_name):
     # Отправка логов и прайса через бота телеграма
     chat_ids = ConverterLogsBotData.objects.all()
     for chat_id in chat_ids:
-        bot.send_message(chat_id.chat_id, f'🔵 {client_name}\n\n{logs}')
+        if len(logs) > 4095:  # У телеграма ограничение на 4096 символов в сообщении
+            for x in range(0, len(logs), 4095):
+                bot.send_message(chat_id.chat_id, logs[x:x+4095])
+        else:
+            bot.send_message(chat_id.chat_id, f'🔵 {client_name}\n\n{logs}')
         bot.send_document(chat_id.chat_id, InputFile(logs_xlsx))
         bot.send_document(chat_id.chat_id, InputFile(price_save_path))
 
@@ -337,7 +394,8 @@ def cd_tree(ftp, path):
     :param ftp: FTP класс из ftplib
     :param path: путь который нужен на ftp
     """
-    for folder in path.split('\\'):
+    path = path.replace('\\', '/')  # Костыль для windows
+    for folder in path.split('/'):
         try:
             ftp.cwd(folder)
         except ftplib.error_perm:

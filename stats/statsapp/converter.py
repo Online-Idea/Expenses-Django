@@ -129,8 +129,11 @@ def template_xml(stock_path, template_path, task):
             # Если не пусто И поле в полях шаблона И поле НЕ в исключениях
             if field_val and field.name in template_col and field.name not in exception_col:
                 cell = car.findtext(field_val)
-                if cell.isnumeric():
-                    cell = int(cell)
+                try:
+                    if cell.isnumeric():
+                        cell = int(cell)
+                except AttributeError:
+                    pass
                 sheet.write(i + 1, template_col[field.name][1], cell)
 
         # Поля-исключения
@@ -271,7 +274,10 @@ def converter_process_result(process_id, client):
     read_file = read_file[(~read_file['Марка'].isnull()) &
                           (~read_file['Цвет'].isnull()) &
                           (~read_file['Фото'].isnull())]
-    read_file.replace(r'\,0$', '', regex=True, inplace=True)
+    print(read_file['Объем двигателя'].loc[:5])
+    read_file.fillna('', inplace=True)
+    read_file = read_file.astype(str).replace(r'\.0$', '', regex=True)
+    print(read_file['Объем двигателя'].loc[:5])
     read_file.to_csv(save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
     save_on_ftp(save_path)
     os.remove(save_path_date)

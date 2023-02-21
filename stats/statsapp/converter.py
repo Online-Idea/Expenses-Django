@@ -123,48 +123,122 @@ def template_xml(stock_path, template_path, task):
     exception_col = ['modification_code', 'options_code', 'images', 'modification_explained']
     for i, car in enumerate(root.iter(fields.car_tag)):
         # sheet.write(y, x, cell_data)  # Пример заполнения ячейки xlsx
-        # Обычные поля
-        for field in fields._meta.fields:
-            field_val = getattr(fields, field.name)
-            # Если не пусто И поле в полях шаблона И поле НЕ в исключениях
-            if field_val and field.name in template_col and field.name not in exception_col:
-                cell = car.findtext(field_val)
-                try:
-                    if cell.isnumeric():
-                        cell = int(cell)
-                except AttributeError:
-                    pass
-                sheet.write(i + 1, template_col[field.name][1], cell)
+        if stock_xml_filter(car, task):
+            # Обычные поля
+            for field in fields._meta.fields:
+                field_val = getattr(fields, field.name)
+                # Если не пусто И поле в полях шаблона И поле НЕ в исключениях
+                if field_val and field.name in template_col and field.name not in exception_col:
+                    cell = car.findtext(field_val)
+                    try:
+                        if cell.isnumeric():
+                            cell = int(cell)
+                    except AttributeError:
+                        pass
+                    sheet.write(i + 1, template_col[field.name][1], cell)
 
-        # Поля-исключения
-        if ',' in fields.modification_code:  # Код модификации
-            # Разделяет по запятой в список если есть значение. Убирает запятую из данных стока
-            mod = [car.findtext(f).replace(',', '') for f in fields.modification_code.split(', ') if car.findtext(f)]
-            sheet.write(i + 1, template_col['modification_code'][1], ' | '.join(mod))
-        else:
-            sheet.write(i + 1, template_col['modification_code'][1], car.findtext(fields.modification_code))
+            # Поля-исключения
+            if ',' in fields.modification_code:  # Код модификации
+                # Разделяет по запятой в список если есть значение. Убирает запятую из данных стока
+                mod = [car.findtext(f).replace(',', '') for f in fields.modification_code.split(', ') if car.findtext(f)]
+                sheet.write(i + 1, template_col['modification_code'][1], ' | '.join(mod))
+            else:
+                sheet.write(i + 1, template_col['modification_code'][1], car.findtext(fields.modification_code))
 
-        if fields.options_code:
-            options = multi_tags(fields.options_code, car)  # Опции
-            sheet.write(i + 1, template_col['options_code'][1], options)
+            if fields.options_code:
+                options = multi_tags(fields.options_code, car)  # Опции
+                sheet.write(i + 1, template_col['options_code'][1], options)
 
-        if fields.images:
-            images = multi_tags(fields.images, car)  # Фото клиента
-            sheet.write_string(i + 1, template_col['images'][1], images)
+            if fields.images:
+                images = multi_tags(fields.images, car)  # Фото клиента
+                sheet.write_string(i + 1, template_col['images'][1], images)
 
-        if ',' in fields.modification_explained:  # Расш. модификации
-            mod = [car.findtext(f) for f in fields.modification_explained.split(', ') if car.findtext(f)]
-            sheet.write(i + 1, template_col['modification_explained'][1], ' | '.join(mod))
-        else:
-            sheet.write(i + 1, template_col['modification_explained'][1], car.findtext(fields.modification_explained))
+            if ',' in fields.modification_explained:  # Расш. модификации
+                mod = [car.findtext(f) for f in fields.modification_explained.split(', ') if car.findtext(f)]
+                sheet.write(i + 1, template_col['modification_explained'][1], ' | '.join(mod))
+            else:
+                sheet.write(i + 1, template_col['modification_explained'][1], car.findtext(fields.modification_explained))
 
     xlsx_template.close()
 
     return pd.read_excel(template_path, decimal=',')
 
 
+# TODO настроить для нескольких значений в f.value. Потом для xlsx стоков
+def stock_xml_filter(car, task):
+    """
+    Проверяет автомобиль из xml стока по фильтрам из ConverterFilters
+    :param car: node автомобиля из xml стока
+    :param task: task (запись) из таблицы Задачи конвертера
+    :return: True если фильтры пройдены
+    """
+    filters = ConverterFilters.objects.filter(converter_task=task)
+    dict_filters, stock_fields, result = [], [], []
+
+    # Перевожу фильтры в словарь вида: {'values': values, 'condition': condition, 'field': field}
+    for f in filters:
+        # Значения
+        if '`' in f.value:
+            values = [val.replace('`', '').strip() for val in f.value.split('`,')]
+        else:
+            values = [f.value]
+
+        # Поля (теги)
+        if '/' in f.field:  # Путь к детям
+            parent = f.field.split('/')[0]
+
+            if '@' not in f.field:  # Дети
+                stock_fields = [tag.text for tag in car.find(parent)]
+
+            else:  # Атрибуты
+                attribute_name = f.field.split('@')[1].split('=')[0]
+                attribute_value = f.field.split('"')[1].replace('"', '')
+                for tag in car.find(parent):
+                    for tag_attribute in tag.attrib.items():
+                        if tag_attribute == (attribute_name, attribute_value):
+                            stock_fields = [tag.text]
+
+        else:  # Просто один тег
+            stock_fields = [car.findtext(f.field)]
+
+        for field in stock_fields:
+            dict_filters.append({
+                'values': values,
+                'condition': f.condition,
+                'field': field,
+            })
+
+    for sf in dict_filters:
+        for value in sf['values']:
+            result.append(xml_filter_conditions(value, sf['condition'], sf['field']))
+
+    # Если длина фильтров равна сумме результатов значит каждый фильтр вернул True, соответственно автомобиль подходит
+    return len(dict_filters) == sum(result)
+
+
+def xml_filter_conditions(value, condition, stock_field):
+    """
+    Условия фильтра
+    :param value: значение для проверки
+    :param condition: условие
+    :param stock_field: значение из стока
+    :return: True если условие выполнено
+    """
+    if 'with' not in condition:
+        return eval(f'"{value}" {condition} "{stock_field}"')
+    elif condition == ConverterFilters.STARTS_WITH:
+        return stock_field.startswith(value)
+    elif condition == ConverterFilters.NOT_STARTS_WITH:
+        return not(stock_field.startswith(value))
+    elif condition == ConverterFilters.ENDS_WITH:
+        return stock_field.endswith(value)
+    elif condition == ConverterFilters.NOT_ENDS_WITH:
+        return not(stock_field.endswith(value))
+
+
 def template_xlsx(stock_path, template_path, task):
     df_stock = pd.read_excel(stock_path, decimal=',')
+    df_stock = stock_xlsx_filter(df_stock, task)
 
     fields = StockFields.objects.filter(pk=task.stock_fields.id)
     fields = fields.values()[0]
@@ -188,6 +262,46 @@ def template_xlsx(stock_path, template_path, task):
     df_stock.T.reset_index().T.to_excel(template_path, sheet_name='Шаблон', header=False, index=False)
 
     return df_stock
+
+
+def stock_xlsx_filter(df, task):
+    """
+    Проверяет автомобиль из xlsx стока по фильтрам из ConverterFilters
+    :param df: xlsx сток в виде pandas dataframe
+    :param task: task (запись) из таблицы Задачи конвертера
+    :return: Отфильтрованный dataframe
+    """
+    filters = ConverterFilters.objects.filter(converter_task=task)
+    filter_strings = []
+    for f in filters:
+        if '`' in f.value:
+            values = [val.replace('`', '').strip() for val in f.value.split('`,')]
+        else:
+            values = [f.value]
+
+        # TODO для условий с несколькими значениями нужно писать ИЛИ через |
+        # Т.е. вместо df.loc[(df["VIN"].str.startswith("Z9M2130055L045585")) & (df["VIN"].str.startswith("Z9M2130055L046037")) & (df["Модель"] == "E (W/S213)")]
+        # Писать df.loc[(df["VIN"].str.startswith("Z9M2130055L045585")) | (df["VIN"].str.startswith("Z9M2130055L046037")) & (df["Модель"] == "E (W/S213)")]
+        for value in values:
+            if f.condition == ConverterFilters.CONTAINS:
+                filter_strings.append(f'(df["{f.field}"].str.contains({value})')
+            elif f.condition == ConverterFilters.NOT_CONTAINS:
+                filter_strings.append(f'(~df["{f.field}"].str.contains({value})')
+            elif f.condition == ConverterFilters.EQUALS:
+                filter_strings.append(f'(df["{f.field}"] == "{value}")')
+            elif f.condition == ConverterFilters.NOT_EQUALS:
+                filter_strings.append(f'(~df["{f.field}"] == "{value}")')
+            elif f.condition == ConverterFilters.STARTS_WITH:
+                filter_strings.append(f'(df["{f.field}"].str.startswith("{value}"))')
+            elif f.condition == ConverterFilters.NOT_STARTS_WITH:
+                filter_strings.append(f'~(df["{f.field}"].str.startswith("{value}"))')
+            elif f.condition == ConverterFilters.ENDS_WITH:
+                filter_strings.append(f'(df["{f.field}"].str.endswith("{value}")')
+            elif f.condition == ConverterFilters.NOT_ENDS_WITH:
+                filter_strings.append(f'~(df["{f.field}"].str.endswith("{value}")')
+        print(f'df.loc[{" & ".join(filter_strings)}]')
+
+    return eval(f'df.loc[{" & ".join(filter_strings)}]')
 
 
 def multi_tags(field, element):
@@ -274,10 +388,8 @@ def converter_process_result(process_id, client):
     read_file = read_file[(~read_file['Марка'].isnull()) &
                           (~read_file['Цвет'].isnull()) &
                           (~read_file['Фото'].isnull())]
-    print(read_file['Объем двигателя'].loc[:5])
     read_file.fillna('', inplace=True)
     read_file = read_file.astype(str).replace(r'\.0$', '', regex=True)
-    print(read_file['Объем двигателя'].loc[:5])
     read_file.to_csv(save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
     save_on_ftp(save_path)
     os.remove(save_path_date)
@@ -371,7 +483,7 @@ def bot_messages(logs, logs_xlsx, price, client_slug, client_name):
     for chat_id in chat_ids:
         if len(logs) > 4095:  # У телеграма ограничение на 4096 символов в сообщении
             for x in range(0, len(logs), 4095):
-                bot.send_message(chat_id.chat_id, logs[x:x+4095])
+                bot.send_message(chat_id.chat_id, logs[x:x + 4095])
         else:
             bot.send_message(chat_id.chat_id, f'🔵 {client_name}\n\n{logs}')
         bot.send_document(chat_id.chat_id, InputFile(logs_xlsx))

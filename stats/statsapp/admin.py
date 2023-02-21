@@ -82,6 +82,16 @@ class ConverterLogsBotDataAdmin(admin.ModelAdmin):
     readonly_fields = ('id', )
 
 
+class ConverterFiltersAdmin(admin.ModelAdmin):
+    list_display = ('id', 'converter_task', 'field', 'condition', 'value')
+    list_display_links = ('id', 'converter_task', 'field')
+    list_editable = ('condition', )
+    search_fields = ('converter_task', 'field')
+    list_filter = ('converter_task', )
+    fields = ('id', 'converter_task', 'field', 'condition', 'value')
+    readonly_fields = ('id', )
+
+
 admin.site.register(Clients, ClientsAdmin)
 admin.site.register(Marks, MarksAdmin)
 admin.site.register(Models, ModelsAdmin)
@@ -90,3 +100,4 @@ admin.site.register(StockFields, StockFieldsAdmin)
 admin.site.register(PhotoFolder, PhotoFolderAdmin)
 admin.site.register(Configuration, ConfigurationAdmin)
 admin.site.register(ConverterLogsBotData, ConverterLogsBotDataAdmin)
+admin.site.register(ConverterFilters, ConverterFiltersAdmin)

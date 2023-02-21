@@ -289,3 +289,36 @@ class ConverterLogsBotData(BaseModel):
         verbose_name = 'Логи конвертера'
         verbose_name_plural = 'Логи конвертера'
         ordering = ['chat_id']
+
+
+class ConverterFilters(BaseModel):
+    CONTAINS = 'in'
+    NOT_CONTAINS = 'not in'
+    EQUALS = '=='
+    NOT_EQUALS = '!='
+    STARTS_WITH = 'starts_with'
+    NOT_STARTS_WITH = 'not_starts_with'
+    ENDS_WITH = 'ends_with'
+    NOT_ENDS_WITH = 'not_ends_with'
+    CONDITION_CHOICES = [
+        (CONTAINS, 'содержит'),
+        (NOT_CONTAINS, 'не содержит'),
+        (EQUALS, 'равно'),
+        (NOT_EQUALS, 'не равно'),
+        (STARTS_WITH, 'начинается с'),
+        (NOT_STARTS_WITH, 'не начинается с'),
+        (ENDS_WITH, 'заканчивается на'),
+        (NOT_ENDS_WITH, 'не заканчивается на'),
+    ]
+    converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.CASCADE)
+    field = models.CharField(max_length=500, verbose_name='Поле')
+    condition = models.CharField(max_length=500, choices=CONDITION_CHOICES, verbose_name='Условие')
+    value = models.CharField(max_length=500, verbose_name='Значение')
+
+    def __str__(self):
+        return f'{self.field} | {self.condition} | {self.value}'
+
+    class Meta:
+        verbose_name = 'Фильтр конвертера'
+        verbose_name_plural = 'Фильтры конвертера'
+        ordering = ['field']

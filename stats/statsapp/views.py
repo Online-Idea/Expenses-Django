@@ -80,6 +80,8 @@ def home(request):
                 teleph_calls_sum = platform + client['commission_size']
             else:
                 teleph_calls_sum = 0
+            # Если у клиента вообще нет суммы по звонкам
+            teleph_calls_sum = 0 if not teleph_calls_sum else teleph_calls_sum
 
             try:
                 teleph_target = telephcalls_dict[client['teleph_id']]['teleph_target']

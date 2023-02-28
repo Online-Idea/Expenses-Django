@@ -17,10 +17,9 @@ from statsapp.management.commands.bot import bot
 # Список Конфигураций: POST http://151.248.118.19/Api/Configurations/GetList
 # Список Папок с фото: POST http://151.248.118.19/Api/Stock/GetClients
 
-# Прогон шаблона (4 запроса)
+# Прогон шаблона (3 запроса)
 # POST http://151.248.118.19/Api/Stock/StartProcess
 # POST http://151.248.118.19/Api/Stock/GetProcessStep
-# POST http://151.248.118.19/Api/Stock/GetProcessResult
 # POST http://151.248.118.19/Api/Log/GetByProcessId
 
 def get_converter_tasks():
@@ -37,23 +36,22 @@ def get_price(task):
     client_slug = task.client.slug
     client_name = task.client.name
     process_id = converter_post(task)
-    print(f'Клиент {client_slug}, pid: {process_id}')
-    progress = converter_process_step(process_id)
-    while progress < 100:
-        print(progress)
-        progress = converter_process_step(process_id)
     price = converter_process_result(process_id, client_slug)
     logs = converter_logs(process_id)
     logs_xlsx = logs_to_xlsx(logs, template, client_slug)
     bot_messages(logs, logs_xlsx, price, client_slug, client_name)
     save_on_ftp(logs_xlsx)
     os.remove(logs_xlsx)
-
     print(f'Клиент {client_slug} - прайс готов')
     return
 
 
 def converter_template(task):
+    """
+    Из стока клиента делает шаблон для конвертера
+    :param task: строка из таблицы Задачи конвертера
+    :return: шаблон как pandas dataframe
+    """
     # Сохраняю сток клиента, делаю по нему шаблон для конвертера
     slug = task.client.slug
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
@@ -97,6 +95,8 @@ def converter_template(task):
         template = template_xml(stock_path, template_path, task)
     elif content_type == 'xlsx':
         template = template_xlsx(stock_path, template_path, task)
+    else:
+        return 'Неверный формат файла, должен быть xml или xlsx'
 
     save_on_ftp(template_path)
     os.remove(stock_path)
@@ -105,6 +105,13 @@ def converter_template(task):
 
 
 def template_xml(stock_path, template_path, task):
+    """
+    Шаблон из xml стока
+    :param stock_path: путь к файлу стока
+    :param template_path: путь к файлу шаблона
+    :param task: строка из таблицы Задачи конвертера
+    :return: шаблон как pandas dataframe
+    """
     # XML tree
     tree = ET.parse(stock_path)
     root = tree.getroot()
@@ -164,7 +171,6 @@ def template_xml(stock_path, template_path, task):
     return pd.read_excel(template_path, decimal=',')
 
 
-# TODO настроить для нескольких значений в f.value. Потом для xlsx стоков
 def stock_xml_filter(car, task):
     """
     Проверяет автомобиль из xml стока по фильтрам из ConverterFilters
@@ -237,6 +243,13 @@ def xml_filter_conditions(value, condition, stock_field):
 
 
 def template_xlsx(stock_path, template_path, task):
+    """
+    Шаблон из xlsx стока
+    :param stock_path: путь к файлу стока
+    :param template_path: путь к файлу шаблона
+    :param task: строка из таблицы Задачи конвертера
+    :return: шаблон как pandas dataframe
+    """
     df_stock = pd.read_excel(stock_path, decimal=',')
     df_stock = stock_xlsx_filter(df_stock, task)
 
@@ -274,32 +287,31 @@ def stock_xlsx_filter(df, task):
     filters = ConverterFilters.objects.filter(converter_task=task)
     filter_strings = []
     for f in filters:
+        filter_or = []
         if '`' in f.value:
             values = [val.replace('`', '').strip() for val in f.value.split('`,')]
         else:
             values = [f.value]
 
-        # TODO для условий с несколькими значениями нужно писать ИЛИ через |
-        # Т.е. вместо df.loc[(df["VIN"].str.startswith("Z9M2130055L045585")) & (df["VIN"].str.startswith("Z9M2130055L046037")) & (df["Модель"] == "E (W/S213)")]
-        # Писать df.loc[(df["VIN"].str.startswith("Z9M2130055L045585")) | (df["VIN"].str.startswith("Z9M2130055L046037")) & (df["Модель"] == "E (W/S213)")]
         for value in values:
             if f.condition == ConverterFilters.CONTAINS:
-                filter_strings.append(f'(df["{f.field}"].str.contains({value})')
+                filter_or.append(f'(df["{f.field}"].str.contains({value})')
             elif f.condition == ConverterFilters.NOT_CONTAINS:
-                filter_strings.append(f'(~df["{f.field}"].str.contains({value})')
+                filter_or.append(f'(~df["{f.field}"].str.contains({value})')
             elif f.condition == ConverterFilters.EQUALS:
-                filter_strings.append(f'(df["{f.field}"] == "{value}")')
+                filter_or.append(f'(df["{f.field}"] == "{value}")')
             elif f.condition == ConverterFilters.NOT_EQUALS:
-                filter_strings.append(f'(~df["{f.field}"] == "{value}")')
+                filter_or.append(f'(~df["{f.field}"] == "{value}")')
             elif f.condition == ConverterFilters.STARTS_WITH:
-                filter_strings.append(f'(df["{f.field}"].str.startswith("{value}"))')
+                filter_or.append(f'(df["{f.field}"].str.startswith("{value}"))')
             elif f.condition == ConverterFilters.NOT_STARTS_WITH:
-                filter_strings.append(f'~(df["{f.field}"].str.startswith("{value}"))')
+                filter_or.append(f'~(df["{f.field}"].str.startswith("{value}"))')
             elif f.condition == ConverterFilters.ENDS_WITH:
-                filter_strings.append(f'(df["{f.field}"].str.endswith("{value}")')
+                filter_or.append(f'(df["{f.field}"].str.endswith("{value}"))')
             elif f.condition == ConverterFilters.NOT_ENDS_WITH:
-                filter_strings.append(f'~(df["{f.field}"].str.endswith("{value}")')
-        print(f'df.loc[{" & ".join(filter_strings)}]')
+                filter_or.append(f'~(df["{f.field}"].str.endswith("{value}"))')
+
+        filter_strings.append(f'({" | ".join(filter_or)})')
 
     return eval(f'df.loc[{" & ".join(filter_strings)}]')
 
@@ -330,10 +342,11 @@ def multi_tags(field, element):
 
 def converter_post(task):
     """
-    Первый запрос к конвертеру. Отправляются опции и файл шаблона.
+    Отправляет шаблон и настройки по которым нужно прогнать конвертер
     :param task: task (запись) из таблицы Задачи конвертера
-    :return: process_id для converter_process_step и converter_process_result
+    :return: прайс как pandas dataframe
     """
+    # Отправляю шаблон
     url = 'http://151.248.118.19/Api/Stock/StartProcess'
 
     configuration = task.configuration.configuration if task.configuration is not None else Configuration.DEFAULT
@@ -349,22 +362,9 @@ def converter_post(task):
     files = {'file': ('template.xlsx', template, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                       {'Expires': '0'})}
     response = requests.post(url=url, data=payload, files=files)
-    process_id = response.json()['processId']
     template.close()
     os.remove(task.template)
-    return process_id
-
-
-def converter_process_step(process_id):
-    """
-    Второй запрос, когда возвращает progress:100 значит прайс готов, можно вызывать converter_process_result
-    :param process_id: из converter_post
-    """
-    url = 'http://151.248.118.19/Api/Stock/GetProcessStep'
-    payload = {'processId': process_id}
-    response = requests.post(url=url, json=payload)
-    progress = response.json()['progress']
-    return progress
+    return response.json()['processId']
 
 
 def converter_process_result(process_id, client):
@@ -400,13 +400,14 @@ def converter_process_result(process_id, client):
 def converter_logs(process_id):
     """
     Логи конвертера
-    :param process_id: из converter_post
+    :return: логи в виде текста
     """
     # Логи которые присылает конвертер
     url = 'http://151.248.118.19/Api/Log/GetByProcessId'
     payload = {'processId': process_id}
     response = requests.post(url=url, json=payload)
     logs = response.json()['log']
+    logs = logs.replace(' ,', '')  # Убираю лишние запятые
     return logs
 
 
@@ -429,7 +430,7 @@ def logs_to_xlsx(logs, template, client):
     }
 
     # Переделываю логи в словарь
-    lines = logs.split('\n')[:-1]
+    lines = logs.split('\n')[:-2]  # Последние 2 убираю т.к. там Время обработки и пустая строка
     logs_dict = {}
     for line in lines:
         key = line.split('"')[1]
@@ -485,7 +486,7 @@ def bot_messages(logs, logs_xlsx, price, client_slug, client_name):
             for x in range(0, len(logs), 4095):
                 bot.send_message(chat_id.chat_id, logs[x:x + 4095])
         else:
-            bot.send_message(chat_id.chat_id, f'🔵 {client_name}\n\n{logs}')
+            bot.send_message(chat_id.chat_id, f'🟢 {client_name}\n\n{logs}')
         bot.send_document(chat_id.chat_id, InputFile(logs_xlsx))
         bot.send_document(chat_id.chat_id, InputFile(price_save_path))
 
@@ -519,6 +520,7 @@ def cd_tree(ftp, path):
         except ftplib.error_perm:
             ftp.mkd(folder)
             ftp.cwd(folder)
+    return
 
 
 def get_photo_folders():
@@ -531,6 +533,7 @@ def get_photo_folders():
         if folder not in current_folders:
             new_folders.append(PhotoFolder(folder=folder))
     PhotoFolder.objects.bulk_create(new_folders)
+    return
 
 
 def get_configurations():
@@ -553,3 +556,4 @@ def get_configurations():
     Configuration.objects.bulk_update(updated_configurations, ['name', 'configuration'])
     if len(new_configurations):
         Configuration.objects.bulk_create(new_configurations)
+    return

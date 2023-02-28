@@ -310,13 +310,15 @@ class ConverterFilters(BaseModel):
         (ENDS_WITH, 'заканчивается на'),
         (NOT_ENDS_WITH, 'не заканчивается на'),
     ]
+    value_help_text = 'Для фильтрации по нескольким значениям пиши каждое между `` и разделяй запятыми. Например: `E (W/S213)`, `CLS (C257)`'
+
     converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.CASCADE)
     field = models.CharField(max_length=500, verbose_name='Поле')
     condition = models.CharField(max_length=500, choices=CONDITION_CHOICES, verbose_name='Условие')
-    value = models.CharField(max_length=500, verbose_name='Значение')
+    value = models.CharField(max_length=500, help_text=value_help_text, verbose_name='Значение')
 
     def __str__(self):
-        return f'{self.field} | {self.condition} | {self.value}'
+        return f'{self.field} {self.condition} {self.value}'
 
     class Meta:
         verbose_name = 'Фильтр конвертера'

@@ -192,17 +192,3 @@ def configurations(request):
     get_configurations()
     return redirect('home')
 
-
-def converter_testing(request):
-    task = ConverterTask.objects.get(pk=1)
-    converter_template(task)
-    client = task.client.slug
-    process_id = converter_post(task)
-    print(process_id)
-    progress = converter_process_step(process_id)
-    print(progress)
-    if progress == 100:
-        price = converter_process_result(process_id, client)
-        print(price)
-    return redirect('home')
-

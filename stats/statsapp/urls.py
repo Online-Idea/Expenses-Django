@@ -12,5 +12,4 @@ urlpatterns = [
     # TODO добавь ссылки ниже на страницу converter
     path('converter/photo_folders/get', photo_folders, name='get_photo_folders'),
     path('converter/configurations/get', configurations, name='get_configurations'),
-    path('converter/testing', converter_testing, name='converter_testing'),
 ]

@@ -36,7 +36,7 @@ def get_price(task):
     client_slug = task.client.slug
     client_name = task.client.name
     process_id = converter_post(task)
-    price = converter_process_result(process_id, client_slug)
+    price = converter_process_result(process_id, client_slug, template)
     logs = converter_logs(process_id)
     logs_xlsx = logs_to_xlsx(logs, template, client_slug)
     bot_messages(logs, logs_xlsx, price, client_slug, client_name)
@@ -313,7 +313,7 @@ def stock_xlsx_filter(df, task):
 
         filter_strings.append(f'({" | ".join(filter_or)})')
 
-    return eval(f'df.loc[{" & ".join(filter_strings)}]')
+    return eval(f'df.loc[{" & ".join(filter_strings)}]') if filter_strings else df
 
 
 def multi_tags(field, element):
@@ -367,31 +367,42 @@ def converter_post(task):
     return response.json()['processId']
 
 
-def converter_process_result(process_id, client):
+def converter_process_result(process_id, client, template):
     """
-    Третий запрос, возвращает готовый прайс
+    Возвращает готовый прайс
     :param process_id: из converter_post
     :param client: имя клиента как slug - используется как имя папки клиента куда сохраняется прайс
+    :param template: шаблон как pandas dataframe - если из шаблона нужны данные для прайса
     """
+    # Получаю прайс от конвертера по process_id
     url = 'http://151.248.118.19/Api/Stock/GetProcessResult'
     payload = {'processId': (None, process_id)}
     response = requests.post(url=url, files=payload)
+
+    # Сохраняю прайс в xlsx
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
     save_path_date = f'converter/{client}/prices/price_{client}_{file_date}.xlsx'
     os.makedirs(os.path.dirname(save_path_date), exist_ok=True)
     with open(save_path_date, 'wb') as file:
         file.write(response.content)
     save_on_ftp(save_path_date)
-    save_path = f'converter/{client}/prices/price_{client}.csv'
+
+    # Обработки прайса
     read_file = pd.read_excel(save_path_date, decimal=',')
+    # Переношу Описание из шаблона если оно есть в шаблоне
+    if 'Описание' in template.columns:
+        read_file['Описание'] = template['Описание']
     # Убираю автомобили которые не расшифрованы (пустые столбцы Марка, Цвет либо Фото)
     read_file = read_file[(~read_file['Марка'].isnull()) &
                           (~read_file['Цвет'].isnull()) &
                           (~read_file['Фото'].isnull())]
     read_file.fillna('', inplace=True)
     read_file = read_file.astype(str).replace(r'\.0$', '', regex=True)
+    # Сохраняю в csv
+    save_path = f'converter/{client}/prices/price_{client}.csv'
     read_file.to_csv(save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
     save_on_ftp(save_path)
+
     os.remove(save_path_date)
     os.remove(save_path)
     return read_file

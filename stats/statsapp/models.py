@@ -206,6 +206,7 @@ class StockFields(BaseModel):
         'color_explained':  ('Расш. цвета', 17),
         'interior_explained':  ('Расш. интерьера', 18),
         'run': ('Пробег', 19),
+        'description': ('Описание', 20),
     }
     multi_tags_help = 'Если тег с детьми и нужно значение детей то пиши тег/дети, например options/option. ' \
                       'Если тег с детьми и из детей нужен атрибут то пиши тег/дети@атрибут, например options/option@code. ' \

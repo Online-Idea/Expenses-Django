@@ -75,6 +75,9 @@ def converter_template(task):
     elif 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in content_type:
         stock_path += '.xlsx'
         content_type = 'xlsx'
+    elif 'text/csv' in content_type:
+        stock_path += '.csv'
+        content_type = 'csv'
 
     # Сохраняю сток на ftp
     os.makedirs(os.path.dirname(stock_path), mode=0o755, exist_ok=True)
@@ -94,7 +97,9 @@ def converter_template(task):
     if content_type == 'xml':
         template = template_xml(stock_path, template_path, task)
     elif content_type == 'xlsx':
-        template = template_xlsx(stock_path, template_path, task)
+        template = template_xlsx_or_csv(stock_path, 'xlsx', template_path, task)
+    elif content_type == 'csv':
+        template = template_xlsx_or_csv(stock_path, 'csv', template_path, task)
     else:
         return 'Неверный формат файла, должен быть xml или xlsx'
 
@@ -242,15 +247,31 @@ def xml_filter_conditions(value, condition, stock_field):
         return not(stock_field.endswith(value))
 
 
-def template_xlsx(stock_path, template_path, task):
+def template_xlsx_or_csv(stock_path, filetype, template_path, task):
     """
-    Шаблон из xlsx стока
+    Шаблон из xlsx или csv стока
     :param stock_path: путь к файлу стока
+    :param filetype: тип файла: 'xlsx' или 'csv'
     :param template_path: путь к файлу шаблона
     :param task: строка из таблицы Задачи конвертера
     :return: шаблон как pandas dataframe
     """
-    df_stock = pd.read_excel(stock_path, decimal=',')
+    if filetype == 'xlsx':
+        df_stock = pd.read_excel(stock_path, decimal=',')
+    elif filetype == 'csv':
+        df_stock = pd.read_csv(stock_path, decimal=',', sep=';', header=0, encoding='cp1251')
+    else:
+        return 'Неверный формат файла, должен быть xlsx или csv'
+
+    # Проверяю если сток это наш прайс. На случай если прайс готов и нужно только фото подставить
+    # Если первые 4 столбца совпадают с our_price_first_4_cols И Исходный VIN в столбцах
+    our_price_first_4_cols = ['Марка', 'Модель', 'Комплектация', 'Авто.ру Комплектация']
+    if list(df_stock.columns[:4]) == our_price_first_4_cols and 'Исходный VIN' in df_stock.columns:
+        # TODO убирать каталожные здесь - всё равно у каталожных самый низкий приоритет. Проверить то что ниже после Миши
+        df_stock.loc[df_stock['Фото'].str.contains('gallery'), 'Фото'] = ''
+        df_stock.T.reset_index().T.to_excel(template_path, sheet_name='Шаблон', header=False, index=False)
+        return df_stock
+
     df_stock = stock_xlsx_filter(df_stock, task)
 
     fields = StockFields.objects.filter(pk=task.stock_fields.id)
@@ -391,7 +412,9 @@ def converter_process_result(process_id, client, template):
     read_file = pd.read_excel(save_path_date, decimal=',')
     # Переношу Описание из шаблона если оно есть в шаблоне
     if 'Описание' in template.columns:
-        read_file['Описание'] = template['Описание']
+        read_file['Описание2'] = template['Описание']
+        read_file.loc[read_file['Описание2'].notnull(), 'Описание'] = read_file['Описание2']
+        read_file.drop(columns='Описание2', inplace=True)
     # Убираю автомобили которые не расшифрованы (пустые столбцы Марка, Цвет либо Фото)
     read_file = read_file[(~read_file['Марка'].isnull()) &
                           (~read_file['Цвет'].isnull()) &

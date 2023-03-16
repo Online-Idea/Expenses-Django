@@ -235,7 +235,15 @@ def xml_filter_conditions(value, condition, stock_field):
     :param stock_field: значение из стока
     :return: True если условие выполнено
     """
-    if 'with' not in condition:
+    if condition == ConverterFilters.GREATER_THAN:
+        if not stock_field:
+            stock_field = 0
+        return eval(f'"{int(stock_field)}" {condition} "{int(value)}"')
+    elif condition == ConverterFilters.LESS_THAN:
+        if not stock_field:
+            stock_field = 0
+        return eval(f'"{int(stock_field)}" {condition} "{int(value)}"')
+    elif 'with' not in condition:
         return eval(f'"{value}" {condition} "{stock_field}"')
     elif condition == ConverterFilters.STARTS_WITH:
         return stock_field.startswith(value)
@@ -323,6 +331,10 @@ def stock_xlsx_filter(df, task):
                 filter_or.append(f'(df["{f.field}"] == "{value}")')
             elif f.condition == ConverterFilters.NOT_EQUALS:
                 filter_or.append(f'(~df["{f.field}"] == "{value}")')
+            elif f.condition == ConverterFilters.GREATER_THAN:
+                filter_or.append(f'(df["{f.field}"] > "{value}")')
+            elif f.condition == ConverterFilters.LESS_THAN:
+                filter_or.append(f'(df["{f.field}"] < "{value}")')
             elif f.condition == ConverterFilters.STARTS_WITH:
                 filter_or.append(f'(df["{f.field}"].str.startswith("{value}"))')
             elif f.condition == ConverterFilters.NOT_STARTS_WITH:

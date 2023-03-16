@@ -90,6 +90,7 @@ class ConverterFiltersAdmin(admin.ModelAdmin):
     list_filter = ('converter_task', )
     fields = ('id', 'converter_task', 'field', 'condition', 'value')
     readonly_fields = ('id', )
+    ordering = ('converter_task', 'field')
 
 
 admin.site.register(Clients, ClientsAdmin)

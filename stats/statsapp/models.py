@@ -297,6 +297,8 @@ class ConverterFilters(BaseModel):
     NOT_CONTAINS = 'not in'
     EQUALS = '=='
     NOT_EQUALS = '!='
+    GREATER_THAN = '>'
+    LESS_THAN = '<'
     STARTS_WITH = 'starts_with'
     NOT_STARTS_WITH = 'not_starts_with'
     ENDS_WITH = 'ends_with'
@@ -306,6 +308,8 @@ class ConverterFilters(BaseModel):
         (NOT_CONTAINS, 'не содержит'),
         (EQUALS, 'равно'),
         (NOT_EQUALS, 'не равно'),
+        (GREATER_THAN, 'больше'),
+        (LESS_THAN, 'меньше'),
         (STARTS_WITH, 'начинается с'),
         (NOT_STARTS_WITH, 'не начинается с'),
         (ENDS_WITH, 'заканчивается на'),

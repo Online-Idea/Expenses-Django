@@ -431,6 +431,9 @@ def converter_process_result(process_id, client, template):
     read_file = read_file[(~read_file['Марка'].isnull()) &
                           (~read_file['Цвет'].isnull()) &
                           (~read_file['Фото'].isnull())]
+    # Если Максималка пустая то считать её как сумму других скидок
+    read_file.loc[read_file['Максималка'].isna(), 'Максималка'] = read_file[['Трейд-ин', 'Кредит', 'Страховка']].sum(axis=1)
+
     read_file.fillna('', inplace=True)
     read_file = read_file.astype(str).replace(r'\.0$', '', regex=True)
     # Сохраняю в csv

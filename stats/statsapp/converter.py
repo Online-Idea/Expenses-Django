@@ -436,6 +436,8 @@ def converter_process_result(process_id, client, template):
 
     read_file.fillna('', inplace=True)
     read_file = read_file.astype(str).replace(r'\.0$', '', regex=True)
+    read_file = read_file.astype(str).replace('é', 'e', regex=True)
+
     # Сохраняю в csv
     save_path = f'converter/{client}/prices/price_{client}.csv'
     read_file.to_csv(save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')

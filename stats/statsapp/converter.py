@@ -238,11 +238,11 @@ def xml_filter_conditions(value, condition, stock_field):
     if condition == ConverterFilters.GREATER_THAN:
         if not stock_field:
             stock_field = 0
-        return eval(f'"{int(stock_field)}" {condition} "{int(value)}"')
+        return eval(f'{int(stock_field)} {condition} {int(value)}')
     elif condition == ConverterFilters.LESS_THAN:
         if not stock_field:
             stock_field = 0
-        return eval(f'"{int(stock_field)}" {condition} "{int(value)}"')
+        return eval(f'{int(stock_field)} {condition} {int(value)}')
     elif 'with' not in condition:
         return eval(f'"{value}" {condition} "{stock_field}"')
     elif condition == ConverterFilters.STARTS_WITH:

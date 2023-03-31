@@ -16,34 +16,58 @@ def last_30_days():
 
 
 @shared_task
-def autoru_products():
-    active_autoru_clients_ids = get_autoru_clients()
-    from_, to = last_30_days()
-    for i in range(len(active_autoru_clients_ids)):
-        get_autoru_products(from_, to, active_autoru_clients_ids[i])
+def autoru_products(from_=None, to=None, clients=None):
+    if not from_ and not to:  # Если обе даты не заполнены то берём последние 30 дней
+        from_, to = last_30_days()
+    elif not from_ or not to:  # Если одна дата не заполнена то выдать ошибку
+        raise ValueError('Даты должны быть либо обе заполнены либо ни одной')
+
+    if not clients:
+        clients = get_autoru_clients()
+
+    for client in clients:
+        get_autoru_products(from_, to, client)
 
 
 @shared_task
-def autoru_daily():
-    active_autoru_clients_ids = get_autoru_clients()
-    from_, to = last_30_days()
-    for i in range(len(active_autoru_clients_ids)):
-        get_autoru_daily(from_, to, active_autoru_clients_ids[i])
+def autoru_daily(from_=None, to=None, clients=None):
+    if not from_ and not to:  # Если обе даты не заполнены то берём последние 30 дней
+        from_, to = last_30_days()
+    elif not from_ or not to:  # Если одна дата не заполнена то выдать ошибку
+        raise ValueError('Даты должны быть либо обе заполнены либо ни одной')
+
+    if not clients:
+        clients = get_autoru_clients()
+
+    for client in clients:
+        get_autoru_daily(from_, to, client)
 
 
 @shared_task
-def autoru_calls():
-    active_autoru_clients_ids = get_autoru_clients()
-    from_, to = last_30_days()
-    for i in range(len(active_autoru_clients_ids)):
-        get_autoru_calls(from_, to, active_autoru_clients_ids[i])
+def autoru_calls(from_=None, to=None, clients=None):
+    if not from_ and not to:  # Если обе даты не заполнены то берём последние 30 дней
+        from_, to = last_30_days()
+    elif not from_ or not to:  # Если одна дата не заполнена то выдать ошибку
+        raise ValueError('Даты должны быть либо обе заполнены либо ни одной')
+
+    if not clients:
+        clients = get_autoru_clients()
+
+    for client in clients:
+        get_autoru_calls(from_, to, client)
 
 
 @shared_task
-def teleph_calls():
-    active_teleph_clients = get_teleph_clients()
-    from_, to = last_30_days()
-    for client in active_teleph_clients:
+def teleph_calls(from_=None, to=None, clients=None):
+    if not from_ and not to:  # Если обе даты не заполнены то берём последние 30 дней
+        from_, to = last_30_days()
+    elif not from_ or not to:  # Если одна дата не заполнена то выдать ошибку
+        raise ValueError('Даты должны быть либо обе заполнены либо ни одной')
+
+    if not clients:
+        clients = get_teleph_clients()
+
+    for client in clients:
         get_teleph_calls(from_, to, client)
 
 

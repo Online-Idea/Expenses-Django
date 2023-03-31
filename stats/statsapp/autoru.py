@@ -78,6 +78,10 @@ def get_autoru_products(from_, to, client_id):
     # https://yandex.ru/dev/autoru/doc/reference/dealer-wallet-product-activations-offer-stats.html
     # GET /dealer/wallet/product/{productName}/activations/offer-stats
 
+    if isinstance(from_, str) and isinstance(to, str):
+        from_ = datetime.strptime(from_, '%Y-%m-%d')
+        to = datetime.strptime(to, '%Y-%m-%d')
+
     # Удаляю текущие записи чтобы вместо них добавить записи с актуальными данными
     delete_autoru_products(from_, to, client_id)
 
@@ -234,6 +238,9 @@ def get_autoru_calls(from_, to, client_id):
     # Возвращает список звонков дилера.
     # https://yandex.ru/dev/autoru/doc/reference/calltracking.html
     # POST /calltracking
+
+    from_ = datetime.strptime(f'{from_}T00:00:00.000Z', '%Y-%m-%dT00:00:00.000Z')
+    to = datetime.strptime(f'{to}T23:59:59.000Z', '%Y-%m-%dT23:59:59.000Z')
 
     delete_autoru_calls(from_, to, client_id)
 

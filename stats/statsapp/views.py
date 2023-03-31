@@ -22,8 +22,8 @@ def home(request):
         # Разбиваю дату на день, месяц, год
         date_start = [int(i) for i in daterange[0].split('.')]
         date_end = [int(i) for i in daterange[2].split('.')]
-        datefrom = datetime.datetime(date_start[2], date_start[1], date_start[0], 00, 00, 00, 629013, tzinfo=datetime.timezone.utc)
-        dateto = datetime.datetime(date_end[2], date_end[1], date_end[0], 23, 59, 59, 629013, tzinfo=datetime.timezone.utc)
+        datefrom = datetime.datetime(date_start[2], date_start[1], date_start[0], 00, 00, 00, 629013)
+        dateto = datetime.datetime(date_end[2], date_end[1], date_end[0], 19, 59, 59, 629013)
         # Выбранные клиенты
         clients_checked = [c for c in request.POST.getlist('client_checkbox')]
 

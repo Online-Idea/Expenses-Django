@@ -39,7 +39,7 @@ class ConverterTaskAdmin(admin.ModelAdmin):
     list_display = ('id', 'client', 'name', 'active', 'photos_folder', 'configuration')
     list_display_links = ('id', 'client', 'name')
     list_editable = ('active', )
-    search_fields = ('client', 'name')
+    search_fields = ('name', )
     list_filter = ('client', 'active')
     fields = ('id', 'client', 'name', 'stock_source', 'stock_url', 'stock_post_host', 'stock_post_login',
               'stock_post_password', 'active', 'photos_folder', 'front', 'back', 'interior', 'salon_only', 'template',

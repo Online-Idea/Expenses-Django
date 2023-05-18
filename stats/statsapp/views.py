@@ -12,7 +12,8 @@ import calendar
 from .models import *
 from .forms import *
 from .converter import *
-from .autoru import get_autoru_products, autoru_authenticate
+from .autoru import get_autoru_products, autoru_authenticate, update_autoru_catalog
+
 
 def home(request):
     if request.method == 'POST':
@@ -192,3 +193,7 @@ def configurations(request):
     get_configurations()
     return redirect('home')
 
+
+def autoru_catalog(request):
+    update_autoru_catalog()
+    return redirect('home')

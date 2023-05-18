@@ -329,3 +329,31 @@ class ConverterFilters(BaseModel):
         verbose_name = 'Фильтр конвертера'
         verbose_name_plural = 'Фильтры конвертера'
         ordering = ['field']
+
+
+class AutoruCatalog(BaseModel):
+    mark_id = models.IntegerField(blank=True, null=True, verbose_name='Марка id')
+    mark_name = models.CharField(max_length=500, verbose_name='Марка имя')
+    mark_code = models.CharField(max_length=500, verbose_name='Марка код')
+    folder_id = models.IntegerField(verbose_name='folder_id')
+    folder_name = models.CharField(max_length=500, verbose_name='folder_name')
+    model_id = models.IntegerField(blank=True, null=True, verbose_name='Модель id')
+    model_name = models.CharField(max_length=500, verbose_name='Модель имя')
+    model_code = models.CharField(max_length=500, verbose_name='Модель код')
+    generation_id = models.IntegerField(verbose_name='Поколение id')
+    generation_name = models.CharField(max_length=500, verbose_name='Поколение имя')
+    modification_id = models.IntegerField(verbose_name='Модификация id')
+    modification_name = models.CharField(max_length=500, verbose_name='Модификация имя')
+    configuration_id = models.IntegerField(verbose_name='configuration_id')
+    tech_param_id = models.IntegerField(verbose_name='tech_param_id')
+    body_type = models.CharField(max_length=500, verbose_name='Кузов')
+    years = models.CharField(max_length=500, verbose_name='Года выпуска')
+    complectation_id = models.IntegerField(blank=True, null=True, verbose_name='Комплектация id')
+    complectation_name = models.CharField(max_length=500, blank=True, null=True, verbose_name='Комплектация имя')
+
+    def __str__(self):
+        return f'{self.mark_name} | {self.folder_name} | {self.modification_name} | {self.complectation_name}'
+
+    class Meta:
+        verbose_name = 'Авто.ру Каталог'
+        verbose_name_plural = 'Авто.ру Каталог'

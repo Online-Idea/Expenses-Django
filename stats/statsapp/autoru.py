@@ -2,6 +2,8 @@ from stats.settings import env
 import time
 import requests
 from datetime import datetime, timedelta
+import xml.etree.ElementTree as ET
+
 from .models import *
 from django.db.models import Q
 
@@ -354,3 +356,75 @@ def delete_autoru_calls(from_, to, client_id):
 
 session_id = autoru_authenticate(env('AUTORU_LOGIN'), env('AUTORU_PASSWORD'))
 session_id2 = autoru_authenticate(env('AUTORU_LOGIN2'), env('AUTORU_PASSWORD2'))
+
+
+def update_autoru_catalog():
+    """
+    Обновляет каталог авто.ру
+    """
+    # Удаляю текущие
+    AutoruCatalog.objects.all().delete()
+
+    # Скачиваю актуальный
+    url = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
+    response = requests.get(url)
+    xml_content = response.content
+
+    root = ET.fromstring(xml_content)
+
+    rows = []
+    for mark in root.iter('mark'):
+        mark_id = mark.get('id')
+        mark_name = mark.get('name')
+        mark_code = mark.find('code').text
+
+        for folder in mark.iter('folder'):
+            folder_id = folder.get('id')
+            folder_name = folder.get('name')
+            model_id = folder.find('model').get('id')
+            model_name = folder_name.split(',')[0]
+            model_code = folder.find('model').text
+            generation_id = folder.find('generation').get('id')
+            try:
+                generation_name = folder_name.split(',')[1].strip()
+            except IndexError:
+                generation_name = 'take_years'
+
+            for modification in folder.iter('modification'):
+                modification_id = modification.get('id')
+                modification_name = modification.get('name')
+                configuration_id = modification.find('configuration_id').text
+                tech_param_id = modification.find('tech_param_id').text
+                body_type = modification.find('body_type').text
+                years = modification.find('years').text
+
+                if generation_name == 'take_years':
+                    generation_name = years
+
+                for complectation in modification.iter('complectation'):
+                    complectation_id = complectation.get('id')
+                    complectation_name = complectation.text
+
+                    rows.append(AutoruCatalog(
+                        mark_id=mark_id,
+                        mark_name=mark_name,
+                        mark_code=mark_code,
+                        folder_id=folder_id,
+                        folder_name=folder_name,
+                        model_id=model_id,
+                        model_name=model_name,
+                        model_code=model_code,
+                        generation_id=generation_id,
+                        generation_name=generation_name,
+                        modification_id=modification_id,
+                        modification_name=modification_name,
+                        configuration_id=configuration_id,
+                        tech_param_id=tech_param_id,
+                        body_type=body_type,
+                        years=years,
+                        complectation_id=complectation_id,
+                        complectation_name=complectation_name,
+                    ))
+
+    AutoruCatalog.objects.bulk_create(rows)
+    return

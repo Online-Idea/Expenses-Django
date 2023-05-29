@@ -484,7 +484,10 @@ def logs_to_xlsx(logs, template, client):
     lines = logs.split('\n')[:-2]  # Последние 2 убираю т.к. там Время обработки и пустая строка
     logs_dict = {}
     for line in lines:
-        key = line.split('"')[1]
+        try:
+            key = line.split('"')[1]
+        except IndexError:
+            continue
         start = line.index(':') + 1
         end = line.index(';')
         value = []

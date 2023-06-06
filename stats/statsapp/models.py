@@ -331,6 +331,40 @@ class ConverterFilters(BaseModel):
         ordering = ['field']
 
 
+class ConverterExtraProcessing(BaseModel):
+    # Различные изменения прайса по условию
+    SOURCE_CHOICES = [
+        ('Сток', 'Сток'),
+        ('Прайс', 'Прайс')
+    ]
+
+    converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.CASCADE)
+    source = models.CharField(max_length=500, choices=SOURCE_CHOICES, verbose_name='Источник')
+    price_column_to_change = models.CharField(max_length=500, verbose_name='Столбец прайса в котором менять')
+    new_value = models.CharField(max_length=500, verbose_name='Новое значение')
+
+    def __str__(self):
+        return f'{self.converter_task.name} {self.source} -> {self.price_column_to_change} {self.new_value}'
+
+    class Meta:
+        verbose_name = 'Обработка прайса'
+        verbose_name_plural = 'Обработка прайса'
+
+
+class Conditionals(BaseModel):
+    converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.CASCADE)
+    field = models.CharField(max_length=500, verbose_name='Поле')
+    condition = models.CharField(max_length=500, choices=ConverterFilters.CONDITION_CHOICES, verbose_name='Условие')
+    value = models.CharField(max_length=500, help_text=ConverterFilters.value_help_text, verbose_name='Значение')
+
+    def __str__(self):
+        return f'{self.converter_extra_processing} {self.field} {self.condition} {self.value}'
+
+    class Meta:
+        verbose_name = 'Условие'
+        verbose_name_plural = 'Условия'
+
+
 class AutoruCatalog(BaseModel):
     mark_id = models.IntegerField(blank=True, null=True, verbose_name='Марка id')
     mark_name = models.CharField(max_length=500, verbose_name='Марка имя')

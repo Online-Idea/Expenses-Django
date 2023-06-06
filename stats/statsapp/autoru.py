@@ -9,7 +9,6 @@ from django.db.models import Q
 
 ENDPOINT = 'https://apiauto.ru/1.0'
 
-
 # Список id клиентов на новом агентском аккаунте
 clients_newcard = [48572, 50793, 50877, 51128, 50048, 47554, 53443, 39014, 25832, 26648]
 
@@ -74,6 +73,8 @@ def get_autoru_clients():
     return active_clients_ids
 
 
+
+
 # ---------------------------------------------------------------------------
 def get_autoru_products(from_, to, client_id):
     # Возвращает статистику по активации услуги у объявлений за указанную дату.
@@ -125,7 +126,8 @@ def get_autoru_products(from_, to, client_id):
             except KeyError:
                 continue
             finally:
-                print(f'Клиент {client_id} | дата {current_date} | услуга {product_type:25} | {time.perf_counter() - start:.3f}')
+                print(
+                    f'Клиент {client_id} | дата {current_date} | услуга {product_type:25} | {time.perf_counter() - start:.3f}')
         current_date += timedelta(days=1)
 
 
@@ -428,3 +430,17 @@ def update_autoru_catalog():
 
     AutoruCatalog.objects.bulk_create(rows)
     return
+
+
+# Получение нужных данных для прайса из каталога авто.ру
+# data = AutoruCatalog.objects \
+#     .values('complectation_id') \
+#     .annotate(year_from=Cast(Substr('years', 1, 4), output_field=IntegerField())) \
+#     .filter(Q(mark_name='EXEED')
+#             & Q(model_name='TXL')
+#             & Q(generation_name='I Рестайлинг')
+#             & Q(complectation_name='Flagship')
+#             & Q(modification_name='1.6 AMT (186 л.с.) 4WD')
+#             & Q(body_type='Внедорожник 5 дв.')
+#             & Q(year_from__lte=2023)
+#             )

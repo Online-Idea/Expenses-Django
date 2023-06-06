@@ -1,12 +1,16 @@
 import ftplib
 from ftplib import FTP
+from functools import reduce
 from pathlib import Path
 import os
+
+import pandas.core.series
 import requests
 import datetime
 import xml.etree.ElementTree as ET
 import xlsxwriter
 import pandas as pd
+from pandas import DataFrame
 from telebot.types import InputFile
 
 from stats.settings import env
@@ -36,7 +40,7 @@ def get_price(task):
     client_slug = task.client.slug
     client_name = task.client.name
     process_id = converter_post(task)
-    price = converter_process_result(process_id, client_slug, template)
+    price = converter_process_result(process_id, client_slug, template, task)
     logs = converter_logs(process_id)
     logs_xlsx = logs_to_xlsx(logs, template, client_slug)
     bot_messages(logs, logs_xlsx, price, client_slug, client_name)
@@ -349,6 +353,61 @@ def stock_xlsx_filter(df, task):
     return eval(f'df.loc[{" & ".join(filter_strings)}]') if filter_strings else df
 
 
+def price_extra_processing(df: DataFrame, task: ConverterTask) -> DataFrame:
+    """
+    Меняет данные в прайсе по условию
+    :param df: прайс в виде pandas dataframe
+    :param task: task (запись) из таблицы Задачи конвертера
+    :return: Готовый прайс с изменениями
+    """
+    changes = ConverterExtraProcessing.objects.filter(converter_task=task)
+
+    # Для каждого изменения по клиенту
+    for change in changes:
+        conditionals = Conditionals.objects.filter(converter_extra_processing=change.id)
+        masks = []
+
+        # Для каждого условия в изменении
+        for cond in conditionals:
+
+            # Если несколько значений
+            if '`' in cond.value:
+                values = [val.replace('`', '').strip() for val in cond.value.split('`,')]
+            else:
+                values = [cond.value]
+
+            # Для каждого значения
+            for value in values:
+                if cond.condition == ConverterFilters.CONTAINS:
+                    masks.append(df[cond.field].str.contains(value))
+                elif cond.condition == ConverterFilters.NOT_CONTAINS:
+                    masks.append(~df[cond.field].str.contains(value))
+                elif cond.condition == ConverterFilters.EQUALS:
+                    masks.append(df[cond.field] == value)
+                elif cond.condition == ConverterFilters.NOT_EQUALS:
+                    masks.append(df[cond.field] != value)
+                elif cond.condition == ConverterFilters.GREATER_THAN:
+                    masks.append(df[cond.field] > value)
+                elif cond.condition == ConverterFilters.LESS_THAN:
+                    masks.append(df[cond.field] < value)
+                elif cond.condition == ConverterFilters.STARTS_WITH:
+                    masks.append(df[cond.field].str.startswith(value))
+                elif cond.condition == ConverterFilters.NOT_STARTS_WITH:
+                    masks.append(~df[cond.field].str.startswith(value))
+                elif cond.condition == ConverterFilters.ENDS_WITH:
+                    masks.append(df[cond.field].str.endswith(value))
+                elif cond.condition == ConverterFilters.NOT_ENDS_WITH:
+                    masks.append(~df[cond.field].str.endswith(value))
+
+        # Объединяю маски
+        combined_mask = [mask for mask in masks]
+        combined_mask = reduce(lambda x, y: x & y, combined_mask)
+        # Проставляю новые значения
+        df.loc[combined_mask, change.price_column_to_change] = change.new_value
+
+    return df
+
+
 def multi_tags(field, element):
     """
     Обрабатывает поля для которых данные собираются из нескольких тегов
@@ -400,12 +459,13 @@ def converter_post(task):
     return response.json()['processId']
 
 
-def converter_process_result(process_id, client, template):
+def converter_process_result(process_id, client, template, task):
     """
     Возвращает готовый прайс
     :param process_id: из converter_post
     :param client: имя клиента как slug - используется как имя папки клиента куда сохраняется прайс
     :param template: шаблон как pandas dataframe - если из шаблона нужны данные для прайса
+    :param task: строка из таблицы Задачи конвертера
     """
     # Получаю прайс от конвертера по process_id
     url = 'http://151.248.118.19/Api/Stock/GetProcessResult'
@@ -433,6 +493,9 @@ def converter_process_result(process_id, client, template):
                           (~read_file['Фото'].isnull())]
     # Если Максималка пустая то считать её как сумму других скидок
     read_file.loc[read_file['Максималка'].isna(), 'Максималка'] = read_file[['Трейд-ин', 'Кредит', 'Страховка']].sum(axis=1)
+
+    # Различные изменения прайса по условию
+    read_file = price_extra_processing(read_file, task)
 
     read_file.fillna('', inplace=True)
     read_file = read_file.astype(str).replace(r'\.0$', '', regex=True)

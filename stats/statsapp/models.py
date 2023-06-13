@@ -353,7 +353,7 @@ class ConverterExtraProcessing(BaseModel):
 
 class Conditionals(BaseModel):
     converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.CASCADE)
-    field = models.CharField(max_length=500, verbose_name='Поле')
+    field = models.CharField(max_length=500, help_text=StockFields.multi_tags_help, verbose_name='Поле')
     condition = models.CharField(max_length=500, choices=ConverterFilters.CONDITION_CHOICES, verbose_name='Условие')
     value = models.CharField(max_length=500, help_text=ConverterFilters.value_help_text, verbose_name='Значение')
 

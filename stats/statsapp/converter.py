@@ -138,7 +138,6 @@ def template_xml(stock_path, template_path, task):
     fields = task.stock_fields
     exception_col = ['modification_code', 'options_code', 'images', 'modification_explained']
     for i, car in enumerate(root.iter(fields.car_tag)):
-        # sheet.write(y, x, cell_data)  # Пример заполнения ячейки xlsx
         if stock_xml_filter(car, task):
             # Обычные поля
             for field in fields._meta.fields:
@@ -166,7 +165,11 @@ def template_xml(stock_path, template_path, task):
                 sheet.write(i + 1, template_col['options_code'][1], options)
 
             if fields.images:
-                images = multi_tags(fields.images, car)  # Фото клиента
+                if 'авилон' in task.client.name.lower():
+                    # Особая обработка фото от Авилона
+                    images = avilon_photos(fields.images, car)
+                else:
+                    images = multi_tags(fields.images, car)  # Фото клиента
                 sheet.write_string(i + 1, template_col['images'][1], images)
 
             if ',' in fields.modification_explained:  # Расш. модификации
@@ -175,9 +178,60 @@ def template_xml(stock_path, template_path, task):
             else:
                 sheet.write(i + 1, template_col['modification_explained'][1], car.findtext(fields.modification_explained))
 
+        # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
+        extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
+        if extras:
+            for extra in extras:
+                conditionals = Conditionals.objects.filter(converter_extra_processing=extra.id)
+                for cond in conditionals:
+                    column_name = cond.field
+                    # value = car.find(column_name).text
+                    value = multi_tags(cond.field, car)
+
+                    if column_name not in template_col:
+                        max_column = len(template_col)
+                        template_col[column_name] = (column_name, max_column)
+                        sheet.write(i, max_column, column_name)
+
+                    column_number = template_col[column_name][1]
+
+                    sheet.write(i + 1, column_number, value)
+
     xlsx_template.close()
 
     return pd.read_excel(template_path, decimal=',')
+
+
+def avilon_photos(field: str, element: ET.Element) -> str:
+    """
+    Особая настройка для Авилона. Если брать их фото в том порядке как они идут в xml,
+    то порядок фото получается случайным. А так как Авилон к каждому фото указывает угол,
+    с которого они снимали, то можно по этому углу выставлять в красивый порядок фото
+    :param field: имя тэга с фото
+    :param element: элемент автомобиля
+    :return: фото в одной строке, разделённые запятой
+    """
+    def get_by_view_type(tags, view_type):
+        return [tag for tag in tags if tag.attrib['view_type'] == view_type]
+
+    tags = element.findall(field)
+
+    exterior = get_by_view_type(tags, 'exterior')
+    # Первое фото немного боком влево
+    for element in exterior:
+        if element.attrib['angle'] in ['40', '320']:
+            element.set('angle', '-40')
+            break
+    exterior.sort(key=lambda x: float(x.get('angle')))
+
+    detail = get_by_view_type(tags, 'detail')
+
+    interior = get_by_view_type(tags, 'interior')
+
+    images = [image.text for image in exterior]
+    images += [image.text for image in detail]
+    images += [image.text for image in interior]
+    return ', '.join(images)
 
 
 def stock_xml_filter(car, task):
@@ -279,7 +333,6 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
     # Если первые 4 столбца совпадают с our_price_first_4_cols И Исходный VIN в столбцах
     our_price_first_4_cols = ['Марка', 'Модель', 'Комплектация', 'Авто.ру Комплектация']
     if list(df_stock.columns[:4]) == our_price_first_4_cols and 'Исходный VIN' in df_stock.columns:
-        # TODO убирать каталожные здесь - всё равно у каталожных самый низкий приоритет. Проверить то что ниже после Миши
         df_stock.loc[df_stock['Фото'].str.contains('gallery'), 'Фото'] = ''
         df_stock.T.reset_index().T.to_excel(template_path, sheet_name='Шаблон', header=False, index=False)
         return df_stock
@@ -299,6 +352,17 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
     for k, col in template_col.items():
         if col[0] not in cur_cols:
             df_stock[col[0]] = ''
+
+    # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
+    extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
+    if extras:
+        for extra in extras:
+            conditionals = Conditionals.objects.filter(converter_extra_processing=extra.id)
+            for cond in conditionals:
+                column_name = cond.field
+                if column_name not in template_col:
+                    max_column = len(template_col)
+                    template_col[column_name] = (column_name, max_column)
 
     # Оставляю только нужные столбцы в том порядке как в template_col
     df_stock = df_stock[[v[0] for k, v in template_col.items()]]
@@ -353,14 +417,21 @@ def stock_xlsx_filter(df, task):
     return eval(f'df.loc[{" & ".join(filter_strings)}]') if filter_strings else df
 
 
-def price_extra_processing(df: DataFrame, task: ConverterTask) -> DataFrame:
+def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFrame) -> DataFrame:
     """
     Меняет данные в прайсе по условию
     :param df: прайс в виде pandas dataframe
     :param task: task (запись) из таблицы Задачи конвертера
+    :param template: шаблон в виде pandas dataframe
     :return: Готовый прайс с изменениями
     """
     changes = ConverterExtraProcessing.objects.filter(converter_task=task)
+
+    # Если изменение зависит от данных в стоке то сначала эти данные добавляются к шаблону.
+    # Потом шаблон передаётся сюда и добавляется к прайсу.
+    if changes.filter(source='Сток'):
+        template = template.add_suffix('_template')
+        df = pd.merge(df, template, left_index=True, right_index=True)
 
     # Для каждого изменения по клиенту
     for change in changes:
@@ -370,6 +441,9 @@ def price_extra_processing(df: DataFrame, task: ConverterTask) -> DataFrame:
         # Для каждого условия в изменении
         for cond in conditionals:
 
+            if change.source == 'Сток':
+                cond.field += '_template'
+
             # Если несколько значений
             if '`' in cond.value:
                 values = [val.replace('`', '').strip() for val in cond.value.split('`,')]
@@ -378,6 +452,9 @@ def price_extra_processing(df: DataFrame, task: ConverterTask) -> DataFrame:
 
             # Для каждого значения
             for value in values:
+                if value.isdigit():
+                    value = int(value)
+
                 if cond.condition == ConverterFilters.CONTAINS:
                     masks.append(df[cond.field].str.contains(value))
                 elif cond.condition == ConverterFilters.NOT_CONTAINS:
@@ -402,8 +479,11 @@ def price_extra_processing(df: DataFrame, task: ConverterTask) -> DataFrame:
         # Объединяю маски
         combined_mask = [mask for mask in masks]
         combined_mask = reduce(lambda x, y: x & y, combined_mask)
+        combined_mask = combined_mask.fillna(False)
         # Проставляю новые значения
         df.loc[combined_mask, change.price_column_to_change] = change.new_value
+
+    df = df.drop(df.filter(regex='_template').columns, axis=1)
 
     return df
 
@@ -415,19 +495,27 @@ def multi_tags(field, element):
     :param element: элемент из xml
     :return: готовые данные для шаблона
     """
+    result = []
+
     if '/' in field:
         parent = field.split('/')[0]
-        if '@' not in field:  # Если тег с детьми и нужно значение детей
-            result = [tag.text for tag in element.find(parent)]
-        else:  # Если тег с детьми и из детей нужен атрибут
-            attribute = field.split('@')[1]
-            result = [tag.attrib[attribute] for tag in element.find(parent)]
+        parent_element = element.find(parent)
+        if parent_element:
+            if '@' not in field:  # Если тег с детьми и нужно значение детей
+                result = [tag.text for tag in parent_element]
+            else:  # Если тег с детьми и из детей нужен атрибут
+                attribute = field.split('@')[1]
+                result = [tag.attrib[attribute] for tag in parent_element]
     else:
         if '@' not in field:  # Если тег несколько раз повторяется и нужно значение
-            result = [tag.text for tag in element.findall(field)]
+            tags = element.findall(field)
+            if tags:
+                result = [tag.text for tag in tags]
         else:  # Если тег несколько раз повторяется и из него нужен атрибут
             tag_name, attribute = field.split('@')
-            result = [tag.attrib[attribute] for tag in element.findall(tag_name)]
+            tags = element.findall(tag_name)
+            if tags:
+                result = [tag.attrib[attribute] for tag in tags]
 
     return ' '.join(result)
 
@@ -487,6 +575,9 @@ def converter_process_result(process_id, client, template, task):
         read_file['Описание2'] = template['Описание']
         read_file.loc[read_file['Описание2'].notnull(), 'Описание'] = read_file['Описание2']
         read_file.drop(columns='Описание2', inplace=True)
+
+    read_file['Описание'] = read_file['Описание'].replace('_x000d_', '', regex=True)
+
     # Убираю автомобили которые не расшифрованы (пустые столбцы Марка, Цвет либо Фото)
     read_file = read_file[(~read_file['Марка'].isnull()) &
                           (~read_file['Цвет'].isnull()) &
@@ -495,7 +586,7 @@ def converter_process_result(process_id, client, template, task):
     read_file.loc[read_file['Максималка'].isna(), 'Максималка'] = read_file[['Трейд-ин', 'Кредит', 'Страховка']].sum(axis=1)
 
     # Различные изменения прайса по условию
-    read_file = price_extra_processing(read_file, task)
+    read_file = price_extra_processing(read_file, task, template)
 
     read_file.fillna('', inplace=True)
     read_file = read_file.astype(str).replace(r'\.0$', '', regex=True)

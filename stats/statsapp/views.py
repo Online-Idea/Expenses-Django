@@ -175,7 +175,7 @@ class ConverterManual(SuccessMessageMixin, FormView):
     ordering = ['client']
     form_class = ConverterManualForm
     success_url = 'converter'
-    success_message = format_html('Готово, файлы на ftp, логи в <a href="https://t.me/ConverterLogsBot">телеграме</a>')
+    success_message = format_html('Готово, файлы в <a href="https://t.me/ConverterLogsBot">телеграме</a>')
 
     def form_valid(self, form):
         tasks = form.cleaned_data['task_checkbox']

@@ -8,7 +8,8 @@ import pandas.core.series
 import requests
 import datetime
 import xml.etree.ElementTree as ET
-import xlsxwriter
+from openpyxl import Workbook
+# import xlsxwriter
 import pandas as pd
 from pandas import DataFrame
 from telebot.types import InputFile
@@ -126,13 +127,14 @@ def template_xml(stock_path, template_path, task):
     root = tree.getroot()
 
     # XLSX шаблон
-    xlsx_template = xlsxwriter.Workbook(template_path)
-    sheet = xlsx_template.add_worksheet('Шаблон')
+    workbook = Workbook()
+    workbook.active.title = 'Шаблон'
+    sheet = workbook.active
 
     # Заголовки шаблона
     template_col = StockFields.TEMPLATE_COL
     for k, col in template_col.items():
-        sheet.write(0, col[1], col[0])
+        sheet.cell(row=1, column=col[1] + 1, value=col[0])
 
     # Данные шаблона
     fields = task.stock_fields
@@ -150,19 +152,21 @@ def template_xml(stock_path, template_path, task):
                             cell = int(cell)
                     except AttributeError:
                         pass
-                    sheet.write(i + 1, template_col[field.name][1], cell)
+                    sheet.cell(row=i + 2, column=template_col[field.name][1] + 1, value=cell)
 
             # Поля-исключения
             if ',' in fields.modification_code:  # Код модификации
                 # Разделяет по запятой в список если есть значение. Убирает запятую из данных стока
-                mod = [car.findtext(f).replace(',', '') for f in fields.modification_code.split(', ') if car.findtext(f)]
-                sheet.write(i + 1, template_col['modification_code'][1], ' | '.join(mod))
+                mod = [car.findtext(f).replace(',', '') for f in fields.modification_code.split(', ') if
+                       car.findtext(f)]
+                sheet.cell(row=i + 2, column=template_col['modification_code'][1] + 1, value=' | '.join(mod))
             else:
-                sheet.write(i + 1, template_col['modification_code'][1], car.findtext(fields.modification_code))
+                sheet.cell(row=i + 2, column=template_col['modification_code'][1] + 1,
+                           value=car.findtext(fields.modification_code))
 
             if fields.options_code:
                 options = multi_tags(fields.options_code, car)  # Опции
-                sheet.write(i + 1, template_col['options_code'][1], options)
+                sheet.cell(row=i + 2, column=template_col['options_code'][1] + 1, value=options)
 
             if fields.images:
                 if 'авилон' in task.client.name.lower():
@@ -170,35 +174,39 @@ def template_xml(stock_path, template_path, task):
                     images = avilon_photos(fields.images, car)
                 else:
                     images = multi_tags(fields.images, car)  # Фото клиента
-                sheet.write_string(i + 1, template_col['images'][1], images)
+                sheet.cell(row=i + 2, column=template_col['images'][1] + 1, value=images)
 
             if ',' in fields.modification_explained:  # Расш. модификации
                 mod = [car.findtext(f) for f in fields.modification_explained.split(', ') if car.findtext(f)]
-                sheet.write(i + 1, template_col['modification_explained'][1], ' | '.join(mod))
+                sheet.cell(row=i + 2, column=template_col['modification_explained'][1] + 1, value=' | '.join(mod))
             else:
-                sheet.write(i + 1, template_col['modification_explained'][1], car.findtext(fields.modification_explained))
+                sheet.cell(row=i + 2, column=template_col['modification_explained'][1] + 1,
+                           value=car.findtext(fields.modification_explained))
 
-        # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
-        extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
-        if extras:
-            for extra in extras:
-                conditionals = Conditionals.objects.filter(converter_extra_processing=extra.id)
-                for cond in conditionals:
-                    column_name = cond.field
-                    # value = car.find(column_name).text
-                    value = multi_tags(cond.field, car)
+            # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
+            extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
+            if extras:
+                for extra in extras:
+                    conditionals = Conditionals.objects.filter(converter_extra_processing=extra.id)
+                    for cond in conditionals:
+                        column_name = cond.field
+                        value = multi_tags(cond.field, car)
 
-                    if column_name not in template_col:
-                        max_column = len(template_col)
-                        template_col[column_name] = (column_name, max_column)
-                        sheet.write(i, max_column, column_name)
+                        if column_name not in template_col:
+                            max_column = len(template_col) + 1
+                            template_col[column_name] = (column_name, max_column)
+                            sheet.cell(row=i + 1, column=max_column, value=column_name)
 
-                    column_number = template_col[column_name][1]
+                        column_number = template_col[column_name][1]
 
-                    sheet.write(i + 1, column_number, value)
+                        sheet.cell(row=i + 2, column=column_number, value=value)
 
-    xlsx_template.close()
+    # Удаляю пустые строки
+    for row in reversed(range(1, sheet.max_row + 1)):
+        if all(cell.value is None for cell in sheet[row]):
+            sheet.delete_rows(row)
 
+    workbook.save(filename=template_path)
     return pd.read_excel(template_path, decimal=',')
 
 
@@ -211,6 +219,7 @@ def avilon_photos(field: str, element: ET.Element) -> str:
     :param element: элемент автомобиля
     :return: фото в одной строке, разделённые запятой
     """
+
     def get_by_view_type(tags, view_type):
         return [tag for tag in tags if tag.attrib['view_type'] == view_type]
 
@@ -306,11 +315,11 @@ def xml_filter_conditions(value, condition, stock_field):
     elif condition == ConverterFilters.STARTS_WITH:
         return stock_field.startswith(value)
     elif condition == ConverterFilters.NOT_STARTS_WITH:
-        return not(stock_field.startswith(value))
+        return not (stock_field.startswith(value))
     elif condition == ConverterFilters.ENDS_WITH:
         return stock_field.endswith(value)
     elif condition == ConverterFilters.NOT_ENDS_WITH:
-        return not(stock_field.endswith(value))
+        return not (stock_field.endswith(value))
 
 
 def template_xlsx_or_csv(stock_path, filetype, template_path, task):
@@ -583,7 +592,8 @@ def converter_process_result(process_id, client, template, task):
                           (~read_file['Цвет'].isnull()) &
                           (~read_file['Фото'].isnull())]
     # Если Максималка пустая то считать её как сумму других скидок
-    read_file.loc[read_file['Максималка'].isna(), 'Максималка'] = read_file[['Трейд-ин', 'Кредит', 'Страховка']].sum(axis=1)
+    read_file.loc[read_file['Максималка'].isna(), 'Максималка'] = read_file[['Трейд-ин', 'Кредит', 'Страховка']].sum(
+        axis=1)
 
     # Различные изменения прайса по условию
     read_file = price_extra_processing(read_file, task, template)
@@ -689,12 +699,13 @@ def bot_messages(logs, logs_xlsx, price, client_slug, client_name):
 
     # Отправка логов и прайса через бота телеграма
     chat_ids = ConverterLogsBotData.objects.all()
+    logs = f'🟢 {client_name}\n\n{logs}'
     for chat_id in chat_ids:
         if len(logs) > 4095:  # У телеграма ограничение на 4096 символов в сообщении
             for x in range(0, len(logs), 4095):
                 bot.send_message(chat_id.chat_id, logs[x:x + 4095])
         else:
-            bot.send_message(chat_id.chat_id, f'🟢 {client_name}\n\n{logs}')
+            bot.send_message(chat_id.chat_id, logs)
         bot.send_document(chat_id.chat_id, InputFile(logs_xlsx))
         bot.send_document(chat_id.chat_id, InputFile(price_save_path))
 

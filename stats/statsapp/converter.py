@@ -193,11 +193,11 @@ def template_xml(stock_path, template_path, task):
                         value = multi_tags(cond.field, car)
 
                         if column_name not in template_col:
-                            max_column = len(template_col) + 1
+                            max_column = len(template_col)
                             template_col[column_name] = (column_name, max_column)
-                            sheet.cell(row=i + 1, column=max_column, value=column_name)
+                            sheet.cell(row=1, column=max_column + 1, value=column_name)
 
-                        column_number = template_col[column_name][1]
+                        column_number = template_col[column_name][1] + 1
 
                         sheet.cell(row=i + 2, column=column_number, value=value)
 
@@ -460,35 +460,39 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
                 values = [cond.value]
 
             # Для каждого значения
+            or_masks = []
             for value in values:
                 if value.isdigit():
                     value = int(value)
 
                 if cond.condition == ConverterFilters.CONTAINS:
-                    masks.append(df[cond.field].str.contains(value))
+                    or_masks.append(df[cond.field].str.contains(value))
                 elif cond.condition == ConverterFilters.NOT_CONTAINS:
-                    masks.append(~df[cond.field].str.contains(value))
+                    or_masks.append(~df[cond.field].str.contains(value))
                 elif cond.condition == ConverterFilters.EQUALS:
-                    masks.append(df[cond.field] == value)
+                    or_masks.append(df[cond.field] == value)
                 elif cond.condition == ConverterFilters.NOT_EQUALS:
-                    masks.append(df[cond.field] != value)
+                    or_masks.append(df[cond.field] != value)
                 elif cond.condition == ConverterFilters.GREATER_THAN:
-                    masks.append(df[cond.field] > value)
+                    or_masks.append(df[cond.field] > value)
                 elif cond.condition == ConverterFilters.LESS_THAN:
-                    masks.append(df[cond.field] < value)
+                    or_masks.append(df[cond.field] < value)
                 elif cond.condition == ConverterFilters.STARTS_WITH:
-                    masks.append(df[cond.field].str.startswith(value))
+                    or_masks.append(df[cond.field].str.startswith(value))
                 elif cond.condition == ConverterFilters.NOT_STARTS_WITH:
-                    masks.append(~df[cond.field].str.startswith(value))
+                    or_masks.append(~df[cond.field].str.startswith(value))
                 elif cond.condition == ConverterFilters.ENDS_WITH:
-                    masks.append(df[cond.field].str.endswith(value))
+                    or_masks.append(df[cond.field].str.endswith(value))
                 elif cond.condition == ConverterFilters.NOT_ENDS_WITH:
-                    masks.append(~df[cond.field].str.endswith(value))
+                    or_masks.append(~df[cond.field].str.endswith(value))
+
+            # Несколько значений через ИЛИ
+            combined_or_mask = reduce(lambda x, y: x | y, or_masks)
+            combined_or_mask = combined_or_mask.fillna(False)
+            masks.append(combined_or_mask)
 
         # Объединяю маски
-        combined_mask = [mask for mask in masks]
-        combined_mask = reduce(lambda x, y: x & y, combined_mask)
-        combined_mask = combined_mask.fillna(False)
+        combined_mask = reduce(lambda x, y: x & y, masks)
         # Проставляю новые значения
         df.loc[combined_mask, change.price_column_to_change] = change.new_value
 

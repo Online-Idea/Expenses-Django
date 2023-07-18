@@ -1,5 +1,6 @@
 {% extends 'statsapp/base.html' %}
 {% load static %}
+{% load crispy_forms_tags %}
 
 {% block headcontent %}
 
@@ -10,7 +11,7 @@
 {% block content %}
 <div class="container">
     <div class="row">
-        <div class="col-xl-12">
+        <div class="col">
             <h3 class="logo"><a href="{% url 'converter_manual' %}">Автоконвертер</a></h3>
             <br>
 
@@ -51,11 +52,12 @@
                 {% endfor %}
             {% endif %}
 
-            <form method="post" onsubmit="showLoading()">
-                {% csrf_token %}
-                {{ form.as_table }}
-                <button type="submit" class="btn btn-primary" id="converter-submit">Запустить</button>
-            </form>
+<!--            <form method="post" onsubmit="showLoading()">-->
+<!--                {% csrf_token %}-->
+<!--                {{ form.as_table }}-->
+<!--                <button type="submit" class="btn btn-primary" id="converter-submit">Запустить</button>-->
+<!--            </form>-->
+            {% crispy form form.helper %}
             <div class="d-none" id="loading-spinner">
                 <p>Минуту...</p>
                 <img src="{% static 'statsapp/img/Spin-1s-91px.gif' %}" alt="">

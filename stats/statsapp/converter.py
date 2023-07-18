@@ -1,3 +1,4 @@
+from collections import Counter
 import ftplib
 from ftplib import FTP
 from functools import reduce
@@ -352,15 +353,34 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
     fields = fields.values()[0]
     template_col = StockFields.TEMPLATE_COL
 
+    # Для столбцов которые состоят из нескольких других
+    for k, field in fields.copy().items():
+        if ',' in str(field):
+            columns_split = field.split(', ')
+            df_stock[template_col[k][0]] = df_stock[columns_split[0]].str.cat(df_stock[columns_split[1:]].astype(str), sep=' | ')
+            del fields[k]
+
+    # Для столбцов у которых одинаковый источник.
+    # Например когда 'Код цвета' и 'Расш. цвета' это одинаковый столбец в стоке с названием 'Цвет'
+    same_origin_columns_counter = Counter(fields.values())
+    del same_origin_columns_counter[None]
+    df_stock_copy = pd.DataFrame()
+    # Добавляю каждый такой столбец по отдельности в dataframe
+    for k, v in fields.copy().items():
+        if same_origin_columns_counter[v] > 1:
+            df_stock_copy[template_col[k][0]] = df_stock[v]
+            del fields[k]
     # Меняю имена столбцов
     swapped_cols = {v: template_col[k][0] for k, v in fields.items() if k in template_col}
-    df_stock.rename(columns=swapped_cols, inplace=True)
+    # Объединяю
+    combined_dfs = [df_stock_copy, df_stock.rename(columns=swapped_cols)]
+    df_stock_copy = pd.concat(combined_dfs, axis=1)
 
     # Добавляю недостающие столбцы
-    cur_cols = list(df_stock.columns.values)
+    cur_cols = list(df_stock_copy.columns.values)
     for k, col in template_col.items():
         if col[0] not in cur_cols:
-            df_stock[col[0]] = ''
+            df_stock_copy[col[0]] = ''
 
     # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
     extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
@@ -374,13 +394,13 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
                     template_col[column_name] = (column_name, max_column)
 
     # Оставляю только нужные столбцы в том порядке как в template_col
-    df_stock = df_stock[[v[0] for k, v in template_col.items()]]
+    df_stock_copy = df_stock_copy[[v[0] for k, v in template_col.items()]]
     # В Опции и пакеты заменяю переносы строк на пробел
-    df_stock['Опции и пакеты'].replace(r'\n', ' ', regex=True, inplace=True)
+    df_stock_copy['Опции и пакеты'].replace(r'\n', ' ', regex=True, inplace=True)
 
-    df_stock.T.reset_index().T.to_excel(template_path, sheet_name='Шаблон', header=False, index=False)
+    df_stock_copy.T.reset_index().T.to_excel(template_path, sheet_name='Шаблон', header=False, index=False)
 
-    return df_stock
+    return df_stock_copy
 
 
 def stock_xlsx_filter(df, task):
@@ -589,8 +609,6 @@ def converter_process_result(process_id, client, template, task):
         read_file.loc[read_file['Описание2'].notnull(), 'Описание'] = read_file['Описание2']
         read_file.drop(columns='Описание2', inplace=True)
 
-    read_file['Описание'] = read_file['Описание'].replace('_x000d_', '', regex=True)
-
     # Убираю автомобили которые не расшифрованы (пустые столбцы Марка, Цвет либо Фото)
     read_file = read_file[(~read_file['Марка'].isnull()) &
                           (~read_file['Цвет'].isnull()) &
@@ -602,9 +620,11 @@ def converter_process_result(process_id, client, template, task):
     # Различные изменения прайса по условию
     read_file = price_extra_processing(read_file, task, template)
 
+    # Мелкие замены
     read_file.fillna('', inplace=True)
     read_file = read_file.astype(str).replace(r'\.0$', '', regex=True)
     read_file = read_file.astype(str).replace('é', 'e', regex=True)
+    read_file['Описание'] = read_file['Описание'].replace('_x000d_', '', regex=True)
 
     # Сохраняю в csv
     save_path = f'converter/{client}/prices/price_{client}.csv'

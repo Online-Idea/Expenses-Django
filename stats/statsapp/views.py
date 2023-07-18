@@ -1,4 +1,5 @@
 from django.contrib.messages.views import SuccessMessageMixin
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.utils.html import format_html
@@ -197,3 +198,9 @@ def configurations(request):
 def autoru_catalog(request):
     update_autoru_catalog()
     return redirect('home')
+
+
+def get_models_for_mark(request, mark_id):
+    models = Models.objects.filter(mark_id=mark_id).values('id', 'mark', 'model')
+    return JsonResponse(list(models), safe=False)
+

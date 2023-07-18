@@ -13,4 +13,5 @@ urlpatterns = [
     path('converter/photo_folders/get', photo_folders, name='get_photo_folders'),
     path('converter/configurations/get', configurations, name='get_configurations'),
     path('autoru_catalog', autoru_catalog, name='autoru_catalog'),
+    path('api/get_models_for_mark/<int:mark_id>/', get_models_for_mark, name='get_models_for_mark'),
 ]

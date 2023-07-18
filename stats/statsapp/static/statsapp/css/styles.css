@@ -4,6 +4,10 @@
 }
 .logo a {
     color: #000;
+    text-decoration: none;
+}
+.logo a:hover {
+    text-decoration: underline;
 }
 /*----------------------Период--------------*/
 .period {

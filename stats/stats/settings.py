@@ -71,6 +71,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_celery_beat',
+    "crispy_forms",
+    "crispy_bootstrap5",
     'statsapp.apps.StatsappConfig',
 ]
 
@@ -170,3 +172,7 @@ elif not live_deploy:
 # }
 
 ALLOW_UNICODE_SLUGS = True
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+
+CRISPY_TEMPLATE_PACK = "bootstrap5"

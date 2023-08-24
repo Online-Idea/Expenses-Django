@@ -1,0 +1,183 @@
+{% extends 'statsapp/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block headcontent %}
+
+<title>Аукцион</title>
+
+<!-- Date Range Picker -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<script>
+<!--Выбор периода-->
+$(function() {
+  $('input[name="daterange"]').daterangepicker({
+    opens: 'left',
+    "showDropdowns": true,
+    "minYear": 2016,
+    "maxYear": 2050,
+    "autoApply": true,
+    "locale": {
+        "format": "DD.MM.YYYY",
+        "separator": " - ",
+        "applyLabel": "Apply",
+        "cancelLabel": "Cancel",
+        "fromLabel": "From",
+        "toLabel": "To",
+        "customRangeLabel": "Custom",
+        "weekLabel": "Н",
+        "daysOfWeek": [
+            "Вс",
+            "Пн",
+            "Вт",
+            "Ср",
+            "Чт",
+            "Пт",
+            "Сб"
+        ],
+        "monthNames": [
+            "Январь",
+            "Февраль",
+            "Март",
+            "Апрель",
+            "Май",
+            "Июнь",
+            "Июль",
+            "Август",
+            "Сентябрь",
+            "Октябрь",
+            "Ноябрь",
+            "Декабрь"
+        ],
+        "firstDay": 1,
+    },
+    "startDate": "{{ datefrom }}",
+    "endDate": "{{ dateto }}",
+    "drops": "right"
+},  function(start, end, label) {
+    console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+  });
+});
+</script>
+
+<script>
+    $(document).ready(function() {
+        $('#auctionTable').DataTable( {
+            fixedHeader: {
+                header: true,
+                footer: true
+            },
+            order: [[0, 'desc']],
+            columnDefs: [
+              // { "visible": false, "targets": [0, 1, 2, 3] },
+              { "visible": false, "targets": [0, 1] },
+              { "width": "30%", "targets": 3 },
+              // { "width": "20%", "targets": 4 },
+              { "width": "20%", "targets": 6 },
+            ],
+            rowGroup: {
+              dataSrc: [0, 1]
+            },
+            select: {
+                toggleable: true,
+                info: false
+            },
+            responsive: true,
+            pageLength: 100,
+            language: {
+                url: '{% static 'statsapp/js/datatables-ru.json' %}'
+            }
+        } );
+    } );
+</script>
+
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-xl-12 center">
+            <h3 class="logo"><a href="{% url 'auction' %}">Аукцион</a></h3>
+
+            <!--Выбор периода-->
+            <form method="POST" class="period">
+                {% csrf_token %}
+                {{ form.daterange }}
+                <button type="submit" class="btn btn-primary">Показать</button>
+
+                <!-- Список марок -->
+                <details>
+                    <!-- Отмечает ранее выбранные марки -->
+                    {% if marks_checked %}
+                    <summary onclick="selected_checkboxes({{ marks_checked }}, 'mark_checkbox' )">Марки</summary>
+                    {% else %}
+                    <summary>Марки</summary>
+                    {% endif %}
+                    <div class="content">
+                        <ul>
+                            <li><label><input type="checkbox" onclick="toggle(this, 'mark_checkbox')" checked/> Выбрать все</label></li>
+                            {{ form.mark_checkbox }}
+                        </ul>
+                    </div>
+                </details>
+
+                <!-- Список регионов -->
+                <details>
+                    <!-- Отмечает ранее выбранные регионы -->
+                    {% if regions_checked %}
+                    <summary onclick="selected_checkboxes({{ regions_checked }}, 'region_checkbox' )">Регионы</summary>
+                    {% else %}
+                    <summary>Регионы</summary>
+                    {% endif %}
+                    <div class="content">
+                        <ul>
+                            <li><label><input type="checkbox" onclick="toggle(this, 'region_checkbox')" checked/> Выбрать все</label></li>
+                            {{ form.region_checkbox }}
+                        </ul>
+                    </div>
+                </details>
+            </form>
+
+            <!--Таблица аукциона-->
+            {% if auction_data %}
+            <table id="auctionTable" class="row-border hover order-column stripe compact">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Дата и время</th>
+                        <th>Регион</th>
+                        <th>Марка</th>
+                        <th>Модель</th>
+                        <!-- <th></th> -->
+                        <th>Позиция</th>
+                        <th>Ставка</th>
+                        <th>Имя клиента</th>
+                        <th>Конкурентов по ставке</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in auction_data %}
+                    <tr>
+                        <td>{{ row.datetime }}</td>
+                        <td>{{ row.autoru_region }}</td>
+                        <td>{{ row.mark.mark }}</td>
+                        <td>{{ row.model.model }}</td>
+                        <!-- <td>&nbsp;</td> -->
+                        <td>{{ row.position }}</td>
+                        <td>{{ row.bid }}</td>
+                        <td>{{ row.client.name }}</td>
+                        <td>{{ row.competitors }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot class="tfoot-dark">
+
+                </tfoot>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

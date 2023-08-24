@@ -1,8 +1,14 @@
+from typing import Union
+
+import numpy as np
+from pandas import DataFrame
+
 from stats.settings import env
 import time
 import requests
 from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
+import pandas as pd
 
 from .models import *
 from django.db.models import Q
@@ -71,8 +77,6 @@ def get_autoru_clients():
         .filter(Q(active=True) & Q(autoru_id__isnull=False))
     active_clients_ids = [i['autoru_id'] for i in ids]
     return active_clients_ids
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -444,3 +448,265 @@ def update_autoru_catalog():
 #             & Q(body_type='Внедорожник 5 дв.')
 #             & Q(year_from__lte=2023)
 #             )
+
+
+def update_autoru_regions():
+    """
+    Обновляет регионы авто.ру
+    """
+    # Удаляю текущие
+    AutoruRegions.objects.all().delete()
+
+    # Скачиваю актуальные
+    regions = requests.get('https://cachev2-spb03.cdn.yandex.net/download.cdn.yandex.net/from/yandex.ru/tech/ru'
+                           '/autoru/doc/files/rid.json?lid=193').json()
+
+    rows = []
+    for region in regions:
+        rows.append(AutoruRegions(
+            autoru_region_id=region['id'],
+            name=region['name'],
+            path=region['path']
+        ))
+
+    AutoruRegions.objects.bulk_create(rows)
+    return
+
+
+def get_auction_history(client: Clients) -> Union[None, dict]:
+    """
+    Собирает историю аукциона
+    https://yandex.ru/dev/autoru/doc/reference/auction-current-state.html
+    GET /dealer/auction/current-state
+    :param client: клиент из базы
+    """
+    url = 'https://apiauto.ru/1.0/dealer/auction/current-state'
+    if client.autoru_id not in clients_newcard:
+        dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client.autoru_id}'}
+    else:
+        dealer_headers = {**API_KEY, **session_id2, 'x-dealer-id': f'{client.autoru_id}'}
+
+    auction_response = requests.get(url=url, headers=dealer_headers).json()
+
+    if autoru_errors(auction_response):
+        get_auction_history(client)
+
+    # TODO перепиши везде этот try на что-то получше
+    try:
+        if not auction_response or auction_response['status'] == 'error':  # Пропускаю клиента если доступ запрещён
+            print(f'Клиент {client} пропущен. Отказано в доступе')
+            return
+    except KeyError:
+        for state in auction_response['states']:
+            if 'current_bid' in state:
+                state['client'] = client
+        return auction_response
+    finally:
+        print(f'Клиент {client} | история аукциона')
+
+
+def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame, None]:
+    """
+    Обработка данных аукциона
+    :param data: список с ответами по аукциону от API авто.ру
+    :param datetime_: дата и время
+    :return: обработанный df
+    """
+    # Правки данных перед pandas
+    data2 = {'states': []}
+    for state in data['states']:
+        if 'base_price' not in state:  # Если нет Базовой цены значит пропускаем
+            continue
+
+        if 'competitive_bids' not in state:  # Если нет конкурентов
+            if 'current_bid' not in state:  # Если нет нашей ставки
+                # Сохраняю просто Базовую цену
+                state['competitive_bids'] = [{'bid': state['base_price'], 'competitors': 0}]
+            else:
+                # Сохраняю только нашу ставку
+                state['competitive_bids'] = [{'bid': '000', 'competitors': 0}]
+
+        data2['states'].append(state)
+    data = data2
+
+    if not data['states']:
+        return
+
+    # Данные в pandas
+    df = pd.json_normalize(data['states'],
+                           record_path=['competitive_bids'],
+                           meta=[['context', 'region_id'],
+                                 ['context', 'mark_name'],
+                                 ['context', 'model_name'],
+                                 ['current_bid'],
+                                 ['client']],
+                           errors='ignore')
+    df[['bid', 'current_bid']] = df[['bid', 'current_bid']].apply(lambda x: x.str[:-2])
+    df['current_bid'] = df['current_bid'].fillna(0)
+    df[['bid', 'current_bid', 'competitors']] = df[['bid', 'current_bid', 'competitors']].astype(int)
+
+    # Для ставок, по которым несколько дилеров размещаются, делаю копии по количеству этих дилеров
+    dfs = []
+    for _, row in df.iterrows():
+        if row['competitors'] > 1:
+            dfs.append(pd.concat([pd.DataFrame(row).T] * (row['competitors'] - 1)))
+
+    dfs.append(df)
+    new_df = pd.concat(dfs)
+
+    # Наша ставка
+    current_bids = df[df['current_bid'] > 0]
+    current_bids = current_bids[['context.region_id', 'context.mark_name', 'context.model_name', 'current_bid', 'client']].drop_duplicates()
+    new_df = new_df.drop(columns='client')
+    current_bids['competitors'] = 1
+    current_bids['bid'] = current_bids['current_bid']
+    new_df = pd.concat([new_df, current_bids])
+
+    # Сортирую
+    new_df = new_df.sort_values(['context.region_id', 'context.mark_name', 'context.model_name', 'bid'],
+                                ascending=[True, True, True, False])
+
+    # Регионы словами
+    unique_regions_ids = new_df['context.region_id'].unique()
+    autoru_regions = AutoruRegions.objects.filter(autoru_region_id__in=unique_regions_ids)
+    unique_regions_names = {}
+    for region_id in unique_regions_ids:
+        unique_regions_names[region_id] = autoru_regions.filter(autoru_region_id=region_id)[0].name
+    new_df['region_name'] = new_df['context.region_id'].replace(unique_regions_names)
+
+    # Марки как объекты из базы
+    unique_marks_names = new_df['context.mark_name'].unique()
+    marks = Marks.objects.filter(mark__in=unique_marks_names)
+
+    # Добавляю марки которых нет в базе
+    if len(unique_marks_names) != len(marks):
+        new_marks = []
+        marks_str = [m.mark for m in marks]
+
+        for mark in unique_marks_names:
+            if mark not in marks_str:
+                new_marks.append(Marks(
+                    mark=mark,
+                    teleph=mark,
+                    autoru=mark,
+                    avito=mark,
+                    drom=mark,
+                    human_name=mark
+                ))
+        Marks.objects.bulk_create(new_marks)
+        marks = Marks.objects.filter(mark__in=unique_marks_names)
+
+    unique_marks_objs = {}
+    for mark_name in unique_marks_names:
+        unique_marks_objs[mark_name] = marks.filter(mark=mark_name)[0]
+    new_df['mark_obj'] = new_df['context.mark_name'].replace(unique_marks_objs)
+
+    # Модели как объекты из базы
+    unique_models_names = new_df['context.model_name'].unique()
+    models = Models.objects.filter(model__in=unique_models_names)
+
+    # Добавляю модели которых нет в базе
+    if len(unique_models_names) != len(models):
+        new_models = []
+        models_str = [m.model for m in models]
+
+        for model in unique_models_names:
+            if model not in models_str:
+                mark = new_df[new_df['context.model_name'] == model]['context.mark_name'].iloc[0]
+                mark = marks.filter(mark=mark)[0]
+                new_models.append(Models(
+                    mark=mark,
+                    model=model,
+                    teleph=model,
+                    autoru=model,
+                    avito=model,
+                    drom=model,
+                    human_name=model
+                ))
+        Models.objects.bulk_create(new_models)
+        models = Models.objects.filter(model__in=unique_models_names)
+
+    unique_models_objs = {}
+    for model_name in unique_models_names:
+        unique_models_objs[model_name] = models.filter(model=model_name)[0]
+    new_df['model_obj'] = new_df['context.model_name'].replace(unique_models_objs)
+
+    # Позиция
+    new_df['position'] = new_df.groupby(['context.region_id', 'context.mark_name', 'context.model_name']).cumcount() + 1
+
+    # Дата и время
+    new_df['datetime'] = datetime_
+
+    # Оставляю нужные столбцы
+    new_df = new_df[['datetime', 'region_name', 'mark_obj', 'model_obj', 'position', 'bid', 'competitors', 'client']]
+
+    # Удаляю лишние строки. Это когда мы одни участвуем в аукционе
+    new_df = new_df[new_df['bid'] != 0]
+
+    # Переименовываю
+    new_df = new_df.rename(columns={
+        'region_name': 'autoru_region',
+        'mark_obj': 'mark',
+        'model_obj': 'model',
+    })
+    return new_df
+
+
+def auction_history_drop_unknown(all_bids: DataFrame) -> DataFrame:
+    """
+    Удаляю лишние строки с неизвестными дилерами которые на самом деле наши дилеры.
+    :param all_bids: df со всеми ставками
+    :return:
+    """
+    # Тут дропаю неизвестных дилеров, заменяя их нашими клиентами.
+    all_bids = all_bids.reset_index(drop=True)
+    all_bids = all_bids.drop_duplicates(subset=['datetime', 'autoru_region', 'mark', 'model', 'position', 'client'])
+    uniqueness = ['datetime', 'autoru_region', 'mark', 'model', 'position']
+
+    client_df = all_bids[uniqueness + ['client']].copy()
+    client_notnan = client_df[client_df['client'].notna()].copy()
+
+    rows_to_drop = []
+    for index, row in client_notnan[uniqueness].iterrows():
+        rows_to_drop.append(client_df.loc[(client_df['datetime'] == row[0]) &
+                                          (client_df['autoru_region'] == row[1]) &
+                                          (client_df['mark'] == row[2]) &
+                                          (client_df['model'] == row[3]) &
+                                          (client_df['position'] == row[4]) &
+                                          (client_df['client'].isna())])
+
+    rows_to_drop = pd.concat(rows_to_drop)
+    all_bids = all_bids.drop(rows_to_drop.index, axis=0)
+
+    # Сортирую
+    # Добавляю столбцы со значениями Марок и Моделей чтобы по ним сортировать
+    all_bids['mark_value'] = all_bids['mark'].apply(lambda x: x.mark)
+    all_bids['model_value'] = all_bids['model'].apply(lambda x: x.model)
+
+    # Сортировка
+    sorted_df = all_bids.sort_values(by=['autoru_region', 'mark_value', 'model_value', 'bid'],
+                                     ascending=[True, True, True, False], )
+
+    # Удаляю временные столбцы
+    sorted_df = sorted_df.drop(['mark_value', 'model_value'], axis=1)
+    sorted_df['client'] = sorted_df['client'].replace(np.nan, None)
+    return sorted_df
+
+
+def add_auction_history(data: DataFrame):
+    """
+    Добавляет историю аукциона в базу
+    :param data: df с данными аукциона
+    """
+    objs = [AutoruAuctionHistory(
+        datetime=row['datetime'],
+        autoru_region=row['autoru_region'],
+        mark=row['mark'],
+        model=row['model'],
+        position=row['position'],
+        bid=row['bid'],
+        competitors=row['competitors'],
+        client=row['client']
+    ) for index, row in data.iterrows()]
+
+    AutoruAuctionHistory.objects.bulk_create(objs)

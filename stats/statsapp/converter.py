@@ -264,10 +264,10 @@ def stock_xml_filter(car, task):
 
         # Поля (теги)
         if '/' in f.field:  # Путь к детям
-            parent = f.field.split('/')[0]
+            parent, child = f.field.rsplit('/', 1)
 
             if '@' not in f.field:  # Дети
-                stock_fields = [tag.text for tag in car.find(parent)]
+                stock_fields = [tag.text for tag in car.find(parent) if tag.tag == child]
 
             else:  # Атрибуты
                 attribute_name = f.field.split('@')[1].split('=')[0]
@@ -335,7 +335,8 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
     if filetype == 'xlsx':
         df_stock = pd.read_excel(stock_path, decimal=',')
     elif filetype == 'csv':
-        df_stock = pd.read_csv(stock_path, decimal=',', sep=';', header=0, encoding='cp1251')
+        encoding = task.stock_fields.encoding
+        df_stock = pd.read_csv(stock_path, decimal=',', sep=';', header=0, encoding=encoding)
     else:
         return 'Неверный формат файла, должен быть xlsx или csv'
 

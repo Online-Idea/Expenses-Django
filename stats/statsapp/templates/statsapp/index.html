@@ -60,10 +60,6 @@
                 });
                 </script>
 
-<!-- DataTables.net -->
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.13.1/fc-4.2.1/fh-3.3.1/r-2.4.0/sl-1.5.0/datatables.min.css"/>
-
-<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.13.1/fc-4.2.1/fh-3.3.1/r-2.4.0/sl-1.5.0/datatables.min.js"></script>
 <script>
     $(document).ready(function() {
         $('#tableOne').DataTable( {
@@ -101,13 +97,13 @@
                 <details>
                   <!--Отмечает ранее выбранных клиентов-->
                   {% if clients_checked %}
-                    <summary onclick="selected_clients({{ clients_checked }})">Клиенты</summary>
+                    <summary onclick="selected_checkboxes({{ clients_checked }}, 'client_checkbox' )">Клиенты</summary>
                   {% else %}
                     <summary>Клиенты</summary>
                   {% endif %}
                   <div class="content">
                       <ul>
-                          <li><label><input type="checkbox" onclick="toggle(this)" checked/> Выбрать все</label></li>
+                          <li><label><input type="checkbox" onclick="toggle(this, 'client_checkbox')" checked/> Выбрать все</label></li>
                           {{ form.client_checkbox }}
                       </ul>
                   </div>

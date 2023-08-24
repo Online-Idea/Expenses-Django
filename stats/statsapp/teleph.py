@@ -1,5 +1,6 @@
 import os
 import requests
+import urllib3
 from django.db.models import Q
 
 from .models import *
@@ -22,6 +23,8 @@ def get_teleph_clients():
 def get_teleph_calls(from_, to, client_id):
 
     delete_teleph_calls(from_, to, client_id)
+
+    urllib3.disable_warnings()
 
     params = {
         'login': client_id,

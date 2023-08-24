@@ -13,6 +13,19 @@ class ClientsChooseForm(forms.Form):
         widget=forms.CheckboxSelectMultiple(attrs={'checked': True}),
     )
 
+
+class AuctionChooseForm(forms.Form):
+    daterange = forms.CharField(max_length=255, label='Период')
+    mark_checkbox = forms.ModelMultipleChoiceField(
+        queryset=Marks.objects.all(),
+        widget=forms.CheckboxSelectMultiple(attrs={'checked': True}),
+    )
+    region_checkbox = forms.ModelMultipleChoiceField(
+        queryset=AutoruAuctionHistory.objects.order_by('autoru_region').values_list('autoru_region', flat=True).distinct(),
+        widget=forms.CheckboxSelectMultiple(attrs={'checked': True})
+    )
+
+
 # class ConverterManualForm(forms.Form):
 #     task_checkbox = forms.ModelMultipleChoiceField(
 #         queryset=ConverterTask.objects.filter(active=True),

@@ -13,7 +13,7 @@ import calendar
 from .models import *
 from .forms import *
 from .converter import *
-from .autoru import get_autoru_products, autoru_authenticate, update_autoru_catalog
+from .autoru import get_autoru_products, autoru_authenticate, update_autoru_catalog, update_autoru_regions
 
 
 def home(request):
@@ -31,6 +31,7 @@ def home(request):
 
         # Таблица себестоимости
         # Беру данные из базы
+        # TODO возможно что это можно упростить, смотри на auction
         stats = Clients.objects \
             .values('id', 'name', 'charge_type', 'commission_size', 'autoru_id', 'teleph_id') \
             .filter(id__in=clients_checked)
@@ -162,15 +163,6 @@ def home(request):
     return render(request, 'statsapp/index.html', context)
 
 
-# def autoru_products(request, from_, to, client):
-#     print(f'{request.GET["from_"]}, {request.GET["to"]}, {request.GET["client"]}')
-#     r = request.GET
-#     from_ = datetime.datetime.strptime(r['from_'], '%Y-%m-%d')
-#     to = datetime.datetime.strptime(r['to'], '%Y-%m-%d')
-#     get_autoru_products(from_, to, r['client'])
-#     return redirect('home')
-
-
 class ConverterManual(SuccessMessageMixin, FormView):
     template_name = 'statsapp/converter_manual.html'
     ordering = ['client']
@@ -185,6 +177,55 @@ class ConverterManual(SuccessMessageMixin, FormView):
         return super().form_valid(form)
 
 
+def auction(request):
+    if request.method == 'POST':
+        form = AuctionChooseForm(request.POST)
+
+        daterange = form['daterange'].value().split(' ')
+        # Разбиваю дату на день, месяц, год
+        date_start = [int(i) for i in daterange[0].split('.')]
+        date_end = [int(i) for i in daterange[2].split('.')]
+        datefrom = datetime.datetime(date_start[2], date_start[1], date_start[0], 00, 00, 00, 629013)
+        dateto = datetime.datetime(date_end[2], date_end[1], date_end[0], 19, 59, 59, 629013)
+        # Выбранные марки
+        marks_checked = [m for m in request.POST.getlist('mark_checkbox')]
+        # Выбранные регионы
+        regions_checked = [r for r in request.POST.getlist('region_checkbox')]
+        auction_data = AutoruAuctionHistory.objects.select_related('mark', 'model', 'client').filter(
+            datetime__gte=datefrom,
+            datetime__lte=dateto,
+            mark_id__in=marks_checked,
+            autoru_region__in=regions_checked
+        )
+
+        context = {
+            'form': form,
+            'marks_checked': marks_checked,
+            'datefrom': date_start,
+            'dateto': date_end,
+            'auction_data': auction_data,
+        }
+        return render(request, 'statsapp/auction.html', context)
+
+    else:
+        form = AuctionChooseForm()
+
+    marks = Marks.objects.all()
+    today = datetime.date.today()
+    year = today.year
+    month = today.month
+    datefrom = datetime.date(year, month, 1).strftime('%d.%m.%Y')
+    dayto = today.day if today.day > 1 else 1
+    dateto = datetime.date(year, month, dayto).strftime('%d.%m.%Y')
+    context = {
+        'form': form,
+        'datefrom': datefrom,
+        'dateto': dateto,
+        'clients': marks,
+    }
+    return render(request, 'statsapp/auction.html', context)
+
+
 def photo_folders(request):
     get_photo_folders()
     return redirect('home')
@@ -197,6 +238,11 @@ def configurations(request):
 
 def autoru_catalog(request):
     update_autoru_catalog()
+    return redirect('home')
+
+
+def autoru_regions(request):
+    update_autoru_regions()
     return redirect('home')
 
 

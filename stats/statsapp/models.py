@@ -175,8 +175,8 @@ class Complectations(BaseModel):
 
 class ModificationCodes(BaseModel):
     code = models.CharField(max_length=500, verbose_name='Код')
-    modification = models.ForeignKey('Modifications', on_delete=models.CASCADE, verbose_name='Модификация')
-    complectation = models.ForeignKey('Complectations', on_delete=models.CASCADE, verbose_name='Комплектация')
+    modification = models.ForeignKey('Modifications', on_delete=models.PROTECT, verbose_name='Модификация')
+    complectation = models.ForeignKey('Complectations', on_delete=models.PROTECT, verbose_name='Комплектация')
 
     def __str__(self):
         return self.modificaiton.short_name
@@ -367,7 +367,7 @@ class ConverterTask(BaseModel):
     interior = models.IntegerField(default=10, verbose_name='Фото интерьеров', blank=True, null=True)
     salon_only = models.BooleanField(verbose_name='Только фото салона', default=False)
     template = models.URLField(verbose_name='Шаблон')
-    stock_fields = models.ForeignKey(to='StockFields', on_delete=models.CASCADE, verbose_name='Поля стока')
+    stock_fields = models.ForeignKey(to='StockFields', on_delete=models.PROTECT, verbose_name='Поля стока')
     configuration = models.ForeignKey(to='Configuration', on_delete=models.SET_NULL, blank=True, null=True,
                                       verbose_name='Конфигурация')
 
@@ -417,7 +417,7 @@ class ConverterFilters(BaseModel):
     ]
     value_help_text = 'Для фильтрации по нескольким значениям пиши каждое между `` и разделяй запятыми. Например: `E (W/S213)`, `CLS (C257)`'
 
-    converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.CASCADE)
+    converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.PROTECT)
     field = models.CharField(max_length=500, verbose_name='Поле')
     condition = models.CharField(max_length=500, choices=CONDITION_CHOICES, verbose_name='Условие')
     value = models.CharField(max_length=500, help_text=value_help_text, verbose_name='Значение')
@@ -438,10 +438,10 @@ class ConverterExtraProcessing(BaseModel):
         ('Прайс', 'Прайс')
     ]
 
-    converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.CASCADE)
+    converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.PROTECT)
     source = models.CharField(max_length=500, choices=SOURCE_CHOICES, verbose_name='Источник')
     price_column_to_change = models.CharField(max_length=500, verbose_name='Столбец прайса в котором менять')
-    new_value = models.CharField(max_length=500, verbose_name='Новое значение')
+    new_value = models.CharField(max_length=5000, verbose_name='Новое значение')
 
     def __str__(self):
         return f'{self.converter_task.name} {self.source} -> {self.price_column_to_change} {self.new_value}'
@@ -452,7 +452,7 @@ class ConverterExtraProcessing(BaseModel):
 
 
 class Conditionals(BaseModel):
-    converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.CASCADE)
+    converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.PROTECT)
     field = models.CharField(max_length=500, help_text=StockFields.multi_tags_help, verbose_name='Поле')
     condition = models.CharField(max_length=500, choices=ConverterFilters.CONDITION_CHOICES, verbose_name='Условие')
     value = models.CharField(max_length=500, help_text=ConverterFilters.value_help_text, verbose_name='Значение')
@@ -491,3 +491,34 @@ class AutoruCatalog(BaseModel):
     class Meta:
         verbose_name = 'Авто.ру Каталог'
         verbose_name_plural = 'Авто.ру Каталог'
+
+
+class AutoruRegions(BaseModel):
+    autoru_region_id = models.IntegerField(verbose_name='Авто.ру регион id')
+    name = models.CharField(max_length=500, verbose_name='Название региона')
+    path = models.CharField(max_length=500)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Авто.ру Регион'
+        verbose_name_plural = 'Авто.ру Регионы'
+
+
+class AutoruAuctionHistory(BaseModel):
+    datetime = models.DateTimeField(verbose_name='Дата и время')
+    autoru_region = models.CharField(max_length=500, verbose_name='Регион')
+    mark = models.ForeignKey('Marks', on_delete=models.PROTECT)
+    model = models.ForeignKey('Models', on_delete=models.PROTECT)
+    position = models.IntegerField(verbose_name='Позиция')
+    bid = models.IntegerField(verbose_name='Ставка')
+    competitors = models.IntegerField(verbose_name='Количество конкурентов с этой ставкой')
+    client = models.ForeignKey('Clients', null=True, blank=True, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return f'{self.datetime} | {self.autoru_region} | {self.mark.mark} | {self.model.model} | {self.position} | {self.bid}'
+
+    class Meta:
+        verbose_name = 'Авто.ру История Аукциона'
+        verbose_name_plural = 'Авто.ру История Аукциона'

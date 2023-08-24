@@ -9,9 +9,11 @@ urlpatterns = [
     path('', home, name='home'),
     # re_path(r'^stats/autoru_products/get(?P<from_>)(?P<to>)(?P<client>)$', autoru_products, name='get_autoru_products'),
     path('converter', ConverterManual.as_view(), name='converter_manual'),
+    path('auction', auction, name='auction'),
     # TODO добавь ссылки ниже на страницу converter
     path('converter/photo_folders/get', photo_folders, name='get_photo_folders'),
     path('converter/configurations/get', configurations, name='get_configurations'),
     path('autoru_catalog', autoru_catalog, name='autoru_catalog'),
+    path('autoru_regions', autoru_regions, name='autoru_regions'),
     path('api/get_models_for_mark/<int:mark_id>/', get_models_for_mark, name='get_models_for_mark'),
 ]

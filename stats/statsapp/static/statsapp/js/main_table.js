@@ -117,19 +117,19 @@ document.querySelectorAll('details').forEach((el) => {
   new Accordion(el);
 });
 
-// Чекбокс выбрать всех клиентов
-function toggle(source) {
-    var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+// Чекбокс выбрать все чекбоксы
+function toggle(source, checkboxName) {
+    var checkboxes = document.querySelectorAll('input[name="' + checkboxName + '"]');
     for (var i = 0; i < checkboxes.length; i++) {
         if (checkboxes[i] != source)
             checkboxes[i].checked = source.checked;
     }
 }
-// Отмечает тех клиентов которые были ранее выбраны
-function selected_clients(clients) {
-    checkboxes = document.getElementsByName('client_checkbox');
-    for(var i=0, n=checkboxes.length; i<n; i++) {
-        if (clients.includes(checkboxes[i].value)) {
+// Отмечает те чекбоксы которые были ранее выбраны
+function selected_checkboxes(elements, checkboxName) {
+    checkboxes = document.getElementsByName(checkboxName);
+    for(var i = 0, n = checkboxes.length; i < n; i++) {
+        if (elements.includes(checkboxes[i].value)) {
             checkboxes[i].checked = true;
         } else {
             checkboxes[i].checked = false;

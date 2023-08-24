@@ -1,10 +1,17 @@
 from datetime import datetime, timedelta
+import pandas as pd
 # Celery tasks
 from celery.app import task
 from celery import shared_task
+from django.db.models import Q
+from openpyxl.workbook import Workbook
 
 from stats.celery import app
-from statsapp.autoru import get_autoru_clients, get_autoru_products, get_autoru_daily, get_autoru_calls
+from statsapp.autoru import get_autoru_clients, get_autoru_products, get_autoru_daily, get_autoru_calls, \
+    get_auction_history, prepare_auction_history, auction_history_drop_unknown, add_auction_history
+from statsapp.export import export_calls_to_file
+from statsapp.email_sender import send_email_to_client
+from statsapp.models import Clients, TelephCalls
 from statsapp.teleph import get_teleph_clients, get_teleph_calls
 from statsapp.converter import get_converter_tasks, get_price
 
@@ -76,3 +83,25 @@ def converter_price():
     tasks = get_converter_tasks()
     for task in tasks:
         get_price(task)
+
+
+@shared_task
+def export_calls():
+    calls_file = export_calls_to_file()
+    send_email_to_client('evgen0nlin3@gmail.com', [calls_file])
+
+
+@shared_task
+def auction_history():
+    clients = Clients.objects.filter(Q(active=True) & Q(autoru_id__isnull=False))
+    # clients = Clients.objects.filter(id__in=[46, 48])
+    # clients = Clients.objects.filter(id__in=[1])
+    datetime_ = datetime.today()
+    responses = [get_auction_history(client) for client in clients]
+
+    dfs = [prepare_auction_history(data=response, datetime_=datetime_) for response in responses if response]
+    if dfs:
+        all_bids = pd.concat(dfs)
+        all_bids = auction_history_drop_unknown(all_bids)
+
+        add_auction_history(all_bids)

@@ -33,9 +33,9 @@ class MarksAdmin(admin.ModelAdmin):
 
 class ModelsAdmin(admin.ModelAdmin):
     list_display = ('id', marks_mark, 'model', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
-    list_display_links = ('id', 'model')
+    list_display_links = ('id', marks_mark, 'model')
     search_fields = ('model', 'human_name')
-    list_filter = ('model', 'human_name')
+    list_filter = ('mark', )
     fields = ('id', 'mark', 'model', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
     readonly_fields = ('id',)
     save_on_top = True

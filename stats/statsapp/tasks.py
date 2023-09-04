@@ -56,6 +56,10 @@ def autoru_calls(from_=None, to=None, clients=None):
         from_, to = last_30_days()
     elif not from_ or not to:  # Если одна дата не заполнена то выдать ошибку
         raise ValueError('Даты должны быть либо обе заполнены либо ни одной')
+    else:
+        date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+        from_ = datetime.strptime(from_, date_format)
+        to = datetime.strptime(to, date_format)
 
     if not clients:
         clients = get_autoru_clients()
@@ -88,7 +92,7 @@ def converter_price():
 @shared_task
 def export_calls():
     calls_file = export_calls_to_file()
-    send_email_to_client('evgen0nlin3@gmail.com', [calls_file])
+    # send_email_to_client('evgen0nlin3@gmail.com', [calls_file])
 
 
 @shared_task

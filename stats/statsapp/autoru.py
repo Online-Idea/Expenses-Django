@@ -247,8 +247,8 @@ def get_autoru_calls(from_, to, client_id):
     # https://yandex.ru/dev/autoru/doc/reference/calltracking.html
     # POST /calltracking
 
-    from_ = datetime.strptime(f'{from_}T00:00:00.000Z', '%Y-%m-%dT00:00:00.000Z')
-    to = datetime.strptime(f'{to}T23:59:59.000Z', '%Y-%m-%dT23:59:59.000Z')
+    # from_ = datetime.strptime(from_, '%Y-%m-%dT00:00:00.000Z')
+    # to = datetime.strptime(to, '%Y-%m-%dT23:59:59.000Z')
 
     delete_autoru_calls(from_, to, client_id)
 
@@ -494,7 +494,7 @@ def get_auction_history(client: Clients) -> Union[None, dict]:
     # TODO перепиши везде этот try на что-то получше
     try:
         if not auction_response or auction_response['status'] == 'error':  # Пропускаю клиента если доступ запрещён
-            print(f'Клиент {client} пропущен. Отказано в доступе')
+            print(f'Клиент {client} пропущен. Нет объявлений либо отказано в доступе')
             return
     except KeyError:
         for state in auction_response['states']:

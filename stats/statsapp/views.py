@@ -110,6 +110,9 @@ def home(request):
             elif client['charge_type'] == Clients.COMMISSION_SUM:
                 client['margin'] = client['profit'] = client['commission_size']
 
+        # Удаляю клиентов с пустыми данными
+        stats = list(filter(lambda x: not(sum([x['client_cost'], x['margin'], x['profit']]) == 0), stats))
+
         # Суммы столбцов
         subtotal = {
             'teleph_calls_sum': 0,
@@ -186,16 +189,23 @@ def auction(request):
         date_start = [int(i) for i in daterange[0].split('.')]
         date_end = [int(i) for i in daterange[2].split('.')]
         datefrom = datetime.datetime(date_start[2], date_start[1], date_start[0], 00, 00, 00, 629013)
-        dateto = datetime.datetime(date_end[2], date_end[1], date_end[0], 19, 59, 59, 629013)
+        dateto = datetime.datetime(date_end[2], date_end[1], date_end[0], 23, 59, 59, 629013)
         # Выбранные марки
         marks_checked = [m for m in request.POST.getlist('mark_checkbox')]
         # Выбранные регионы
         regions_checked = [r for r in request.POST.getlist('region_checkbox')]
-        auction_data = AutoruAuctionHistory.objects.select_related('mark', 'model', 'client').filter(
-            datetime__gte=datefrom,
-            datetime__lte=dateto,
-            mark_id__in=marks_checked,
-            autoru_region__in=regions_checked
+        # Данные истории аукциона
+        auction_data = (
+            AutoruAuctionHistory.objects.select_related(
+                "mark", "model", "client"
+            )
+            .filter(
+                datetime__gte=datefrom,
+                datetime__lte=dateto,
+                mark_id__in=marks_checked,
+                autoru_region__in=regions_checked,
+            )
+            .order_by("-datetime", "autoru_region", "mark", "model", "position")
         )
 
         context = {
@@ -214,13 +224,15 @@ def auction(request):
     today = datetime.date.today()
     year = today.year
     month = today.month
-    datefrom = datetime.date(year, month, 1).strftime('%d.%m.%Y')
-    dayto = today.day if today.day > 1 else 1
-    dateto = datetime.date(year, month, dayto).strftime('%d.%m.%Y')
+    # datefrom = datetime.date(year, month, 1).strftime('%d.%m.%Y')
+    # dayto = today.day if today.day > 1 else 1
+    # dateto = datetime.date(year, month, dayto).strftime('%d.%m.%Y')
     context = {
         'form': form,
-        'datefrom': datefrom,
-        'dateto': dateto,
+        # 'datefrom': datefrom,
+        # 'dateto': dateto,
+        'datefrom': today,
+        'dateto': today,
         'clients': marks,
     }
     return render(request, 'statsapp/auction.html', context)
@@ -249,4 +261,3 @@ def autoru_regions(request):
 def get_models_for_mark(request, mark_id):
     models = Models.objects.filter(mark_id=mark_id).values('id', 'mark', 'model')
     return JsonResponse(list(models), safe=False)
-

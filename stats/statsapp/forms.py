@@ -17,7 +17,7 @@ class ClientsChooseForm(forms.Form):
 class AuctionChooseForm(forms.Form):
     daterange = forms.CharField(max_length=255, label='Период')
     mark_checkbox = forms.ModelMultipleChoiceField(
-        queryset=Marks.objects.all(),
+        queryset=Marks.objects.filter(id__in=AutoruAuctionHistory.objects.values('mark').distinct()),
         widget=forms.CheckboxSelectMultiple(attrs={'checked': True}),
     )
     region_checkbox = forms.ModelMultipleChoiceField(

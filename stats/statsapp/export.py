@@ -4,6 +4,7 @@ from openpyxl.reader.excel import load_workbook
 from openpyxl.styles import Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
 
+from statsapp.converter import save_on_ftp
 from statsapp.models import TelephCalls
 
 
@@ -13,11 +14,18 @@ def export_calls_to_file() -> str:
     :return: имя файла
     """
     # РОЛЬФ клиенты которым это нужно
+    # rolf_clients = {
+    #     'Rolf_scoda_Center': 'РОЛЬФ Skoda Центр',
+    #     'Rolf_Jetta_Center': 'РОЛЬФ Jetta Центр',
+    #     'Rolf_moskvich_Himki': 'РОЛЬФ Москвич Химки',
+    #     'Rolf_moskvich_Center': 'РОЛЬФ Москвич Центр',
+    # }
     rolf_clients = {
-        'Rolf_scoda_Center': 'РОЛЬФ Skoda Центр',
-        'Rolf_Jetta_Center': 'РОЛЬФ Jetta Центр',
-        'Rolf_moskvich_Himki': 'РОЛЬФ Москвич Химки',
-        'Rolf_moskvich_Center': 'РОЛЬФ Москвич Центр',
+        'porsche_nevsky': 'Порше Невский',
+        'rolf_JLR_oct_spb': 'Рольф JLR Октябрьский СПБ',
+        'rolf_multibrand_oct_spb': 'Рольф Мультибренд спб',
+        'rolf_oktyabr_genesis_spb': 'Рольф Генезис СПБ',
+        'rolf_viteb_exeed_spb': 'Рольф EXEED Витебский',
     }
     # Звонки из базы
     calls = TelephCalls.objects.filter(client__teleph_id__in=rolf_clients.keys())\
@@ -48,8 +56,9 @@ def export_calls_to_file() -> str:
     })
 
     # Открываю xlsx
-    file_name = f'Звонки РОЛЬФ.xlsx'
-    book = load_workbook(file_name)
+    file_name = f'Расходы РОЛЬФ.xlsx'
+    file_path = f'temp/ROLF_stats/{file_name}'
+    book = load_workbook(file_path)
     calls_sheet = book['Звонки']
 
     # Удаляю прошлые и вставляю новые
@@ -78,7 +87,9 @@ def export_calls_to_file() -> str:
             calls_sheet.column_dimensions[column_letter].width = adjusted_width
 
     # Сохраняю
-    book.save(file_name)
+    book.save(file_path)
+
+    save_on_ftp(file_path)
 
     # Сохраняю в xlsx
     # with pd.ExcelWriter(file_name, engine='xlsxwriter') as writer:

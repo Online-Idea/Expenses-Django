@@ -64,22 +64,22 @@ $(function() {
 
 <script>
     $(document).ready(function() {
+        $.fn.dataTable.moment('DD.MM.YYYY HH:mm');
+
         $('#auctionTable').DataTable( {
             fixedHeader: {
                 header: true,
                 footer: true
             },
-            order: [[0, 'desc']],
             columnDefs: [
-              // { "visible": false, "targets": [0, 1, 2, 3] },
               { "visible": false, "targets": [0, 1] },
               { "width": "30%", "targets": 3 },
-              // { "width": "20%", "targets": 4 },
               { "width": "20%", "targets": 6 },
             ],
             rowGroup: {
               dataSrc: [0, 1]
             },
+			order: [[0, "desc"]],
             select: {
                 toggleable: true,
                 info: false
@@ -149,7 +149,6 @@ $(function() {
                         <th>Регион</th>
                         <th>Марка</th>
                         <th>Модель</th>
-                        <!-- <th></th> -->
                         <th>Позиция</th>
                         <th>Ставка</th>
                         <th>Имя клиента</th>
@@ -159,11 +158,10 @@ $(function() {
                 <tbody>
                 {% for row in auction_data %}
                     <tr>
-                        <td>{{ row.datetime }}</td>
+                        <td>{{ row.datetime|date:"d.m.Y H:i" }}</td>
                         <td>{{ row.autoru_region }}</td>
                         <td>{{ row.mark.mark }}</td>
                         <td>{{ row.model.model }}</td>
-                        <!-- <td>&nbsp;</td> -->
                         <td>{{ row.position }}</td>
                         <td>{{ row.bid }}</td>
                         <td>{{ row.client.name }}</td>

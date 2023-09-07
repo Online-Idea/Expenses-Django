@@ -240,6 +240,14 @@ class TelephCalls(BaseModel):
     call_price = models.FloatField(null=True, verbose_name='Стоимость')
     price_autoru = models.FloatField(null=True, verbose_name='Стоимость авто.ру')
     price_drom = models.FloatField(null=True, verbose_name='Стоимость drom')
+    call_status = models.CharField(max_length=1000, null=True, verbose_name='Статус звонка')
+    price_of_car = models.IntegerField(null=True, verbose_name='Цена автомобиля')
+    color = models.CharField(max_length=500, null=True, verbose_name='Цвет')
+    body = models.CharField(max_length=500, null=True, verbose_name='Кузов')
+    drive_unit = models.CharField(max_length=500, null=True, verbose_name='Привод')
+    engine = models.CharField(max_length=500, null=True, verbose_name='Двигатель')
+    equipment = models.CharField(max_length=500, null=True, verbose_name='Комплектация')
+    comment = models.CharField(max_length=1000, null=True, verbose_name='Остальные комментарии')
 
     def __str__(self):
         return f'{self.client} | {self.num_from} | {self.datetime}'

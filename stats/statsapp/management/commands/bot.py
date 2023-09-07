@@ -1,18 +1,18 @@
 from django.core.management.base import BaseCommand
 from stats.settings import env
+import threading
 from telebot import TeleBot
 from statsapp.models import ConverterLogsBotData
 
-# Объявление переменной бота
+# Объявление переменной бота для конвертера
 bot = TeleBot(env('CONVERTER_LOGS_TOKEN'), threaded=False)
 
 
 class Command(BaseCommand):
-    # Используется как описание команды обычно
-    help = 'Implemented to Django application telegram bot setup command'
+    help = 'Телеграм бот для Автоконвертера'
 
     def handle(self, *args, **kwargs):
-        print('Бот запущен')
+        print('Бот Конвертера запущен')
         bot.enable_save_next_step_handlers(delay=2)  # Сохранение обработчиков
         bot.load_next_step_handlers()  # Загрузка обработчиков
         bot.infinity_polling()  # Бесконечный цикл бота
@@ -20,7 +20,10 @@ class Command(BaseCommand):
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
-    msg = 'Этот бот для логов конвертера.\nПосле того как ты подпишешься на него через /start или /subscribe бот начнёт присылать тебе логи и прайс.\n\nЛоги есть в текстовом варианте - чтобы ты мог их посмотреть не открывая файл.\nИ в файле - с него удобно добавлять нерасшифрованные коды.\n\nПрайс уже в csv - можешь сразу грузить в базу.\n\nЧтобы отписаться: /unsubscribe'
+    msg = 'Этот бот для логов конвертера.\nПосле того как ты подпишешься на него через /start или /subscribe бот ' \
+          'начнёт присылать тебе логи и прайс.\n\nЛоги есть в текстовом варианте - чтобы ты мог их посмотреть не ' \
+          'открывая файл.\nИ в файле - с него удобно добавлять нерасшифрованные коды.\n\nПрайс уже в csv - можешь ' \
+          'сразу грузить в базу.\n\nЧтобы отписаться: /unsubscribe'
     bot.send_message(message.chat.id, msg)
 
 
@@ -53,3 +56,4 @@ def unsubscribe(message):
 # def echo_message(message):
 #     print(message.chat.id)
 #     bot.reply_to(message, message.text)
+

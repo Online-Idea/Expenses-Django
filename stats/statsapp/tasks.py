@@ -9,17 +9,12 @@ from openpyxl.workbook import Workbook
 from stats.celery import app
 from statsapp.autoru import get_autoru_clients, get_autoru_products, get_autoru_daily, get_autoru_calls, \
     get_auction_history, prepare_auction_history, auction_history_drop_unknown, add_auction_history
-from statsapp.export import export_calls_to_file
+from statsapp.export import export_calls_to_file, export_calls_for_callback
 from statsapp.email_sender import send_email_to_client
 from statsapp.models import Clients, TelephCalls
 from statsapp.teleph import get_teleph_clients, get_teleph_calls
 from statsapp.converter import get_converter_tasks, get_price
-
-
-def last_30_days():
-    minus_30 = (datetime.now() - timedelta(days=31)).replace(hour=0, minute=0)
-    yesterday = (datetime.now() - timedelta(days=1)).replace(hour=23, minute=59)
-    return minus_30, yesterday
+from statsapp.utils import last_30_days
 
 
 @shared_task
@@ -94,6 +89,10 @@ def export_calls():
     calls_file = export_calls_to_file()
     # send_email_to_client('evgen0nlin3@gmail.com', [calls_file])
 
+
+@shared_task
+def export_callback():
+    export_calls_for_callback()
 
 @shared_task
 def auction_history():

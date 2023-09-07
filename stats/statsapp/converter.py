@@ -208,7 +208,19 @@ def template_xml(stock_path, template_path, task):
             sheet.delete_rows(row)
 
     workbook.save(filename=template_path)
-    return pd.read_excel(template_path, decimal=',')
+
+    # Чтобы pandas не менял колонки со значением true или false на bool, оставлял как str
+    # - тогда обработки прайса (ConverterExtraProcessing) будут верно срабатывать
+    template_df = pd.read_excel(template_path, decimal=',')
+    bool_cols_as_str = {}
+    for col in template_df.columns:
+        unique_values = set(x.strip().lower() for x in template_df[col].dropna().unique().astype(str))
+        if unique_values.issubset({'true', 'false'}):
+            bool_cols_as_str[col] = 'str'
+
+    template_df = pd.read_excel(template_path, decimal=',', dtype=bool_cols_as_str)
+
+    return template_df
 
 
 def avilon_photos(field: str, element: ET.Element) -> str:
@@ -340,6 +352,20 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
     else:
         return 'Неверный формат файла, должен быть xlsx или csv'
 
+    # Чтобы pandas не менял колонки со значением true или false на bool, оставлял как str
+    # - тогда обработки прайса (ConverterExtraProcessing) будут верно срабатывать
+    bool_cols_as_str = {}
+    for col in df_stock.columns:
+        unique_values = set(x.strip().lower() for x in df_stock[col].dropna().unique().astype(str))
+        if unique_values.issubset({'true', 'false'}):
+            bool_cols_as_str[col] = 'str'
+
+    if filetype == 'xlsx':
+        df_stock = pd.read_excel(stock_path, decimal=',', dtype=bool_cols_as_str)
+    elif filetype == 'csv':
+        encoding = task.stock_fields.encoding
+        df_stock = pd.read_csv(stock_path, decimal=',', sep=';', header=0, encoding=encoding, dtype=bool_cols_as_str)
+
     # Проверяю если сток это наш прайс. На случай если прайс готов и нужно только фото подставить
     # Если первые 4 столбца совпадают с our_price_first_4_cols И Исходный VIN в столбцах
     our_price_first_4_cols = ['Марка', 'Модель', 'Комплектация', 'Авто.ру Комплектация']
@@ -470,7 +496,6 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
 
         # Для каждого условия в изменении
         for cond in conditionals:
-
             if change.source == 'Сток':
                 cond.field += '_template'
 
@@ -492,6 +517,12 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
                     or_masks.append(~df[cond.field].str.contains(value))
                 elif cond.condition == ConverterFilters.EQUALS:
                     or_masks.append(df[cond.field] == value)
+                    if change.price_column_to_change == 'Цена с НДС':
+                        print(f'{change=}')
+                        print(f'{cond=}')
+                        print(df['with_nds_template'])
+                        print(df['Цена с НДС'])
+                        print(f'on EQUALS {or_masks=}')
                 elif cond.condition == ConverterFilters.NOT_EQUALS:
                     or_masks.append(df[cond.field] != value)
                 elif cond.condition == ConverterFilters.GREATER_THAN:

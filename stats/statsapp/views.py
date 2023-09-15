@@ -1,3 +1,4 @@
+import pandas as pd
 from django.contrib.messages.views import SuccessMessageMixin
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
@@ -9,6 +10,8 @@ from django.contrib import messages
 
 import datetime
 import calendar
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
 
 from .models import *
 from .forms import *
@@ -111,7 +114,7 @@ def home(request):
                 client['margin'] = client['profit'] = client['commission_size']
 
         # Удаляю клиентов с пустыми данными
-        stats = list(filter(lambda x: not(sum([x['client_cost'], x['margin'], x['profit']]) == 0), stats))
+        stats = list(filter(lambda x: not (sum([x['client_cost'], x['margin'], x['profit']]) == 0), stats))
 
         # Суммы столбцов
         subtotal = {
@@ -211,10 +214,44 @@ def auction(request):
         context = {
             'form': form,
             'marks_checked': marks_checked,
+            'regions_checked': regions_checked,
             'datefrom': date_start,
             'dateto': date_end,
             'auction_data': auction_data,
         }
+
+        # График plotly, только по одной марке и одному региону
+        if len(marks_checked) == 1 and len(regions_checked) == 1 and auction_data:
+            auction_data_values = list(
+                auction_data.values("datetime", "autoru_region", "mark__mark", "model__model", "position", "bid",
+                                    "competitors", "client__name"))
+
+            df = pd.DataFrame.from_records(auction_data_values)
+
+            df = df.rename(columns={"mark__mark": "mark", "model__model": "model", "client__name": "client"})
+
+            # Только первая позиция
+            df = df[df['position'] == 1]
+
+            uniq_models = df['model'].unique()
+
+            fig = make_subplots(rows=len(uniq_models), cols=1, subplot_titles=uniq_models)
+
+            for i, model in enumerate(uniq_models):
+                data = df[df['model'] == model]
+                fig.add_trace(
+                    go.Scatter(x=data['datetime'], y=data['bid']),
+                    row=i + 1, col=1
+                )
+            fig_title = f'{df["autoru_region"][0]}<br>{df["mark"][0]}'
+            fig.update_layout(title_text=fig_title, showlegend=False,
+                              height=len(uniq_models) * 200, margin={'t': 130, 'b': 130})
+            fig.update_yaxes(tickformat=',.0f')
+
+            # Generate the HTML code for the plot
+            plot_html = fig.to_html(full_html=False)
+            context['plot_html'] = plot_html
+
         return render(request, 'statsapp/auction.html', context)
 
     else:

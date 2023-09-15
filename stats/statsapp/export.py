@@ -3,6 +3,7 @@ import shutil
 from datetime import datetime, timedelta
 from io import BytesIO
 
+import numpy as np
 import openpyxl
 import pandas as pd
 import re
@@ -45,7 +46,7 @@ def export_calls_to_file() -> str:
     df['month_year'] = df['datetime'].dt.strftime('%m.%Y')
     df['datetime'] = df['datetime'].dt.strftime('%Y.%m.%d %H:%M:%S')
     df['moderation'] = df['moderation'].replace({'М': 'Авто.ру', 'М(Б)': 'Авто.ру', 'М(З)': 'Авто.ру',
-                                                 'Доп.ресурсы': 'Дром'})
+                                                 'Доп.ресурсы': 'Дром', np.nan: 'Дром'})
     df['client_id'] = df['client_id'].replace(rolf_clients)
 
     # Оставляю нужные столбцы
@@ -124,6 +125,7 @@ def export_calls_to_file() -> str:
 
 def export_calls_for_callback():
     from_, to = last_30_days()
+    minus_3_days = to.date() - timedelta(days=3)
     calls = TelephCalls.objects.filter(datetime__gte=from_, datetime__lte=to) \
         .values('client__name', 'datetime', 'num_from', 'target', 'call_status', 'comment')
     statuses = [
@@ -138,6 +140,8 @@ def export_calls_for_callback():
     df['phone_from_comment'] = df['comment'].str.extract(r'\+(\d{11})')
     df['num_from'] = df.apply(lambda x: x['phone_from_comment'] if pd.notnull(x['phone_from_comment']) else x['num_from'], axis=1)
     df['date'] = df['datetime'].dt.date
+    # Только мобильные. Мобильными считаю тех кто начинается на 79
+    df = df[df['num_from'].astype(str).str.startswith('79')]
 
     calls_to_callback = {}
     unique_clients = df['client__name'].unique()
@@ -145,10 +149,10 @@ def export_calls_for_callback():
         client_df = df[df['client__name'] == client]
 
         # Номера за прошедший день с нужными статусами
-        statuses_df = client_df[(client_df['call_status'].isin(statuses)) & (client_df['date'] == to.date())]
+        statuses_df = client_df[(client_df['call_status'].str.contains('|'.join(statuses))) &
+                                (client_df['date'] == to.date())]
 
         unique_phones = statuses_df['num_from'].unique()
-        minus_3_days = to.date() - timedelta(days=3)
         for phone in unique_phones:
             phone_df = client_df[client_df['num_from'] == phone]
             # Если по этому телефону не было целевых
@@ -176,7 +180,10 @@ def export_calls_for_callback():
     virtual_workbook = BytesIO()
     wb.save(virtual_workbook)
     virtual_workbook.seek(0)
-    online_idea_bot.send_document('289346624', ('test.xlsx', virtual_workbook))
+    yesterday_fmt = to.strftime('%d.%m.%Y')
+    online_idea_bot.send_document('-1001839691903', (f'Перезвон {yesterday_fmt}.xlsx', virtual_workbook))  # Этот chat.id из группы прозвона
+    # online_idea_bot.send_document('289346624', (f'Перезвон {yesterday_fmt}.xlsx', virtual_workbook))  # Это мой чат с ботом
+    # online_idea_bot.send_message('-1001839691903', 'test')
 
     return wb
 

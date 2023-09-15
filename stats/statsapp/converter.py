@@ -517,12 +517,6 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
                     or_masks.append(~df[cond.field].str.contains(value))
                 elif cond.condition == ConverterFilters.EQUALS:
                     or_masks.append(df[cond.field] == value)
-                    if change.price_column_to_change == 'Цена с НДС':
-                        print(f'{change=}')
-                        print(f'{cond=}')
-                        print(df['with_nds_template'])
-                        print(df['Цена с НДС'])
-                        print(f'on EQUALS {or_masks=}')
                 elif cond.condition == ConverterFilters.NOT_EQUALS:
                     or_masks.append(df[cond.field] != value)
                 elif cond.condition == ConverterFilters.GREATER_THAN:

@@ -23,3 +23,9 @@ def send_message_to_users(message):
     print(f'LOOK HERE {user_id=}')
     text_message = 'This is a test message'  # Message you want to send
     online_idea_bot.send_message(user_id, text_message)
+
+
+@online_idea_bot.message_handler(commands=['chatid'])
+def send_chat_id(message):
+    online_idea_bot.reply_to(message, message.chat.id)
+

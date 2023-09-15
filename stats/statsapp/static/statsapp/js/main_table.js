@@ -127,7 +127,7 @@ function toggle(source, checkboxName) {
 }
 // Отмечает те чекбоксы которые были ранее выбраны
 function selected_checkboxes(elements, checkboxName) {
-    checkboxes = document.getElementsByName(checkboxName);
+    var checkboxes = document.getElementsByName(checkboxName);
     for(var i = 0, n = checkboxes.length; i < n; i++) {
         if (elements.includes(checkboxes[i].value)) {
             checkboxes[i].checked = true;
@@ -135,6 +135,8 @@ function selected_checkboxes(elements, checkboxName) {
             checkboxes[i].checked = false;
         }
     }
+    var selectAll = checkboxes[0].parentElement.parentElement.parentElement.parentElement.querySelector('.selectAll');
+    selectAll.checked = false;
 }
 
 /*---------------------------------------------------*/

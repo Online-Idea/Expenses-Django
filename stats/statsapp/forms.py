@@ -8,6 +8,8 @@ from .models import *
 
 class ClientsChooseForm(forms.Form):
     daterange = forms.CharField(max_length=255, label='Период')
+    select_all_clients = forms.ChoiceField(required=False,
+                                           widget=forms.CheckboxInput(attrs={'checked': True, 'class': 'selectAll'}))
     client_checkbox = forms.ModelMultipleChoiceField(
         queryset=Clients.objects.filter(active=True),
         widget=forms.CheckboxSelectMultiple(attrs={'checked': True}),
@@ -16,10 +18,14 @@ class ClientsChooseForm(forms.Form):
 
 class AuctionChooseForm(forms.Form):
     daterange = forms.CharField(max_length=255, label='Период')
+    select_all_marks = forms.ChoiceField(required=False,
+                                         widget=forms.CheckboxInput(attrs={'checked': True, 'class': 'selectAll'}))
     mark_checkbox = forms.ModelMultipleChoiceField(
         queryset=Marks.objects.filter(id__in=AutoruAuctionHistory.objects.values('mark').distinct()),
         widget=forms.CheckboxSelectMultiple(attrs={'checked': True}),
     )
+    select_all_regions = forms.ChoiceField(required=False,
+                                           widget=forms.CheckboxInput(attrs={'checked': True, 'class': 'selectAll'}))
     region_checkbox = forms.ModelMultipleChoiceField(
         queryset=AutoruAuctionHistory.objects.order_by('autoru_region').values_list('autoru_region', flat=True).distinct(),
         widget=forms.CheckboxSelectMultiple(attrs={'checked': True})

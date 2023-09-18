@@ -14,7 +14,7 @@ from openpyxl.workbook.protection import WorkbookProtection
 from statsapp.converter import save_on_ftp
 from statsapp.management.commands.online_idea_bot import online_idea_bot
 from statsapp.models import TelephCalls
-from statsapp.utils import last_30_days
+from statsapp.utils import last_30_days, xlsx_column_width
 
 
 def export_calls_to_file() -> str:
@@ -76,25 +76,31 @@ def export_calls_to_file() -> str:
     for row in dataframe_to_rows(df, index=False, header=True):
         calls_sheet.append(row)
 
-    # Меняю ширину столбцов
-    for column in calls_sheet.columns:
-        max_length = 0
-        column_letter = column[0].column_letter
-        column_name = column[0].value
+    custom_width = {
+        'Площадка': 15,
+        'Стоимость звонка': 15,
+    }
+    calls_sheet = xlsx_column_width(calls_sheet, custom_width)
 
-        if column_name in ['Площадка', 'Стоимость звонка']:
-            calls_sheet.column_dimensions[column_letter].width = 15
-        else:
-            for cell in column:
-                if cell.row == 1:
-                    continue
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = (max_length + 4)
-            calls_sheet.column_dimensions[column_letter].width = adjusted_width
+    # # Меняю ширину столбцов
+    # for column in calls_sheet.columns:
+    #     max_length = 0
+    #     column_letter = column[0].column_letter
+    #     column_name = column[0].value
+    #
+    #     if column_name in ['Площадка', 'Стоимость звонка']:
+    #         calls_sheet.column_dimensions[column_letter].width = 15
+    #     else:
+    #         for cell in column:
+    #             if cell.row == 1:
+    #                 continue
+    #             try:
+    #                 if len(str(cell.value)) > max_length:
+    #                     max_length = len(str(cell.value))
+    #             except:
+    #                 pass
+    #         adjusted_width = (max_length + 4)
+    #         calls_sheet.column_dimensions[column_letter].width = adjusted_width
 
     # Сохраняю
     book.save(f'{file_path}{file_name}')

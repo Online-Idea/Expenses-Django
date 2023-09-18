@@ -79,7 +79,7 @@ $(function() {
             rowGroup: {
               dataSrc: [0, 1]
             },
-			order: [[0, "desc"]],
+			  order: [[0, "desc"]],
             select: {
                 toggleable: true,
                 info: false
@@ -89,7 +89,19 @@ $(function() {
             language: {
                 url: '{% static 'statsapp/js/datatables-ru.json' %}'
             }
-        } );
+        });
+
+
+        <!--Чекбосы Выбрать все для марок и регионов-->
+        $('#id_select_all_marks').click(function() {
+          $('input[type=checkbox][name=mark_checkbox]').prop('checked', $(this).prop('checked'));
+        });
+
+        $('#id_select_all_regions').click(function() {
+          $('input[type=checkbox][name=region_checkbox]').prop('checked', $(this).prop('checked'));
+        });
+
+
     } );
 
 </script>
@@ -107,36 +119,30 @@ $(function() {
                 {% csrf_token %}
                 {{ form.daterange }}
                 <button type="submit" class="btn btn-primary">Показать</button>
+                <button type="submit" class="btn btn-primary" formaction="{% url 'download_auction' %}">Скачать</button>
+
 
                 <!-- Список марок -->
                 <details>
-                    <!-- Отмечает ранее выбранные марки -->
-                    {% if marks_checked %}
-                        <summary onclick="selected_checkboxes({{ marks_checked }}, 'mark_checkbox' )">Марки</summary>
-                    {% else %}
-                        <summary>Марки</summary>
-                    {% endif %}
+                    <summary>Марки</summary>
                     <div class="content">
-                        <ul>
-                            <li><label><input class="selectAll" type="checkbox" onclick="toggle(this, 'mark_checkbox')" checked/> Выбрать все</label></li>
-                            {{ form.mark_checkbox }}
-                        </ul>
+                        <label for="id_select_all_marks">
+                            {{ form.select_all_marks }}
+                            Выбрать все
+                        </label>
+                        {{ form.mark_checkbox }}
                     </div>
                 </details>
 
                 <!-- Список регионов -->
                 <details>
-                    <!-- Отмечает ранее выбранные регионы -->
-                    {% if regions_checked %}
-                        <summary onclick="selected_checkboxes({{ regions_checked }}, 'region_checkbox' )">Регионы</summary>
-                    {% else %}
-                        <summary>Регионы</summary>
-                    {% endif %}
+                    <summary>Регионы</summary>
                     <div class="content">
-                        <ul>
-                            <li><label><input class="selectAll" type="checkbox" onclick="toggle(this, 'region_checkbox')" checked/> Выбрать все</label></li>
-                            {{ form.region_checkbox }}
-                        </ul>
+                        <label for="id_select_all_regions">
+                            {{ form.select_all_regions }}
+                            Выбрать все
+                        </label>
+                        {{ form.region_checkbox }}
                     </div>
                 </details>
             </form>
@@ -196,10 +202,11 @@ $(function() {
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         {% if marks_checked %}
-            selected_checkboxes('{{ marks_checked }}', 'mark_checkbox');
+            selected_checkboxes({{ marks_checked|safe }}, 'mark_checkbox', 'select_all_marks');
         {% endif %}
+
         {% if regions_checked %}
-            selected_checkboxes('{{ regions_checked }}', 'region_checkbox');
+            selected_checkboxes({{ regions_checked|safe }}, 'region_checkbox', 'select_all_regions');
         {% endif %}
     });
 </script>

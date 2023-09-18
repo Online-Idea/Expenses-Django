@@ -1,6 +1,8 @@
+import urllib.parse
+
 import pandas as pd
 from django.contrib.messages.views import SuccessMessageMixin
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.utils.html import format_html
@@ -17,6 +19,7 @@ from .models import *
 from .forms import *
 from .converter import *
 from .autoru import get_autoru_products, autoru_authenticate, update_autoru_catalog, update_autoru_regions
+from .utils import xlsx_column_width
 
 
 def home(request):
@@ -142,7 +145,7 @@ def home(request):
 
         context = {
             'form': form,
-            'clients_checked': clients_checked,
+            'clients_checked': json.dumps(clients_checked),
             'datefrom': date_start,
             'dateto': date_end,
             'stats': stats,
@@ -183,48 +186,59 @@ class ConverterManual(SuccessMessageMixin, FormView):
         return super().form_valid(form)
 
 
+def get_auction_data(request):
+    """
+    Возвращает данные истории аукциона по форме с сайта.
+    Вынес это отдельно чтобы использовать для разных кнопок
+    :param request:
+    :return: context с данными формы и с Django QuerySet с историей аукциона
+    """
+    form = AuctionChooseForm(request.POST)
+
+    daterange = form['daterange'].value().split(' ')
+    # Разбиваю дату на день, месяц, год
+    date_start = [int(i) for i in daterange[0].split('.')]
+    date_end = [int(i) for i in daterange[2].split('.')]
+    datefrom = datetime.datetime(date_start[2], date_start[1], date_start[0], 00, 00, 00, 629013)
+    dateto = datetime.datetime(date_end[2], date_end[1], date_end[0], 23, 59, 59, 629013)
+    # Выбранные марки
+    marks_checked = [m for m in request.POST.getlist('mark_checkbox')]
+    # Выбранные регионы
+    regions_checked = [r for r in request.POST.getlist('region_checkbox')]
+    # Данные истории аукциона
+    auction_data = (
+        AutoruAuctionHistory.objects.select_related(
+            "mark", "model", "client"
+        )
+        .filter(
+            datetime__gte=datefrom,
+            datetime__lte=dateto,
+            mark_id__in=marks_checked,
+            autoru_region__in=regions_checked,
+        )
+        .order_by("-datetime", "autoru_region", "mark", "model", "position")
+    )
+    context = {
+        'form': form,
+        'marks_checked': json.dumps(marks_checked),
+        'regions_checked': json.dumps(regions_checked),
+        'datefrom': date_start,
+        'dateto': date_end,
+        'auction_data': auction_data,
+    }
+    return context
+
+
 def auction(request):
     if request.method == 'POST':
-        form = AuctionChooseForm(request.POST)
 
-        daterange = form['daterange'].value().split(' ')
-        # Разбиваю дату на день, месяц, год
-        date_start = [int(i) for i in daterange[0].split('.')]
-        date_end = [int(i) for i in daterange[2].split('.')]
-        datefrom = datetime.datetime(date_start[2], date_start[1], date_start[0], 00, 00, 00, 629013)
-        dateto = datetime.datetime(date_end[2], date_end[1], date_end[0], 23, 59, 59, 629013)
-        # Выбранные марки
-        marks_checked = [m for m in request.POST.getlist('mark_checkbox')]
-        # Выбранные регионы
-        regions_checked = [r for r in request.POST.getlist('region_checkbox')]
-        # Данные истории аукциона
-        auction_data = (
-            AutoruAuctionHistory.objects.select_related(
-                "mark", "model", "client"
-            )
-            .filter(
-                datetime__gte=datefrom,
-                datetime__lte=dateto,
-                mark_id__in=marks_checked,
-                autoru_region__in=regions_checked,
-            )
-            .order_by("-datetime", "autoru_region", "mark", "model", "position")
-        )
-
-        context = {
-            'form': form,
-            'marks_checked': marks_checked,
-            'regions_checked': regions_checked,
-            'datefrom': date_start,
-            'dateto': date_end,
-            'auction_data': auction_data,
-        }
+        context = get_auction_data(request)
 
         # График plotly, только по одной марке и одному региону
-        if len(marks_checked) == 1 and len(regions_checked) == 1 and auction_data:
+        if len(context['marks_checked']) == 1 and len(context['regions_checked']) == 1 and context['auction_data']:
             auction_data_values = list(
-                auction_data.values("datetime", "autoru_region", "mark__mark", "model__model", "position", "bid",
-                                    "competitors", "client__name"))
+                context['auction_data'].values("datetime", "autoru_region", "mark__mark", "model__model", "position",
+                                               "bid", "competitors", "client__name"))
 
             df = pd.DataFrame.from_records(auction_data_values)
 
@@ -273,6 +287,35 @@ def auction(request):
         'clients': marks,
     }
     return render(request, 'statsapp/auction.html', context)
+
+
+def download_auction(request):
+    context = get_auction_data(request)
+
+    wb = Workbook()
+    ws = wb.active
+    headers = ['id', 'Дата и время', 'Регион', 'Марка', 'Модель', 'Позиция', 'Ставка', 'Имя клиента',
+               'Количество конкурентов']
+    ws.append(headers)
+    data = context['auction_data'].values_list('id', 'datetime', 'autoru_region', 'mark__mark', 'model__model',
+                                               'position', 'bid', 'client__name', 'competitors')
+    for row in data:
+        row = [dt.replace(tzinfo=None) if hasattr(dt, 'tzinfo') and dt.tzinfo else dt for dt in row]
+        ws.append(row)
+
+    ws = xlsx_column_width(ws)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    datefrom = datetime.date(*context['datefrom'][::-1]).strftime("%d.%m.%Y")
+    dateto = datetime.date(*context['dateto'][::-1]).strftime("%d.%m.%Y")
+    filename = f'Аукцион {datefrom}-{dateto}.xlsx'
+    filename = urllib.parse.quote(filename)
+    response['Content-Disposition'] = f'attachment; filename*=UTF-8\'\'{filename}'
+
+    wb.save(response)
+
+    return response
+
 
 
 def photo_folders(request):

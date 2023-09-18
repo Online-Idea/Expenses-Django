@@ -60,6 +60,8 @@ def autoru_errors(data):
 
 def autoru_authenticate(login, password):
     # Аутентификация пользователя
+    # https://yandex.ru/dev/autoru/doc/reference/auth-login.html
+    # POST /auth/login
     auth = '/auth/login'
     login_pass = {
         'login': login,

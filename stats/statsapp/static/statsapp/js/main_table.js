@@ -118,25 +118,29 @@ document.querySelectorAll('details').forEach((el) => {
 });
 
 // Чекбокс выбрать все чекбоксы
-function toggle(source, checkboxName) {
-    var checkboxes = document.querySelectorAll('input[name="' + checkboxName + '"]');
-    for (var i = 0; i < checkboxes.length; i++) {
-        if (checkboxes[i] != source)
-            checkboxes[i].checked = source.checked;
-    }
-}
+//function toggle(source, checkboxName) {
+//    var checkboxes = document.querySelectorAll('input[name="' + checkboxName + '"]');
+//    for (var i = 0; i < checkboxes.length; i++) {
+//        if (checkboxes[i] != source)
+//            checkboxes[i].checked = source.checked;
+//    }
+//}
 // Отмечает те чекбоксы которые были ранее выбраны
-function selected_checkboxes(elements, checkboxName) {
+function selected_checkboxes(elements, checkboxName, selectAllName) {
     var checkboxes = document.getElementsByName(checkboxName);
-    for(var i = 0, n = checkboxes.length; i < n; i++) {
-        if (elements.includes(checkboxes[i].value)) {
-            checkboxes[i].checked = true;
-        } else {
-            checkboxes[i].checked = false;
+    console.log(checkboxName, elements, elements.length, checkboxes, checkboxes.length);
+    if (elements.length != checkboxes.length) {
+        for(var i = 0, n = checkboxes.length; i < n; i++) {
+            if (elements.includes(checkboxes[i].value)) {
+                checkboxes[i].checked = true;
+            } else {
+                checkboxes[i].checked = false;
+            }
         }
+        var selectAll = $('input[type=checkbox][name=' + selectAllName + ']').prop('checked', false);
     }
-    var selectAll = checkboxes[0].parentElement.parentElement.parentElement.parentElement.querySelector('.selectAll');
-    selectAll.checked = false;
+//    var selectAll = checkboxes[0].parentElement.parentElement.parentElement.parentElement.querySelector('.selectAll');
+//    selectAll.checked = false;
 }
 
 /*---------------------------------------------------*/

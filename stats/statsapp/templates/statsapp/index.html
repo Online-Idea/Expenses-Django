@@ -76,6 +76,11 @@ $(function() {
                 url: '{% static 'statsapp/js/datatables-ru.json' %}'
             }
         } );
+
+        <!--Чекбокс Выбрать все для клиентов-->
+        $('#id_select_all_clients').click(function() {
+          $('input[type=checkbox][name=client_checkbox]').prop('checked', $(this).prop('checked'));
+        });
     } );
 </script>
 
@@ -95,18 +100,14 @@ $(function() {
                 <button type="submit" class="btn btn-primary">Показать</button>
                 <!--Список клиентов-->
                 <details>
-                  <!--Отмечает ранее выбранных клиентов-->
-                  {% if clients_checked %}
-                    <summary onclick="selected_checkboxes({{ clients_checked }}, 'client_checkbox' )">Клиенты</summary>
-                  {% else %}
                     <summary>Клиенты</summary>
-                  {% endif %}
-                  <div class="content">
-                      <ul>
-                          <li><label><input class="selectAll" type="checkbox" onclick="toggle(this, 'client_checkbox')" checked/> Выбрать все</label></li>
-                          {{ form.client_checkbox }}
-                      </ul>
-                  </div>
+                    <div class="content">
+                        <label for="id_select_all_clients">
+                            {{ form.select_all_clients }}
+                            Выбрать все
+                        </label>
+                        {{ form.client_checkbox }}
+                    </div>
                 </details>
             </form>
 
@@ -182,7 +183,7 @@ $(function() {
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         {% if clients_checked %}
-            selected_checkboxes('{{ clients_checked }}', 'client_checkbox');
+            selected_checkboxes({{ clients_checked|safe }}, 'client_checkbox', 'select_all_clients');
         {% endif %}
     });
 </script>

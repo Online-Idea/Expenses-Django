@@ -33,6 +33,7 @@ details {
   margin-top: 5px;
 }
 .content {
+  text-indent: 20px;
   border-top: none;
   padding: 10px;
   border: 1px solid grey;

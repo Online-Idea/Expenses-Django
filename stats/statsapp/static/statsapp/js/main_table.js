@@ -128,7 +128,6 @@ document.querySelectorAll('details').forEach((el) => {
 // Отмечает те чекбоксы которые были ранее выбраны
 function selected_checkboxes(elements, checkboxName, selectAllName) {
     var checkboxes = document.getElementsByName(checkboxName);
-    console.log(checkboxName, elements, elements.length, checkboxes, checkboxes.length);
     if (elements.length != checkboxes.length) {
         for(var i = 0, n = checkboxes.length; i < n; i++) {
             if (elements.includes(checkboxes[i].value)) {

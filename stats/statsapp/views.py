@@ -235,7 +235,9 @@ def auction(request):
         context = get_auction_data(request)
 
         # График plotly, только по одной марке и одному региону
-        if len(context['marks_checked']) == 1 and len(context['regions_checked']) == 1 and context['auction_data']:
+        if len(json.loads(context['marks_checked'])) == 1 \
+                and len(json.loads(context['regions_checked'])) == 1\
+                and context['auction_data']:
             auction_data_values = list(
                 context['auction_data'].values("datetime", "autoru_region", "mark__mark", "model__model", "position",
                                                "bid", "competitors", "client__name"))

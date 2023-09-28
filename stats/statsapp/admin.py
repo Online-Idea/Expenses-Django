@@ -25,7 +25,6 @@ class MarksAdmin(admin.ModelAdmin):
     list_display = ('id', 'mark', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
     list_display_links = ('id', 'mark')
     search_fields = ('mark', 'human_name')
-    list_filter = ('mark', 'human_name')
     fields = ('id', 'mark', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
     readonly_fields = ('id',)
     save_on_top = True
@@ -34,8 +33,8 @@ class MarksAdmin(admin.ModelAdmin):
 class ModelsAdmin(admin.ModelAdmin):
     list_display = ('id', marks_mark, 'model', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
     list_display_links = ('id', marks_mark, 'model')
+    # TODO добавить поиск по марке
     search_fields = ('model', 'human_name')
-    list_filter = ('mark', )
     fields = ('id', 'mark', 'model', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
     readonly_fields = ('id',)
     save_on_top = True

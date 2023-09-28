@@ -17,4 +17,6 @@ urlpatterns = [
     path('autoru_catalog', autoru_catalog, name='autoru_catalog'),
     path('autoru_regions', autoru_regions, name='autoru_regions'),
     path('api/get_models_for_mark/<int:mark_id>/', get_models_for_mark, name='get_models_for_mark'),
+    path('api/v1/clients/create', ClientsCreateAPIView.as_view(), name='clients_create'),
+    path('api/v1/autoru_parsed_ads/create', AutoruParsedAdsViewSet.as_view({'get': 'list'}), name='autoru_parsed_ads_create'),
 ]

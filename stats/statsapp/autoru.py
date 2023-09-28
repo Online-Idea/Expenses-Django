@@ -380,11 +380,38 @@ def update_autoru_catalog():
 
     root = ET.fromstring(xml_content)
 
+    # Мои Марки и Модели
+    my_marks = Marks.objects.all()
+    my_models = Models.objects.all()
+    # Добавляю к себе тех что нет
+    new_marks = []
+    for mark in root.iter('mark'):
+        mark_name = mark.get('name')
+        if not Marks.objects.filter(autoru=mark_name).exists():
+            new_marks.append(Marks(mark=mark_name, teleph=mark_name, autoru=mark_name, avito=mark_name,
+                                   drom=mark_name, human_name=mark_name))
+    Marks.objects.bulk_create(new_marks)
+    my_marks = Marks.objects.all()
+
+    new_models = []
+    for mark in root.iter('mark'):
+        mark_name = mark.get('name')
+        for folder in mark.iter('folder'):
+            folder_name = folder.get('name')
+            model_name = folder_name.split(',')[0]
+            if not Models.objects.filter(autoru=model_name).exists():
+                new_models.append(Models(mark=my_marks.filter(autoru=mark_name)[0], model=model_name, teleph=model_name,
+                                         autoru=model_name, avito=model_name, drom=model_name, human_name=model_name))
+    Models.objects.bulk_create(new_models)
+    my_models = Models.objects.all()
+
+    # Теперь работаю уже с каталогом авто.ру
     rows = []
     for mark in root.iter('mark'):
         mark_id = mark.get('id')
         mark_name = mark.get('name')
         mark_code = mark.find('code').text
+        my_mark_id = my_marks.filter(autoru=mark_name)[0]
 
         for folder in mark.iter('folder'):
             folder_id = folder.get('id')
@@ -392,6 +419,7 @@ def update_autoru_catalog():
             model_id = folder.find('model').get('id')
             model_name = folder_name.split(',')[0]
             model_code = folder.find('model').text
+            my_model_id = my_models.filter(autoru=model_name)[0]
             generation_id = folder.find('generation').get('id')
             try:
                 generation_name = folder_name.split(',')[1].strip()
@@ -432,6 +460,8 @@ def update_autoru_catalog():
                         years=years,
                         complectation_id=complectation_id,
                         complectation_name=complectation_name,
+                        my_mark_id=my_mark_id,
+                        my_model_id=my_model_id,
                     ))
 
     AutoruCatalog.objects.bulk_create(rows)
@@ -558,7 +588,8 @@ def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame,
 
     # Наша ставка
     current_bids = df[df['current_bid'] > 0]
-    current_bids = current_bids[['context.region_id', 'context.mark_name', 'context.model_name', 'current_bid', 'client']].drop_duplicates()
+    current_bids = current_bids[
+        ['context.region_id', 'context.mark_name', 'context.model_name', 'current_bid', 'client']].drop_duplicates()
     new_df = new_df.drop(columns='client')
     current_bids['competitors'] = 1
     current_bids['bid'] = current_bids['current_bid']
@@ -712,3 +743,23 @@ def add_auction_history(data: DataFrame):
     ) for index, row in data.iterrows()]
 
     AutoruAuctionHistory.objects.bulk_create(objs)
+
+
+def process_parsed_ads(df):
+    # По complectation_id я смотрю каталог авто.ру чтобы взять верные Марки и Модели
+    df['complectation_id'] = df['link'].apply(lambda x: x.split('/')[9])
+
+    # TODO возможно не values а по-другому, т.к. в базу мне нужны объекты.
+    # TODO но может я не прав и id достаточно
+    autoru_catalog = AutoruCatalog.objects.filter(comlectation_id__in=[df['complectation_id']]) \
+        .values('complectation_id', 'my_mark_id', 'my_model_id')
+    df_db = pd.DataFrame(autoru_catalog)
+    df_merged = pd.merge(df, df_db, on='complectation_id', how='left')
+
+    clients = Clients.objects.all().values('id', 'autoru_name')
+    df_db = pd.DataFrame(clients)
+    df_merged = pd.merge(df_merged, df_db, left_on='dealer', right_on='autoru_name', how='left')
+
+    df_merged = df_merged.rename(columns={'my_mark_id': 'mark', 'my_model_id': 'model'})
+
+    return df

@@ -1,4 +1,8 @@
 import json
+
+from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from slugify import slugify
@@ -31,6 +35,7 @@ class Clients(BaseModel):
     commission_size = models.FloatField(null=True, blank=True, verbose_name='Размер комиссии')
     teleph_id = models.CharField(max_length=255, null=True, blank=True, unique=True, verbose_name='Имя в телефонии')
     autoru_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авто.ру')
+    autoru_name = models.CharField(max_length=500, null=True, blank=True, verbose_name='Имя на авто.ру')
     avito_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авито')
     drom_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id drom')
 
@@ -445,11 +450,13 @@ class ConverterExtraProcessing(BaseModel):
         ('Сток', 'Сток'),
         ('Прайс', 'Прайс')
     ]
+    new_value_help = 'Если одно значение для всех то пиши его, если из другого столбца то пиши имя столбца' \
+                     'в формате: %col:"имя_столбца"'
 
     converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.PROTECT)
     source = models.CharField(max_length=500, choices=SOURCE_CHOICES, verbose_name='Источник')
     price_column_to_change = models.CharField(max_length=500, verbose_name='Столбец прайса в котором менять')
-    new_value = models.CharField(max_length=5000, verbose_name='Новое значение')
+    new_value = models.CharField(max_length=5000, help_text=new_value_help, verbose_name='Новое значение')
 
     def __str__(self):
         return f'{self.converter_task.name} {self.source} -> {self.price_column_to_change} {self.new_value}'
@@ -492,6 +499,8 @@ class AutoruCatalog(BaseModel):
     years = models.CharField(max_length=500, verbose_name='Года выпуска')
     complectation_id = models.IntegerField(blank=True, null=True, verbose_name='Комплектация id')
     complectation_name = models.CharField(max_length=500, blank=True, null=True, verbose_name='Комплектация имя')
+    my_mark_id = models.ForeignKey('Marks', on_delete=models.PROTECT)
+    my_model_id = models.ForeignKey('Models', on_delete=models.PROTECT)
 
     def __str__(self):
         return f'{self.mark_name} | {self.folder_name} | {self.modification_name} | {self.complectation_name}'
@@ -530,3 +539,31 @@ class AutoruAuctionHistory(BaseModel):
     class Meta:
         verbose_name = 'Авто.ру История Аукциона'
         verbose_name_plural = 'Авто.ру История Аукциона'
+
+
+class AutoruParsedAds(BaseModel):
+    mark = models.ForeignKey('Marks', on_delete=models.PROTECT)
+    model = models.ForeignKey('Models', on_delete=models.PROTECT)
+    complectation = models.CharField(null=True, blank=True, max_length=500, verbose_name='Комплектация')
+    modification = models.CharField(null=True, blank=True, max_length=500, verbose_name='Модификация')
+    year = models.IntegerField(verbose_name='Год')
+    dealer = models.CharField(max_length=500, verbose_name='Имя дилера')
+    client = models.ForeignKey('Clients', on_delete=models.PROTECT, null=True, blank=True)
+    price_with_discount = models.IntegerField(verbose_name='Цена со скидками')
+    price_no_discount = models.IntegerField(verbose_name='Цена без скидок')
+    with_nds = models.BooleanField(verbose_name='Цена с НДС')
+    position_actual = models.IntegerField(verbose_name='Позиция по актуальности')
+    position_total = models.IntegerField(verbose_name='Позиция общая')
+    link = models.CharField(max_length=1000, verbose_name='Ссылка')
+    condition = models.CharField(max_length=500, verbose_name='Состояние/пробег')
+    in_stock = models.CharField(max_length=500, verbose_name='Наличие')
+    services = models.CharField(max_length=500, verbose_name='Услуги')
+    tags = models.CharField(max_length=500, verbose_name='Стикеры')
+    photos = models.IntegerField(verbose_name='Количество фото')
+
+    def __str__(self):
+        return f'{self.mark} | {self.model} | {self.complectation} | {self.dealer}'
+
+    class Meta:
+        verbose_name = 'Спарсенное объявление авто.ру'
+        verbose_name_plural = 'Спарсенные объявления авто.ру'

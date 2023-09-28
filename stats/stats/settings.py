@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     'statsapp.apps.StatsappConfig',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

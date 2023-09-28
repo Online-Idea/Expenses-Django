@@ -7,6 +7,8 @@ import numpy as np
 import openpyxl
 import pandas as pd
 import re
+
+from django.db.models import Q
 from openpyxl.reader.excel import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.workbook.protection import WorkbookProtection
@@ -132,8 +134,9 @@ def export_calls_to_file() -> str:
 def export_calls_for_callback():
     from_, to = last_30_days()
     minus_3_days = to.date() - timedelta(days=3)
-    calls = TelephCalls.objects.filter(datetime__gte=from_, datetime__lte=to) \
+    calls = TelephCalls.objects.filter(~Q(client__teleph_id='Exeed_voronezh'), datetime__gte=from_, datetime__lte=to) \
         .values('client__name', 'datetime', 'num_from', 'target', 'call_status', 'comment')
+
     statuses = [
         'Сорвался',
         'Перевели, но Отдел продаж не взял трубку',

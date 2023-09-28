@@ -1,24 +1,21 @@
-import urllib.parse
-
-import pandas as pd
 from django.contrib.messages.views import SuccessMessageMixin
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
-from django.urls import reverse_lazy
 from django.utils.html import format_html
-from django.views.generic import ListView, FormView, DetailView
+from django.views.generic import FormView
 from django.db.models import *
-from django.contrib import messages
+from rest_framework import generics, viewsets, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-import datetime
-import calendar
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
+import urllib.parse
 
-from .models import *
 from .forms import *
 from .converter import *
-from .autoru import get_autoru_products, autoru_authenticate, update_autoru_catalog, update_autoru_regions
+from .autoru import update_autoru_catalog, update_autoru_regions
+from .serializers import *
 from .utils import xlsx_column_width
 
 
@@ -303,6 +300,7 @@ def download_auction(request):
                                                'position', 'bid', 'client__name', 'competitors')
     for row in data:
         row = [dt.replace(tzinfo=None) if hasattr(dt, 'tzinfo') and dt.tzinfo else dt for dt in row]
+        row = [dt + datetime.timedelta(hours=3) if isinstance(dt, datetime.datetime) else dt for dt in row]
         ws.append(row)
 
     ws = xlsx_column_width(ws)
@@ -317,7 +315,6 @@ def download_auction(request):
     wb.save(response)
 
     return response
-
 
 
 def photo_folders(request):
@@ -343,3 +340,46 @@ def autoru_regions(request):
 def get_models_for_mark(request, mark_id):
     models = Models.objects.filter(mark_id=mark_id).values('id', 'mark', 'model')
     return JsonResponse(list(models), safe=False)
+
+
+class ClientsCreateAPIView(generics.CreateAPIView):
+    queryset = Clients.objects.all()
+    serializer_class = ClientsSerializer
+
+    def post(self, request, *args, **kwargs):
+        # TODO меняй данные в request перед тем как отправлять их на create
+        # request.data['name'] = f"{request.data['name']} | ye"
+        # request.data = [f"{i['name']} | ye" for i in request.data]
+        return self.create(request, *args, **kwargs)
+
+
+class AutoruParsedAdsViewSet(viewsets.ModelViewSet):
+    queryset = AutoruParsedAds.objects.all()
+    serializer_class = AutoruParsedAdsSerializer
+
+    def create(self, request, *args, **kwargs):
+        # TODO тут обработать dataframe
+        serializer = self.get_serializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+# GET по модели
+# class ClientsAPIView(generics.ListAPIView):
+#     queryset = Clients.objects.all()
+#     serializer_class = ClientsSerializer
+
+# GET и POST низкого уровня
+# class ClientsAPIView(APIView):
+#     def get(self, request):
+#         c = Clients.objects.all()
+#         return Response({'clients': ClientsSerializer(c, many=True).data})
+#
+#     def post(self, request):
+#         serializer = ClientsSerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#
+#         return Response({'client': serializer.data})

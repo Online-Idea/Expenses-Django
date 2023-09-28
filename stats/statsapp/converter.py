@@ -1,3 +1,4 @@
+import re
 from collections import Counter
 import ftplib
 from ftplib import FTP
@@ -188,10 +189,20 @@ def template_xml(stock_path, template_path, task):
             extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
             if extras:
                 for extra in extras:
-                    conditionals = Conditionals.objects.filter(converter_extra_processing=extra.id)
+                    conditionals = list(Conditionals.objects.filter(converter_extra_processing=extra.id).values('field'))
+
+                    # Когда нужно брать значение из другого столбца
+                    if extra.new_value[:4] == '%col':
+                        column_name_extra = re.findall(r'"(.*?)"', extra.new_value)[0]
+                        column_name_extra += '__stock'
+                        conditionals.append({'field': column_name_extra})
+
                     for cond in conditionals:
-                        column_name = cond.field
-                        value = multi_tags(cond.field, car)
+                        column_name = cond['field']
+                        if '__stock' in column_name:
+                            value = multi_tags(column_name.replace('__stock', ''), car)
+                        else:
+                            value = multi_tags(column_name, car)
 
                         if column_name not in template_col:
                             max_column = len(template_col)
@@ -539,8 +550,17 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
 
         # Объединяю маски
         combined_mask = reduce(lambda x, y: x & y, masks)
+
         # Проставляю новые значения
-        df.loc[combined_mask, change.price_column_to_change] = change.new_value
+        # Когда нужно брать значение из другого столбца
+        if change.new_value[:4] == '%col':
+            column = re.findall(r'"(.*?)"', change.new_value)[0]
+            if change.source == 'Сток':
+                column += '__stock_template'
+            df.loc[combined_mask, change.price_column_to_change] = df[column]
+        # Иначе одно прописанное значение на все
+        else:
+            df.loc[combined_mask, change.price_column_to_change] = change.new_value
 
     df = df.drop(df.filter(regex='_template').columns, axis=1)
 

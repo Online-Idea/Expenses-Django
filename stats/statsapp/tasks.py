@@ -8,7 +8,7 @@ from openpyxl.workbook import Workbook
 
 from stats.celery import app
 from statsapp.autoru import get_autoru_clients, get_autoru_products, get_autoru_daily, get_autoru_calls, \
-    get_auction_history, prepare_auction_history, auction_history_drop_unknown, add_auction_history
+    get_auction_history, prepare_auction_history, auction_history_drop_unknown, add_auction_history, post_feeds_task
 from statsapp.export import export_calls_to_file, export_calls_for_callback
 from statsapp.email_sender import send_email_to_client
 from statsapp.models import Clients, TelephCalls
@@ -78,8 +78,8 @@ def teleph_calls(from_=None, to=None, clients=None):
 
 
 @shared_task
-def converter_price():
-    tasks = get_converter_tasks()
+def converter_price(task_ids=None):
+    tasks = get_converter_tasks(task_ids)
     for task in tasks:
         get_price(task)
 
@@ -108,3 +108,11 @@ def auction_history():
         all_bids = auction_history_drop_unknown(all_bids)
 
         add_auction_history(all_bids)
+
+
+@shared_task
+def post_autoru_xml(client_id: int, section: str, price_url: str,
+                    delete_sale: bool = True, leave_services: bool = True,
+                    leave_added_images: bool = False, is_active: bool = True):
+    response = post_feeds_task(client_id, section, price_url, delete_sale, leave_services, leave_added_images, is_active)
+

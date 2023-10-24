@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List, Dict
 
 import numpy as np
 from pandas import DataFrame
@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 
 from .models import *
-from django.db.models import Q
+from django.db.models import Q, Max, Count
 
 ENDPOINT = 'https://apiauto.ru/1.0'
 
@@ -387,7 +387,7 @@ def update_autoru_catalog():
     new_marks = []
     for mark in root.iter('mark'):
         mark_name = mark.get('name')
-        if not Marks.objects.filter(autoru=mark_name).exists():
+        if not my_marks.filter(autoru=mark_name).exists():
             new_marks.append(Marks(mark=mark_name, teleph=mark_name, autoru=mark_name, avito=mark_name,
                                    drom=mark_name, human_name=mark_name))
     Marks.objects.bulk_create(new_marks)
@@ -399,7 +399,7 @@ def update_autoru_catalog():
         for folder in mark.iter('folder'):
             folder_name = folder.get('name')
             model_name = folder_name.split(',')[0]
-            if not Models.objects.filter(autoru=model_name).exists():
+            if not my_models.filter(mark__autoru=mark_name, autoru=model_name).exists():
                 new_models.append(Models(mark=my_marks.filter(autoru=mark_name)[0], model=model_name, teleph=model_name,
                                          autoru=model_name, avito=model_name, drom=model_name, human_name=model_name))
     Models.objects.bulk_create(new_models)
@@ -419,7 +419,7 @@ def update_autoru_catalog():
             model_id = folder.find('model').get('id')
             model_name = folder_name.split(',')[0]
             model_code = folder.find('model').text
-            my_model_id = my_models.filter(autoru=model_name)[0]
+            my_model_id = my_models.filter(mark__autoru=mark_name, autoru=model_name)[0]
             generation_id = folder.find('generation').get('id')
             try:
                 generation_name = folder_name.split(',')[1].strip()
@@ -486,12 +486,15 @@ def update_autoru_regions():
     """
     Обновляет регионы авто.ру
     """
-    # Удаляю текущие
-    AutoruRegions.objects.all().delete()
 
     # Скачиваю актуальные
     regions = requests.get('https://cachev2-spb03.cdn.yandex.net/download.cdn.yandex.net/from/yandex.ru/tech/ru'
                            '/autoru/doc/files/rid.json?lid=193').json()
+    if not regions:
+        return
+
+    # Удаляю текущие
+    AutoruRegions.objects.all().delete()
 
     rows = []
     for region in regions:
@@ -635,9 +638,11 @@ def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame,
     new_df['mark_obj'] = new_df['context.mark_name'].replace(unique_marks_objs)
 
     # Модели как объекты из базы
-    unique_models_names = new_df['context.model_name'].unique()
-    models = Models.objects.filter(model__in=unique_models_names)
+    unique_marks_models_names = new_df[['context.mark_name', 'context.model_name']].drop_duplicates()
+    models = Models.objects.filter(mark__mark__in=unique_marks_models_names['context.mark_name'],
+                                   model__in=unique_marks_models_names['context.model_name'])
 
+    unique_models_names = new_df['context.model_name'].unique()
     # Добавляю модели которых нет в базе
     if len(unique_models_names) != len(models):
         new_models = []
@@ -657,7 +662,8 @@ def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame,
                     human_name=model
                 ))
         Models.objects.bulk_create(new_models)
-        models = Models.objects.filter(model__in=unique_models_names)
+        models = Models.objects.filter(mark__mark__in=unique_marks_models_names['context.mark_name'],
+                                       model__in=unique_marks_models_names['context.model_name'])
 
     unique_models_objs = {}
     for model_name in unique_models_names:
@@ -701,11 +707,11 @@ def auction_history_drop_unknown(all_bids: DataFrame) -> DataFrame:
 
     rows_to_drop = []
     for index, row in client_notnan[uniqueness].iterrows():
-        rows_to_drop.append(client_df.loc[(client_df['datetime'] == row[0]) &
-                                          (client_df['autoru_region'] == row[1]) &
-                                          (client_df['mark'] == row[2]) &
-                                          (client_df['model'] == row[3]) &
-                                          (client_df['position'] == row[4]) &
+        rows_to_drop.append(client_df.loc[(client_df['datetime'] == row.iloc[0]) &
+                                          (client_df['autoru_region'] == row.iloc[1]) &
+                                          (client_df['mark'] == row.iloc[2]) &
+                                          (client_df['model'] == row.iloc[3]) &
+                                          (client_df['position'] == row.iloc[4]) &
                                           (client_df['client'].isna())])
 
     rows_to_drop = pd.concat(rows_to_drop)
@@ -739,27 +745,268 @@ def add_auction_history(data: DataFrame):
         position=row['position'],
         bid=row['bid'],
         competitors=row['competitors'],
-        client=row['client']
+        client=row['client'],
+        dealer=''
     ) for index, row in data.iterrows()]
 
     AutoruAuctionHistory.objects.bulk_create(objs)
 
 
-def process_parsed_ads(df):
-    # По complectation_id я смотрю каталог авто.ру чтобы взять верные Марки и Модели
-    df['complectation_id'] = df['link'].apply(lambda x: x.split('/')[9])
+def process_parsed_ads(df: DataFrame, parser_datetime: datetime, region: str) -> List[Dict]:
+    """
+    Обрабатывает входящие данные от сравнительной
+    :param df: данные сравнительной как pandas dataframe
+    :param parser_datetime: дата и время когда парсер собрал данные
+    :param region: регион
+    :return: список со словарями, каждый словарь это одна строка
+    """
+    # Для всех одна дата и время
+    df['datetime'] = parser_datetime
+    # Для всех один регион
+    df['region'] = region
 
-    # TODO возможно не values а по-другому, т.к. в базу мне нужны объекты.
-    # TODO но может я не прав и id достаточно
-    autoru_catalog = AutoruCatalog.objects.filter(comlectation_id__in=[df['complectation_id']]) \
+    # Список столбцов которые позже удалю
+    columns_to_drop = ["mark_model", "autoru_name", "complectation_id"]
+
+    # По complectation_id я смотрю каталог авто.ру чтобы взять верные Марки и Модели
+    df['complectation_id'] = df['link'].apply(lambda x: int(x.split('/')[9]))
+    unique_complectation_ids = df['complectation_id'].unique().tolist()
+    autoru_catalog = AutoruCatalog.objects.filter(complectation_id__in=unique_complectation_ids) \
         .values('complectation_id', 'my_mark_id', 'my_model_id')
     df_db = pd.DataFrame(autoru_catalog)
     df_merged = pd.merge(df, df_db, on='complectation_id', how='left')
+
+    # По modification_id смотрю в том случае если по complectation_id не найдены Марка и Модель
+    if df_merged['my_mark_id'].isnull().values.any():
+        df_merged['modification_id'] = df_merged['link'].apply(lambda x: int(x.split('/')[8]))
+        unique_modification_ids = df_merged['modification_id'].unique().tolist()
+        # autoru_catalog2 = AutoruCatalog.objects.filter(modification_id__in=unique_modification_ids) \
+        #     .values('modification_id', 'my_mark_id', 'my_model_id').distinct()
+        autoru_catalog2 = AutoruCatalog.objects.filter(tech_param_id__in=unique_modification_ids) \
+            .values('modification_id', 'my_mark_id', 'my_model_id').distinct()
+        df_db2 = pd.DataFrame(autoru_catalog2)
+        df_db2 = df_db2.add_suffix('2')
+        df_merged = pd.merge(df_merged, df_db2, left_on='modification_id', right_on='modification_id2', how='left')
+        df_merged['my_mark_id'] = df_merged['my_mark_id'].fillna(df_merged['my_mark_id2'])
+        df_merged['my_model_id'] = df_merged['my_model_id'].fillna(df_merged['my_model_id2'])
+
+        columns_to_drop.extend(['modification_id', 'modification_id2', 'my_mark_id2', 'my_model_id2'])
+
+    # Если всё ещё есть пустые Марка и Модель то ищу по mark_model
+    if df_merged['my_mark_id'].isnull().values.any():
+        df_merged['my_mark_id'] = df_merged.apply(fill_nan_for_mark, axis=1)
+        marks = Marks.objects.filter(id__in=df_merged['my_mark_id'].distinct())
+
+        def remove_mark(row):
+            to_replace = marks.filter(id=row['my_mark_id'])[0].mark + ' '
+            return row['mark_model'].str.replace(to_replace, '')
+
+        df_merged['mark_model'] = df_merged['mark_model'].apply(remove_mark, axis=1)
+        df_merged['my_model_id'] = df_merged.apply(fill_nan_for_model, axis=1)
 
     clients = Clients.objects.all().values('id', 'autoru_name')
     df_db = pd.DataFrame(clients)
     df_merged = pd.merge(df_merged, df_db, left_on='dealer', right_on='autoru_name', how='left')
 
-    df_merged = df_merged.rename(columns={'my_mark_id': 'mark', 'my_model_id': 'model'})
+    df_merged = df_merged.drop(columns=columns_to_drop)
+    df_merged = df_merged.rename(columns={'my_mark_id': 'mark', 'my_model_id': 'model', 'id': 'client'})
 
-    return df
+    df_merged['client'] = df_merged['client'].replace(np.nan, None)
+
+    # Словарь вместо dataframe
+    df_dict = df_merged.to_dict(orient='records')
+    return df_dict
+
+
+def fill_nan_for_mark(row):
+    """
+    Функция для pandas для того чтобы найти объект Marks по её названию
+    :param row: строка pandas
+    :return: id Marks
+    """
+    marks = Marks.objects.all()
+    if pd.isna(row['my_mark_id']):
+        possible_name = ' '.join(row['mark_model'].split()[:-1])
+        found_obj = recursive_search(marks, 'mark', possible_name).id
+        if found_obj:
+            return found_obj
+        else:
+            raise ValueError(f'Марка {row["mark_model"]} не найдена в базе')
+    else:
+        return row['my_mark_id']
+
+
+def fill_nan_for_model(row):
+    """
+    Функция для pandas для того чтобы найти объект Models по её названию
+    :param row: строка pandas
+    :return: id Models
+    """
+    models = Models.objects.filter(mark=row['my_mark_id'])
+    if pd.isna(row['my_model_id']):
+        possible_name = ' '.join(row['mark_model'].split()[:-1])
+        found_obj = recursive_search(models, 'model', possible_name).id
+        if found_obj:
+            return found_obj
+        else:
+            raise ValueError(f'Модель {row["mark_model"]} не найдена в базе')
+    else:
+        return row['my_model_id']
+
+
+def recursive_search(db_model: object, db_field: str, possible_name: str) -> object:
+    """
+    Фильтрует Django модель по строке, отнимая по одному слову с конца
+    :param db_model: модель Django
+    :param db_field: поле модели
+    :param possible_name: строка по которой фильтрует
+    :return: объект модели Django
+    """
+    qs = db_model.filter(**{db_field: possible_name})
+    if qs:
+        return qs[0]
+    else:
+        possible_name = ' '.join(possible_name.split()[:-1])
+        if possible_name:
+            return recursive_search(db_model, db_field, possible_name)
+        else:
+            return None
+
+
+def fill_in_auction_with_parsed_ads(parsed_ads: list) -> None:
+    """
+    Заполняет пустых дилеров из аукциона по данным сравнительной
+    :param parsed_ads: спарсенные объявления
+    """
+    parsed_datetime = parsed_ads[0].datetime
+    minus_1_hour = parsed_datetime - timedelta(hours=1)
+    region = parsed_ads[0].region
+    marks = list(set(d.mark for d in parsed_ads))
+    models = list(set(d.model for d in parsed_ads))
+
+    # Данные аукциона
+    auction_data = AutoruAuctionHistory.objects \
+        .filter(autoru_region__contains=region, mark__in=marks, model__in=models,
+                datetime__lte=parsed_datetime, datetime__gte=minus_1_hour)
+
+    # Делаю повторный запрос к базе чтобы получить те же спарсенные объявления но как queryset а не list
+    parsed_ads_qs = AutoruParsedAds.objects.filter(datetime=parsed_datetime, region=region, model__in=models) \
+        .order_by('-datetime', 'model_id', 'position_total')
+
+    unique_ads_df = pd.DataFrame.from_records(parsed_ads_qs.values('model', 'dealer', 'in_stock', 'services'))
+    unique_ads_df = unique_ads_df.drop_duplicates().reset_index(drop=True)
+
+    count_by_dealer = parsed_ads_qs.filter(in_stock__iexact='в наличии') \
+        .order_by().values('dealer').annotate(count=Count('dealer'))
+
+    rows_to_update = []
+    for model in models:
+        # unique_ads_model_df = unique_ads_df[unique_ads_df['model'] == model.id]
+        # unique_ads = unique_ads_model_df.to_dict('records')
+
+        auction_model_filtered = auction_data.filter(model=model)
+
+        # Убираю уже известных дилеров (наших клиентов) из спарсенных дилеров
+        exclude_clients = list(auction_model_filtered.values_list('client_id__autoru_name', flat=True))
+        unique_ads_model_df = unique_ads_df[(unique_ads_df['model'] == model.id) &
+                                            ~(unique_ads_df['dealer'].isin(exclude_clients))]
+
+        unique_ads = unique_ads_model_df.to_dict('records')
+
+        print(f'\n{auction_model_filtered=}')
+        print(f'\n{exclude_clients=}')
+        print(f'\nunique_ads_model_df\n{unique_ads_model_df}')
+
+        for row in auction_model_filtered:
+
+            # Если есть данные в столбце нашего клиента то копирую его в столбец дилер
+            if row.client:
+                row.dealer = row.client.autoru_name
+                rows_to_update.append(row)
+                continue
+
+            while not row.dealer:
+                # Если в наличии
+                if unique_ads[0]['in_stock'].lower() == 'в наличии':
+                    # Если среди услуг есть премиум или поднятие
+                    if 'премиум' in unique_ads[0]['services'] or 'поднятие в поиске' in unique_ads[0]['services']:
+                        dealer_count = count_by_dealer.filter(dealer=unique_ads[0]['dealer']).count
+                        # Если количество объявлений этого дилера 1
+                        if dealer_count == 1:
+                            # Берём
+                            row.dealer = unique_ads[0]['dealer']
+                        else:
+                            # Иначе смотрим на следующего дилера
+                            unique_ads = unique_ads[1:]
+                    else:
+                        # Услуг нет, берём
+                        row.dealer = unique_ads[0]['dealer']
+                else:
+                    # Иначе смотрим на следующего дилера
+                    unique_ads = unique_ads[1:]
+
+            rows_to_update.append(row)
+            unique_ads = unique_ads[1:]
+
+    print(f'\n{rows_to_update=}\n')
+    # Обновляю данные в базе
+    AutoruAuctionHistory.objects.bulk_update(rows_to_update, ['dealer'])
+
+
+def get_feeds_settings(client_id: int) -> json:
+    """
+    # Возвращает список настроек для прайс-листов.
+    # https://yandex.ru/dev/autoru/doc/reference/feeds-settings.html
+    # GET /feeds/settings
+    :param client_id: id клиента на авто.ру
+    :return: json с ответом
+    """
+
+    req_url = 'feeds/settings'
+
+    if client_id not in clients_newcard:
+        dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
+    else:
+        dealer_headers = {**API_KEY, **session_id2, 'x-dealer-id': f'{client_id}'}
+
+    feeds_response = requests.get(url=f'{ENDPOINT}/{req_url}', headers=dealer_headers)
+    return feeds_response.json()
+
+
+def post_feeds_task(client_id: int, section: str, price_url: str,
+                    delete_sale: bool = True, leave_services: bool = True,
+                    leave_added_images: bool = False, is_active: bool = True) -> json:
+    """
+    # Создает задачу на ручную загрузку прайс-листа для категории ТС «Легковые ТС».
+    # https://yandex.ru/dev/autoru/doc/reference/feeds-task-cars-section.html
+    # POST /feeds/task/cars/{section}
+    :param client_id: id клиента на авто.ру
+    :param section: NEW для новых, USED для б/у
+    :param price_url: url с xml прайсом
+    :param delete_sale: удалять размещённые вручную объявления
+    :param leave_services: не удалять услуги объявлений
+    :param leave_added_images: не удалять загруженные вручную фотографии и видео
+    :param is_active: активна или нет загрузка данного прайса
+    :return: json с ответом
+    """
+
+    req_url = f'feeds/task/cars/{section}'
+
+    if client_id not in clients_newcard:
+        dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
+    else:
+        dealer_headers = {**API_KEY, **session_id2, 'x-dealer-id': f'{client_id}'}
+
+    req_body = {
+        "internal_url": price_url,
+        "settings": {
+            "source": price_url,
+            "delete_sale": delete_sale,
+            "leave_services": leave_services,
+            "leave_added_images": leave_added_images,
+            "is_active": is_active
+        }
+    }
+
+    feeds_task_response = requests.post(url=f'{ENDPOINT}/{req_url}', headers=dealer_headers, json=req_body)
+    return feeds_task_response

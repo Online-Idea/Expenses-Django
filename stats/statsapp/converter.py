@@ -10,6 +10,8 @@ import pandas.core.series
 import requests
 import datetime
 import xml.etree.ElementTree as ET
+
+from django.db.models import QuerySet
 from openpyxl import Workbook
 # import xlsxwriter
 import pandas as pd
@@ -29,9 +31,16 @@ from statsapp.management.commands.bot import bot
 # POST http://151.248.118.19/Api/Stock/GetProcessStep
 # POST http://151.248.118.19/Api/Log/GetByProcessId
 
-def get_converter_tasks():
-    active_tasks = ConverterTask.objects.filter(active=True)
-    return active_tasks
+def get_converter_tasks(task_ids: list = None) -> QuerySet:
+    """
+    Собирает Задачи конвертера. Если есть task_ids то берёт только их, иначе все активные
+    :param task_ids: список id модели ConverterTask
+    :return: Django QuerySet с Задачами конвертера
+    """
+    if task_ids:
+        return ConverterTask.objects.filter(id__in=task_ids)
+    else:
+        return ConverterTask.objects.filter(active=True)
 
 
 def get_price(task):
@@ -76,7 +85,8 @@ def converter_template(task):
 
     # Получаю тип файла стока
     content_type = response.headers['content-type']
-    if 'text/xml' in content_type or 'application/xml' in content_type:
+    xml_types = ['text/xml', 'application/xml']
+    if any(ele in content_type for ele in xml_types):
         stock_path += '.xml'
         content_type = 'xml'
     elif 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in content_type:
@@ -140,7 +150,7 @@ def template_xml(stock_path, template_path, task):
 
     # Данные шаблона
     fields = task.stock_fields
-    exception_col = ['modification_code', 'options_code', 'images', 'modification_explained']
+    exception_col = ['modification_code', 'options_code', 'images', 'modification_explained', 'description']
     for i, car in enumerate(root.iter(fields.car_tag)):
         if stock_xml_filter(car, task):
             # Обычные поля
@@ -184,6 +194,15 @@ def template_xml(stock_path, template_path, task):
             else:
                 sheet.cell(row=i + 2, column=template_col['modification_explained'][1] + 1,
                            value=car.findtext(fields.modification_explained))
+
+            if fields.description:
+                if ',' in fields.description:
+                    descr = [car.findtext(f) for f in fields.description.split(', ') if car.findtext(f)]
+                    descr = [f.replace("\\n", "") for f in descr]
+                    sheet.cell(row=i + 2, column=template_col['description'][1] + 1, value=' \n\n '.join(descr))
+                else:
+                    sheet.cell(row=i + 2, column=template_col['description'][1] + 1,
+                               value=car.findtext(fields.description))
 
             # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
             extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
@@ -670,6 +689,7 @@ def converter_process_result(process_id, client, template, task):
     read_file.fillna('', inplace=True)
     read_file = read_file.astype(str).replace(r'\.0$', '', regex=True)
     read_file = read_file.astype(str).replace('é', 'e', regex=True)
+    read_file = read_file.astype(str).replace('\u2070', '0', regex=True)
     read_file['Описание'] = read_file['Описание'].replace('_x000d_', '', regex=True)
 
     # Сохраняю в csv

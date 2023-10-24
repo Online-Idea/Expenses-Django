@@ -1,3 +1,5 @@
+import pickle
+
 from django.contrib.messages.views import SuccessMessageMixin
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
@@ -14,7 +16,7 @@ import urllib.parse
 
 from .forms import *
 from .converter import *
-from .autoru import update_autoru_catalog, update_autoru_regions
+from .autoru import update_autoru_catalog, update_autoru_regions, process_parsed_ads, fill_in_auction_with_parsed_ads
 from .serializers import *
 from .utils import xlsx_column_width
 
@@ -252,14 +254,21 @@ def auction(request):
 
             for i, model in enumerate(uniq_models):
                 data = df[df['model'] == model]
+                y_min, y_max = data['bid'].min(), data['bid'].max()
                 fig.add_trace(
                     go.Scatter(x=data['datetime'], y=data['bid']),
                     row=i + 1, col=1
                 )
+                fig.update_yaxes(range=[y_min - 0.2 * (y_max - y_min),
+                                        y_max + 0.2 * (y_max - y_min)],
+                                 row=i + 1, col=1)
             fig_title = f'{df["autoru_region"][0]}<br>{df["mark"][0]}'
             fig.update_layout(title_text=fig_title, showlegend=False,
-                              height=len(uniq_models) * 200, margin={'t': 130, 'b': 130})
-            fig.update_yaxes(tickformat=',.0f')
+                              height=len(uniq_models) * 200, margin={'t': 130, 'b': 130},
+                              plot_bgcolor='white')
+            fig.update_xaxes(gridcolor='#E1E1E0')
+            fig.update_yaxes(gridcolor='#E1E1E0', tickformat=',.0f')
+            fig.update_traces(line={'shape': 'spline'})
 
             # Generate the HTML code for the plot
             plot_html = fig.to_html(full_html=False)
@@ -358,11 +367,17 @@ class AutoruParsedAdsViewSet(viewsets.ModelViewSet):
     serializer_class = AutoruParsedAdsSerializer
 
     def create(self, request, *args, **kwargs):
-        # TODO тут обработать dataframe
-        serializer = self.get_serializer(data=request.data, many=True)
+        df_received, parser_datetime, region = pickle.loads(request.body)
+        df_processed = process_parsed_ads(df_received, parser_datetime, region)
+
+        serializer = self.get_serializer(data=df_processed, many=True)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+
+        # заполняю дилеров в аукционе по данным сравнительной
+        fill_in_auction_with_parsed_ads(serializer.instance)
+
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 

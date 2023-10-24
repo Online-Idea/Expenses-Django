@@ -532,6 +532,7 @@ class AutoruAuctionHistory(BaseModel):
     bid = models.IntegerField(verbose_name='Ставка')
     competitors = models.IntegerField(verbose_name='Количество конкурентов с этой ставкой')
     client = models.ForeignKey('Clients', null=True, blank=True, on_delete=models.PROTECT)
+    dealer = models.CharField(max_length=500, null=True, blank=True, verbose_name='Дилер')
 
     def __str__(self):
         return f'{self.datetime} | {self.autoru_region} | {self.mark.mark} | {self.model.model} | {self.position} | {self.bid}'
@@ -542,6 +543,8 @@ class AutoruAuctionHistory(BaseModel):
 
 
 class AutoruParsedAds(BaseModel):
+    datetime = models.DateTimeField(verbose_name='Дата и время')
+    region = models.CharField(max_length=500, verbose_name='Регион')
     mark = models.ForeignKey('Marks', on_delete=models.PROTECT)
     model = models.ForeignKey('Models', on_delete=models.PROTECT)
     complectation = models.CharField(null=True, blank=True, max_length=500, verbose_name='Комплектация')
@@ -557,8 +560,8 @@ class AutoruParsedAds(BaseModel):
     link = models.CharField(max_length=1000, verbose_name='Ссылка')
     condition = models.CharField(max_length=500, verbose_name='Состояние/пробег')
     in_stock = models.CharField(max_length=500, verbose_name='Наличие')
-    services = models.CharField(max_length=500, verbose_name='Услуги')
-    tags = models.CharField(max_length=500, verbose_name='Стикеры')
+    services = models.CharField(max_length=500, null=True, blank=True, verbose_name='Услуги')
+    tags = models.CharField(max_length=500, null=True, blank=True, verbose_name='Стикеры')
     photos = models.IntegerField(verbose_name='Количество фото')
 
     def __str__(self):

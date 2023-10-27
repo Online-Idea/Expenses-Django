@@ -179,3 +179,27 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 15_242_880
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': f'{BASE_DIR}/logs/django_logs.log',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'level': 'ERROR',
+        'handlers': ['file']
+    }
+}
+

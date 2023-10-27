@@ -667,7 +667,8 @@ def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame,
 
     unique_models_objs = {}
     for model_name in unique_models_names:
-        unique_models_objs[model_name] = models.filter(model=model_name)[0]
+        unique_models_objs[model_name] = models.filter(mark__mark__in=unique_marks_models_names['context.mark_name'],
+                                                       model=model_name)[0]
     new_df['model_obj'] = new_df['context.model_name'].replace(unique_models_objs)
 
     # Позиция
@@ -697,10 +698,19 @@ def auction_history_drop_unknown(all_bids: DataFrame) -> DataFrame:
     :param all_bids: df со всеми ставками
     :return:
     """
+    # Поля для сортировок
+    all_bids['mark_value'] = all_bids['mark'].apply(lambda x: x.mark)
+    all_bids['model_value'] = all_bids['model'].apply(lambda x: x.model)
+
     # Тут дропаю неизвестных дилеров, заменяя их нашими клиентами.
+    # Всех наших клиентов сортирую в верх таблицы чтобы удалялись строки-дубли где клиентов нет
+    def sort_client(x):
+        return 1 if isinstance(x, type(np.nan)) else 0
+    all_bids = all_bids.sort_values(by='client', key=lambda x: x.apply(sort_client))
+
+    uniqueness = ['datetime', 'autoru_region', 'mark_value', 'model_value', 'position']
     all_bids = all_bids.reset_index(drop=True)
-    all_bids = all_bids.drop_duplicates(subset=['datetime', 'autoru_region', 'mark', 'model', 'position', 'client'])
-    uniqueness = ['datetime', 'autoru_region', 'mark', 'model', 'position']
+    all_bids = all_bids.drop_duplicates(subset=uniqueness + ['client'])
 
     client_df = all_bids[uniqueness + ['client']].copy()
     client_notnan = client_df[client_df['client'].notna()].copy()
@@ -709,22 +719,18 @@ def auction_history_drop_unknown(all_bids: DataFrame) -> DataFrame:
     for index, row in client_notnan[uniqueness].iterrows():
         rows_to_drop.append(client_df.loc[(client_df['datetime'] == row.iloc[0]) &
                                           (client_df['autoru_region'] == row.iloc[1]) &
-                                          (client_df['mark'] == row.iloc[2]) &
-                                          (client_df['model'] == row.iloc[3]) &
+                                          (client_df['mark_value'] == row.iloc[2]) &
+                                          (client_df['model_value'] == row.iloc[3]) &
                                           (client_df['position'] == row.iloc[4]) &
                                           (client_df['client'].isna())])
 
     rows_to_drop = pd.concat(rows_to_drop)
     all_bids = all_bids.drop(rows_to_drop.index, axis=0)
-
-    # Сортирую
-    # Добавляю столбцы со значениями Марок и Моделей чтобы по ним сортировать
-    all_bids['mark_value'] = all_bids['mark'].apply(lambda x: x.mark)
-    all_bids['model_value'] = all_bids['model'].apply(lambda x: x.model)
+    # Здесь удаляю дубли в случае если мы не участвуем в аукционе
+    all_bids = all_bids.drop_duplicates(subset=uniqueness)
 
     # Сортировка
-    sorted_df = all_bids.sort_values(by=['autoru_region', 'mark_value', 'model_value', 'bid'],
-                                     ascending=[True, True, True, False], )
+    sorted_df = all_bids.sort_values(by=uniqueness)
 
     # Удаляю временные столбцы
     sorted_df = sorted_df.drop(['mark_value', 'model_value'], axis=1)
@@ -795,13 +801,13 @@ def process_parsed_ads(df: DataFrame, parser_datetime: datetime, region: str) ->
     # Если всё ещё есть пустые Марка и Модель то ищу по mark_model
     if df_merged['my_mark_id'].isnull().values.any():
         df_merged['my_mark_id'] = df_merged.apply(fill_nan_for_mark, axis=1)
-        marks = Marks.objects.filter(id__in=df_merged['my_mark_id'].distinct())
+        marks = Marks.objects.filter(id__in=df_merged['my_mark_id'].unique())
 
         def remove_mark(row):
             to_replace = marks.filter(id=row['my_mark_id'])[0].mark + ' '
-            return row['mark_model'].str.replace(to_replace, '')
+            return row['mark_model'].replace(to_replace, '')
 
-        df_merged['mark_model'] = df_merged['mark_model'].apply(remove_mark, axis=1)
+        df_merged['mark_model'] = df_merged.apply(remove_mark, axis=1)
         df_merged['my_model_id'] = df_merged.apply(fill_nan_for_model, axis=1)
 
     clients = Clients.objects.all().values('id', 'autoru_name')

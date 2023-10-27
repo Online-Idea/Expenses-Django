@@ -95,8 +95,11 @@ def export_callback():
     export_calls_for_callback()
 
 @shared_task
-def auction_history():
-    clients = Clients.objects.filter(Q(active=True) & Q(autoru_id__isnull=False))
+def auction_history(client_ids=None):
+    if client_ids:
+        clients = Clients.objects.filter(Q(id__in=client_ids) & Q(autoru_id__isnull=False))
+    else:
+        clients = Clients.objects.filter(Q(active=True) & Q(autoru_id__isnull=False))
     # clients = Clients.objects.filter(id__in=[46, 48])
     # clients = Clients.objects.filter(id__in=[1])
     datetime_ = datetime.today()

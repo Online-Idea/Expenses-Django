@@ -30,6 +30,12 @@ class AuctionChooseForm(forms.Form):
         queryset=AutoruAuctionHistory.objects.order_by('autoru_region').values_list('autoru_region', flat=True).distinct(),
         widget=forms.CheckboxSelectMultiple(attrs={'checked': True})
     )
+    only_first = forms.ChoiceField(required=False,
+                                   widget=forms.CheckboxInput(attrs={'checked': False}),
+                                   label='Только первые места', label_suffix='')
+    all_dealers_filled = forms.ChoiceField(required=False,
+                                          widget=forms.CheckboxInput(attrs={'checked': False}),
+                                          label='Все дилеры заполнены', label_suffix='')
 
 
 # class ConverterManualForm(forms.Form):

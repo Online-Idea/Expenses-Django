@@ -33,7 +33,7 @@ class ModelsAdmin(admin.ModelAdmin):
     list_display = ('id', marks_mark, 'model', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
     list_display_links = ('id', marks_mark, 'model')
     # TODO добавить поиск по марке
-    search_fields = ('model', 'human_name')
+    search_fields = ('mark__mark', 'model', 'human_name')
     fields = ('id', 'mark', 'model', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
     readonly_fields = ('id',)
     save_on_top = True
@@ -162,7 +162,7 @@ class ConverterExtraProcessingAdmin(admin.ModelAdmin):
     inlines = [ConditionalsInline, ]
     list_display = ('id', 'converter_task', 'source', 'price_column_to_change', 'new_value')
     list_display_links = ('id', 'converter_task')
-    search_fields = ('converter_task', 'field')
+    search_fields = ('converter_task__name', 'price_column_to_change', 'new_value')
     list_filter = ('converter_task',)
     fields = ('id', 'converter_task', 'source', 'price_column_to_change', 'new_value')
     readonly_fields = ('id',)

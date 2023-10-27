@@ -145,6 +145,16 @@ $(function() {
                         {{ form.region_checkbox }}
                     </div>
                 </details>
+
+                <!--Дополнительные фильтры-->
+                <div class="checkbox-padding">
+                    {{ form.only_first }}
+                    {{ form.only_first.label_tag }}
+                    <br>
+                    {{ form.all_dealers_filled }}
+                    {{ form.all_dealers_filled.label_tag }}
+                </div>
+
             </form>
 
             {% if plot_html %}

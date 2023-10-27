@@ -204,17 +204,30 @@ def get_auction_data(request):
     marks_checked = [m for m in request.POST.getlist('mark_checkbox')]
     # Выбранные регионы
     regions_checked = [r for r in request.POST.getlist('region_checkbox')]
+
+    filter_params = {
+        'datetime__gte': datefrom,
+        'datetime__lte': dateto,
+        'mark_id__in': marks_checked,
+        'autoru_region__in': regions_checked
+    }
+
+    # Только первые места
+    only_first = form['only_first'].value()
+    if only_first:
+        filter_params['position'] = 1
+
+    # Все дилеры заполнены
+    all_dealers_filled = form['all_dealers_filled'].value()
+    if all_dealers_filled:
+        filter_params['dealer__gt'] = ''
+
     # Данные истории аукциона
     auction_data = (
         AutoruAuctionHistory.objects.select_related(
             "mark", "model", "client"
         )
-        .filter(
-            datetime__gte=datefrom,
-            datetime__lte=dateto,
-            mark_id__in=marks_checked,
-            autoru_region__in=regions_checked,
-        )
+        .filter(**filter_params)
         .order_by("-datetime", "autoru_region", "mark", "model", "position")
     )
     context = {
@@ -302,11 +315,11 @@ def download_auction(request):
 
     wb = Workbook()
     ws = wb.active
-    headers = ['id', 'Дата и время', 'Регион', 'Марка', 'Модель', 'Позиция', 'Ставка', 'Имя клиента',
+    headers = ['id', 'Дата и время', 'Регион', 'Марка', 'Модель', 'Позиция', 'Ставка', 'Дилер',
                'Количество конкурентов']
     ws.append(headers)
     data = context['auction_data'].values_list('id', 'datetime', 'autoru_region', 'mark__mark', 'model__model',
-                                               'position', 'bid', 'client__name', 'competitors')
+                                               'position', 'bid', 'dealer', 'competitors')
     for row in data:
         row = [dt.replace(tzinfo=None) if hasattr(dt, 'tzinfo') and dt.tzinfo else dt for dt in row]
         row = [dt + datetime.timedelta(hours=3) if isinstance(dt, datetime.datetime) else dt for dt in row]

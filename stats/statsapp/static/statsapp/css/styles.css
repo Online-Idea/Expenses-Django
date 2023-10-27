@@ -119,3 +119,7 @@ ul {
     max-width: none;
 }
 /*---------------------------------------------------*/
+
+.checkbox-padding {
+    padding-left: 5px;
+}

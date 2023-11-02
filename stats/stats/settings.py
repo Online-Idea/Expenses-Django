@@ -9,6 +9,8 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
+import os
+
 import environ
 from pathlib import Path
 
@@ -165,6 +167,8 @@ elif not live_deploy:
     CELERY_BROKER_URL = env('CELERY_BROKER_URL_DEV')
     CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND_DEV')
 
+CELERY_SEND_TASK_ERROR_EMAILS = True
+
 # CELERY_BEAT_SCHEDULE = {
 #     'scheduled_task': {
 #         'task': 'statsapp.tasks.test_task',
@@ -203,3 +207,9 @@ LOGGING = {
     }
 }
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ['EMAIL_HOST']
+EMAIL_PORT = os.environ['EMAIL_PORT']
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ['EMAIL_LOGIN']
+EMAIL_HOST_PASSWORD = os.environ['EMAIL_PASSWORD']

@@ -621,17 +621,11 @@ def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame,
 
         for mark in unique_marks_names:
             if mark not in marks_str:
-                new_marks.append(Marks(
-                    mark=mark,
-                    teleph=mark,
-                    autoru=mark,
-                    avito=mark,
-                    drom=mark,
-                    human_name=mark
-                ))
+                new_marks.append(Marks(mark=mark, teleph=mark, autoru=mark, avito=mark, drom=mark, human_name=mark))
         Marks.objects.bulk_create(new_marks)
         marks = Marks.objects.filter(mark__in=unique_marks_names)
 
+    # Подставляю
     unique_marks_objs = {}
     for mark_name in unique_marks_names:
         unique_marks_objs[mark_name] = marks.filter(mark=mark_name)[0]
@@ -639,37 +633,27 @@ def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame,
 
     # Модели как объекты из базы
     unique_marks_models_names = new_df[['context.mark_name', 'context.model_name']].drop_duplicates()
-    models = Models.objects.filter(mark__mark__in=unique_marks_models_names['context.mark_name'],
-                                   model__in=unique_marks_models_names['context.model_name'])
+    models = Models.objects.filter(mark__mark__in=unique_marks_names)
 
-    unique_models_names = new_df['context.model_name'].unique()
     # Добавляю модели которых нет в базе
-    if len(unique_models_names) != len(models):
-        new_models = []
-        models_str = [m.model for m in models]
+    new_models = []
+    for _, row in unique_marks_models_names.iterrows():
+        curr_mark = row['context.mark_name']
+        curr_model = row['context.model_name']
+        if not models.filter(mark__mark=curr_mark, model=curr_model):
+            new_models.append(Models(mark=marks.filter(mark=curr_mark)[0], model=curr_model, teleph=curr_model,
+                                     autoru=curr_model, avito=curr_model, drom=curr_model, human_name=curr_model))
+    Models.objects.bulk_create(new_models)
 
-        for model in unique_models_names:
-            if model not in models_str:
-                mark = new_df[new_df['context.model_name'] == model]['context.mark_name'].iloc[0]
-                mark = marks.filter(mark=mark)[0]
-                new_models.append(Models(
-                    mark=mark,
-                    model=model,
-                    teleph=model,
-                    autoru=model,
-                    avito=model,
-                    drom=model,
-                    human_name=model
-                ))
-        Models.objects.bulk_create(new_models)
-        models = Models.objects.filter(mark__mark__in=unique_marks_models_names['context.mark_name'],
-                                       model__in=unique_marks_models_names['context.model_name'])
+    # Подставляю
+    models = Models.objects.filter(mark__mark__in=unique_marks_names)
+    models_objs = []
+    for _, row in new_df.iterrows():
+        models_objs.append(models.filter(
+            mark__mark=row['context.mark_name'],
+            model=row['context.model_name'])[0])
 
-    unique_models_objs = {}
-    for model_name in unique_models_names:
-        unique_models_objs[model_name] = models.filter(mark__mark__in=unique_marks_models_names['context.mark_name'],
-                                                       model=model_name)[0]
-    new_df['model_obj'] = new_df['context.model_name'].replace(unique_models_objs)
+    new_df['model_obj'] = models_objs
 
     # Позиция
     new_df['position'] = new_df.groupby(['context.region_id', 'context.mark_name', 'context.model_name']).cumcount() + 1
@@ -706,6 +690,7 @@ def auction_history_drop_unknown(all_bids: DataFrame) -> DataFrame:
     # Всех наших клиентов сортирую в верх таблицы чтобы удалялись строки-дубли где клиентов нет
     def sort_client(x):
         return 1 if isinstance(x, type(np.nan)) else 0
+
     all_bids = all_bids.sort_values(by='client', key=lambda x: x.apply(sort_client))
 
     uniqueness = ['datetime', 'autoru_region', 'mark_value', 'model_value', 'position']
@@ -896,7 +881,8 @@ def fill_in_auction_with_parsed_ads(parsed_ads: list) -> None:
                 datetime__lte=parsed_datetime, datetime__gte=minus_1_hour)
 
     # Делаю повторный запрос к базе чтобы получить те же спарсенные объявления но как queryset а не list
-    parsed_ads_qs = AutoruParsedAds.objects.filter(datetime=parsed_datetime, region=region, model__in=models) \
+    parsed_ads_qs = AutoruParsedAds.objects.filter(
+        datetime=parsed_datetime, region=region, mark__in=marks, model__in=models) \
         .order_by('-datetime', 'model_id', 'position_total')
 
     unique_ads_df = pd.DataFrame.from_records(parsed_ads_qs.values('model', 'dealer', 'in_stock', 'services'))
@@ -919,10 +905,6 @@ def fill_in_auction_with_parsed_ads(parsed_ads: list) -> None:
 
         unique_ads = unique_ads_model_df.to_dict('records')
 
-        print(f'\n{auction_model_filtered=}')
-        print(f'\n{exclude_clients=}')
-        print(f'\nunique_ads_model_df\n{unique_ads_model_df}')
-
         for row in auction_model_filtered:
 
             # Если есть данные в столбце нашего клиента то копирую его в столбец дилер
@@ -931,12 +913,12 @@ def fill_in_auction_with_parsed_ads(parsed_ads: list) -> None:
                 rows_to_update.append(row)
                 continue
 
-            while not row.dealer:
+            while not row.dealer and unique_ads:
                 # Если в наличии
                 if unique_ads[0]['in_stock'].lower() == 'в наличии':
                     # Если среди услуг есть премиум или поднятие
                     if 'премиум' in unique_ads[0]['services'] or 'поднятие в поиске' in unique_ads[0]['services']:
-                        dealer_count = count_by_dealer.filter(dealer=unique_ads[0]['dealer']).count
+                        dealer_count = count_by_dealer.filter(dealer=unique_ads[0]['dealer'])[0]['count']
                         # Если количество объявлений этого дилера 1
                         if dealer_count == 1:
                             # Берём
@@ -954,9 +936,39 @@ def fill_in_auction_with_parsed_ads(parsed_ads: list) -> None:
             rows_to_update.append(row)
             unique_ads = unique_ads[1:]
 
-    print(f'\n{rows_to_update=}\n')
     # Обновляю данные в базе
     AutoruAuctionHistory.objects.bulk_update(rows_to_update, ['dealer'])
+
+
+# SQL запрос чтобы показать каких моделей нам не хватает для заполнения аукциона
+"""
+SELECT
+  DISTINCT ma.mark, mo.model
+FROM
+  statsapp_autoruparsedads AS ads
+INNER JOIN statsapp_marks AS ma ON ads.mark_id = ma.id
+INNER JOIN statsapp_models AS mo ON ads.model_id = mo.id
+WHERE
+  datetime > '2023-10-31 00:00'
+  AND datetime < '2023-10-31 23:59'
+  AND (ma.mark, mo.model) NOT IN (
+    SELECT
+      DISTINCT ma2.mark, mo2.model
+    FROM
+      statsapp_autoruauctionhistory AS au
+    INNER JOIN statsapp_marks AS ma2 ON au.mark_id = ma2.id
+    INNER JOIN statsapp_models AS mo2 ON au.model_id = mo2.id
+    LEFT JOIN statsapp_clients AS cl ON au.client_id = cl.id
+    WHERE
+      au.datetime > '2023-10-31 00:00'
+      AND au.datetime < '2023-10-31 23:59'
+      AND au.dealer > ''
+  )
+ORDER BY
+  ma.mark,
+  mo.model
+;  
+"""
 
 
 def get_feeds_settings(client_id: int) -> json:

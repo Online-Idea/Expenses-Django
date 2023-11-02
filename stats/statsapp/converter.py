@@ -690,6 +690,9 @@ def converter_process_result(process_id, client, template, task):
     read_file = read_file.astype(str).replace(r'\.0$', '', regex=True)
     read_file = read_file.astype(str).replace('é', 'e', regex=True)
     read_file = read_file.astype(str).replace('\u2070', '0', regex=True)
+    read_file = read_file.astype(str).replace('\U0001f4a5', '', regex=True)
+    read_file = read_file.astype(str).replace('\U0001f947', '', regex=True)
+    read_file = read_file.astype(str).replace('\U0001f51d', '', regex=True)
     read_file['Описание'] = read_file['Описание'].replace('_x000d_', '', regex=True)
 
     # Сохраняю в csv

@@ -193,7 +193,13 @@ $(function() {
                         <td>{{ row.model.model }}</td>
                         <td>{{ row.position }}</td>
                         <td>{{ row.bid }}</td>
-                        <td>{{ row.dealer }}</td>
+                        {% if row.dealer %}
+                            <td>{{ row.dealer }}</td>
+                        {% elif row.client %}
+                            <td>{{ row.client }}</td>
+                        {% else %}
+                            <td></td>
+                        {% endif %}
                         <td>{{ row.competitors }}</td>
                     </tr>
                 {% endfor %}

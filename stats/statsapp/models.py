@@ -383,6 +383,7 @@ class ConverterTask(BaseModel):
     stock_fields = models.ForeignKey(to='StockFields', on_delete=models.PROTECT, verbose_name='Поля стока')
     configuration = models.ForeignKey(to='Configuration', on_delete=models.SET_NULL, blank=True, null=True,
                                       verbose_name='Конфигурация')
+    notifications_email = models.CharField(max_length=500, blank=True, null=True, verbose_name='Почта для уведомлений')
 
     def __str__(self):
         return self.name

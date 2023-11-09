@@ -94,6 +94,7 @@ def export_calls():
 def export_callback():
     export_calls_for_callback()
 
+
 @shared_task
 def auction_history(client_ids=None):
     if client_ids:

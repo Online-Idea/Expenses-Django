@@ -31,7 +31,6 @@ def debug_task(self):
 def handle_task_failure(sender=None, task_id=None, exception=None,
                         args=None, kwargs=None, traceback=None, einfo=None, **kw):
     # Отправляет письмо когда Celery task крашится
-    print('\n\ncall1\n\n')
     send_mail(
         subject='Celery task failed',
         message=f'Task {sender.name} with id {task_id} failed with exception {exception}',
@@ -39,4 +38,3 @@ def handle_task_failure(sender=None, task_id=None, exception=None,
         recipient_list=['evgen0nlin3@gmail.com'],
         fail_silently=False,
     )
-    print('\n\ncall2\n\n')

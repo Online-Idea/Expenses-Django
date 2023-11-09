@@ -47,7 +47,7 @@ if live_deploy:
         }
     }
 
-elif not live_deploy:
+else:
     DEBUG = True
 
     ALLOWED_HOSTS = []
@@ -72,11 +72,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_pdb',
     'django_celery_beat',
-    "crispy_forms",
-    "crispy_bootstrap5",
-    'statsapp.apps.StatsappConfig',
+    'crispy_forms',
+    'crispy_bootstrap5',
     'rest_framework',
+    'statsapp.apps.StatsappConfig',
 ]
 
 MIDDLEWARE = [
@@ -88,6 +89,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+MIDDLEWARE_CLASSES = (
+    'django_pdb.middleware.PdbMiddleware',
+)
 
 ROOT_URLCONF = 'statsapp.urls'
 
@@ -213,3 +218,10 @@ EMAIL_PORT = os.environ['EMAIL_PORT']
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ['EMAIL_LOGIN']
 EMAIL_HOST_PASSWORD = os.environ['EMAIL_PASSWORD']
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'statsapp_cache'),
+    }
+}

@@ -241,6 +241,7 @@ def get_auction_data(request):
     return context
 
 
+# @cache_page(60)  # Кэш представления на 60 секунд
 def auction(request):
     if request.method == 'POST':
 
@@ -292,20 +293,11 @@ def auction(request):
     else:
         form = AuctionChooseForm()
 
-    marks = Marks.objects.all()
     today = datetime.date.today()
-    year = today.year
-    month = today.month
-    # datefrom = datetime.date(year, month, 1).strftime('%d.%m.%Y')
-    # dayto = today.day if today.day > 1 else 1
-    # dateto = datetime.date(year, month, dayto).strftime('%d.%m.%Y')
     context = {
         'form': form,
-        # 'datefrom': datefrom,
-        # 'dateto': dateto,
         'datefrom': today,
         'dateto': today,
-        'clients': marks,
     }
     return render(request, 'statsapp/auction.html', context)
 

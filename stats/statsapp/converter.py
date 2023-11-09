@@ -6,12 +6,14 @@ from functools import reduce
 from pathlib import Path
 import os
 
+import demoji
 import pandas.core.series
 import requests
 import datetime
 import xml.etree.ElementTree as ET
 
 from django.db.models import QuerySet
+from django.core.mail import send_mail
 from openpyxl import Workbook
 # import xlsxwriter
 import pandas as pd
@@ -19,6 +21,7 @@ from pandas import DataFrame
 from telebot.types import InputFile
 
 from stats.settings import env
+from statsapp.email_sender import send_email
 from statsapp.models import *
 from statsapp.management.commands.bot import bot
 
@@ -49,16 +52,14 @@ def get_price(task):
     :param task: строка из таблицы Задачи конвертера
     """
     template = converter_template(task)
-    client_slug = task.client.slug
-    client_name = task.client.name
     process_id = converter_post(task)
-    price = converter_process_result(process_id, client_slug, template, task)
+    price = converter_process_result(process_id, template, task)
     logs = converter_logs(process_id)
-    logs_xlsx = logs_to_xlsx(logs, template, client_slug)
-    bot_messages(logs, logs_xlsx, price, client_slug, client_name)
+    logs_xlsx = logs_to_xlsx(logs, template, task)
+    bot_messages(logs, logs_xlsx, price, task)
     save_on_ftp(logs_xlsx)
     os.remove(logs_xlsx)
-    print(f'Клиент {client_slug} - прайс готов')
+    print(f'Клиент {task.client.slug} - прайс готов')
     return
 
 
@@ -645,14 +646,15 @@ def converter_post(task):
     return response.json()['processId']
 
 
-def converter_process_result(process_id, client, template, task):
+def converter_process_result(process_id, template, task):
     """
     Возвращает готовый прайс
     :param process_id: из converter_post
-    :param client: имя клиента как slug - используется как имя папки клиента куда сохраняется прайс
     :param template: шаблон как pandas dataframe - если из шаблона нужны данные для прайса
     :param task: строка из таблицы Задачи конвертера
     """
+    client = task.client.slug
+
     # Получаю прайс от конвертера по process_id
     url = 'http://151.248.118.19/Api/Stock/GetProcessResult'
     payload = {'processId': (None, process_id)}
@@ -687,12 +689,15 @@ def converter_process_result(process_id, client, template, task):
 
     # Мелкие замены
     read_file.fillna('', inplace=True)
-    read_file = read_file.astype(str).replace(r'\.0$', '', regex=True)
-    read_file = read_file.astype(str).replace('é', 'e', regex=True)
-    read_file = read_file.astype(str).replace('\u2070', '0', regex=True)
-    read_file = read_file.astype(str).replace('\U0001f4a5', '', regex=True)
-    read_file = read_file.astype(str).replace('\U0001f947', '', regex=True)
-    read_file = read_file.astype(str).replace('\U0001f51d', '', regex=True)
+    read_file = read_file.astype(str).replace(
+        {
+            r"\.0$": "",
+            "é": "e",
+            "\u2070": "0",
+        },
+        regex=True,
+    )
+    read_file = read_file.map(lambda x: demoji.replace(x, ''))
     read_file['Описание'] = read_file['Описание'].replace('_x000d_', '', regex=True)
 
     # Сохраняю в csv
@@ -719,12 +724,12 @@ def converter_logs(process_id):
     return logs
 
 
-def logs_to_xlsx(logs, template, client):
+def logs_to_xlsx(logs, template, task):
     """
     Логи конвертера вместе с расшифровкой в xlsx
     :param logs: логи от converter_logs
     :param template: шаблон от converter_template
-    :param client: клиент как client_slug для имени папки и файла
+    :param task: строка из таблицы Задачи конвертера
     :return: xlsx файл логов
     """
     lookup_cols = {
@@ -736,6 +741,8 @@ def logs_to_xlsx(logs, template, client):
         # 'Опции': в логи идут только коды, без расшифровки
         # 'Фото': только количество без фото
     }
+    client_name = task.client.name
+    client_slug = task.client.slug
 
     # Переделываю логи в словарь
     lines = logs.split('\n')[:-2]  # Последние 2 убираю т.к. там Время обработки и пустая строка
@@ -764,7 +771,7 @@ def logs_to_xlsx(logs, template, client):
             logs_dict[key] = joined
 
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
-    logs_save_path = f'converter/{client}/logs/log_{client}_{file_date}.xlsx'
+    logs_save_path = f'converter/{client_slug}/logs/log_{client_slug}_{file_date}.xlsx'
     os.makedirs(os.path.dirname(logs_save_path), exist_ok=True)
 
     # Готовые логи в xlsx
@@ -773,18 +780,31 @@ def logs_to_xlsx(logs, template, client):
             df = pd.DataFrame(value)
             # Такой длинный вариант чтобы убрать форматирование заголовков которое pandas применяет по умолчанию
             df.T.reset_index().T.to_excel(writer, sheet_name=key, header=False, index=False)
+
+    # Отправляю логи на почту
+    if task.notifications_email:
+        if any(code in logs_dict for code in list(lookup_cols.keys())) or logs_dict['Фото'].iloc[0] > 0:
+            send_email(
+                subject='Конвертер. Добавить коды',
+                body=f'Нужно добавить коды для клиента {client_name}.\nЛоги:\n{logs}',
+                recipients=task.notifications_email,
+                attachments=[logs_save_path],
+            )
+
     return logs_save_path
 
 
-def bot_messages(logs, logs_xlsx, price, client_slug, client_name):
+def bot_messages(logs, logs_xlsx, price, task):
     """
     Сообщения для телеграм бота
     :param logs: логи от converter_logs
     :param logs_xlsx: логи в xlsx от logs_to_xlsx
     :param price: прайс от converter_process_result
-    :param client_slug: клиент как client_slug для имени папки и файла
-    :param client_name: клиент как client_name для сообщения бота
+    :param task: строка из таблицы Задачи конвертера
     """
+    client_name = task.client.name
+    client_slug = task.client.slug
+
     # Прайс в csv
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
     price_save_path = f'converter/{client_slug}/prices/price_{client_slug}_{file_date}.csv'

@@ -101,7 +101,7 @@ class ConverterTaskAdmin(admin.ModelAdmin):
     list_filter = ('client', 'active')
     fields = ('id', 'client', 'name', 'stock_source', 'stock_url', 'stock_post_host', 'stock_post_login',
               'stock_post_password', 'active', 'photos_folder', 'front', 'back', 'interior', 'salon_only', 'template',
-              'stock_fields', 'configuration')
+              'stock_fields', 'configuration', 'notifications_email')
     readonly_fields = ('id', 'template')
     save_on_top = True
 

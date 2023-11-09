@@ -6,6 +6,7 @@ from email.mime.text import MIMEText
 from datetime import date
 
 
+# TODO убрать
 def send_email_to_client(client_email: str, file_paths: list) -> None:
     """
     Отправляет письмо с файлом
@@ -45,3 +46,28 @@ def send_email_to_client(client_email: str, file_paths: list) -> None:
         smtp.login(sender, password)
         smtp.sendmail(sender, recipients, msg.as_string())
 
+
+def send_email(subject: str, body: str, recipients: str, attachments: list = None):
+    sender = os.environ['EMAIL_LOGIN']
+    password = os.environ['EMAIL_PASSWORD']
+
+    # Сообщение
+    msg = MIMEMultipart()
+    msg['From'] = sender
+    msg['To'] = recipients
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Прикрепляю файлы
+    if attachments:
+        for file in attachments:
+            file_name_ext = os.path.basename(file)
+            with open(file, 'rb') as f:
+                attachment = MIMEApplication(f.read(), _subtype='xlsx')
+                attachment.add_header('Content-Disposition', 'attachment', filename=file_name_ext)
+                msg.attach(attachment)
+
+    # Отправляю письмо
+    with smtplib.SMTP_SSL('smtp.yandex.ru', 465) as smtp:
+        smtp.login(sender, password)
+        smtp.sendmail(sender, recipients, msg.as_string())

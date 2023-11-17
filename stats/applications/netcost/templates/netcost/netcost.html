@@ -1,0 +1,194 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block headcontent %}
+<title>Себестоимость звонков</title>
+
+<script src="{% static 'netcost/js/netcost.js' %}"></script>
+
+<!-- Date Range Picker -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
+<script>
+<!--Выбор периода-->
+$(function() {
+  $('input[name="daterange"]').daterangepicker({
+    opens: 'left',
+    "showDropdowns": true,
+    "minYear": 2016,
+    "maxYear": 2050,
+    "autoApply": true,
+    "locale": {
+        "format": "DD.MM.YYYY",
+        "separator": " - ",
+        "applyLabel": "Apply",
+        "cancelLabel": "Cancel",
+        "fromLabel": "From",
+        "toLabel": "To",
+        "customRangeLabel": "Custom",
+        "weekLabel": "Н",
+        "daysOfWeek": [
+            "Вс",
+            "Пн",
+            "Вт",
+            "Ср",
+            "Чт",
+            "Пт",
+            "Сб"
+        ],
+        "monthNames": [
+            "Январь",
+            "Февраль",
+            "Март",
+            "Апрель",
+            "Май",
+            "Июнь",
+            "Июль",
+            "Август",
+            "Сентябрь",
+            "Октябрь",
+            "Ноябрь",
+            "Декабрь"
+        ],
+        "firstDay": 1,
+    },
+    "startDate": "{{ datefrom }}",
+    "endDate": "{{ dateto }}",
+    "drops": "right"
+},  function(start, end, label) {
+    console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+  });
+});
+</script>
+
+<script>
+    $(document).ready(function() {
+        $('#tableOne').DataTable( {
+            fixedHeader: {
+                header: true,
+                footer: true
+            },
+            select: {
+                toggleable: true,
+                info: false
+            },
+            responsive: true,
+            language: {
+                url: '{% static 'js/datatables-ru.json' %}'
+            }
+        } );
+
+        <!--Чекбокс Выбрать все для клиентов-->
+        $('#id_select_all_clients').click(function() {
+          $('input[type=checkbox][name=client_checkbox]').prop('checked', $(this).prop('checked'));
+        });
+    } );
+</script>
+
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-xl-12">
+            <h3 class="logo"><a href="{% url 'home' %}">Себестоимость звонков</a></h3>
+            <p><em>сейчас только авто.ру</em></p>
+
+            <!--Выбор периода-->
+            <form method="POST" class="period">
+                {% csrf_token %}
+                {{ form.daterange }}
+                <button type="submit" class="btn btn-primary">Показать</button>
+                <!--Список клиентов-->
+                <details>
+                    <summary>Клиенты</summary>
+                    <div class="content">
+                        <label for="id_select_all_clients">
+                            {{ form.select_all_clients }}
+                            Выбрать все
+                        </label>
+                        {{ form.client_checkbox }}
+                    </div>
+                </details>
+            </form>
+
+            <!--Таблица себестоимости-->
+            {% if stats %}
+            <table id="tableOne" class="row-border hover order-column stripe compact">
+                <thead class="thead-dark">
+                <tr>
+                    <th>Клиент</th>
+                    <th>Приход с площадки</th>
+                    <th>Траты на площадку</th>
+                    <th>Траты на звонки</th>
+                    <th>Траты на услуги</th>
+                    <th>Звонки с площадки</th>
+                    <th>Цена звонка</th>
+                    <th>Цена клиента</th>
+                    <th>Маржа</th>
+                    <th>Заработок</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for stat in stats %}
+                <tr>
+                    <td class="client-name">{{ stat.name }}</td>
+                    <td>{{ stat.teleph_calls_sum|floatformat:"0" }}</td>
+                    <td>{{ stat.platform|floatformat:"0" }}</td>
+                    <td>{{ stat.calls_sum|floatformat:"0" }}</td>
+                    <td>{{ stat.products_sum|floatformat:"0" }}</td>
+                    <td>{{ stat.teleph_target }}</td>
+                    <td>{{ stat.call_cost|floatformat:"0" }}</td>
+                    <td>{{ stat.client_cost|floatformat:"0" }}</td>
+                    {% if stat.margin < 0 %}
+                    <td class="negative">{{ stat.margin|floatformat:"0" }}</td>
+                    {% else %}
+                    <td>{{ stat.margin|floatformat:"0" }}</td>
+                    {% endif %}
+                    {% if stat.profit < 0 %}
+                    <td class="negative">{{ stat.profit|floatformat:"0" }}</td>
+                    {% else %}
+                    <td>{{ stat.profit|floatformat:"0" }}</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot class="tfoot-dark">
+                <tr>
+                    <td>Всего</td>
+                    <td>{{ subtotal.teleph_calls_sum|floatformat:"0" }}</td>
+                    <td>{{ subtotal.platform|floatformat:"0" }}</td>
+                    <td>{{ subtotal.calls_sum|floatformat:"0" }}</td>
+                    <td>{{ subtotal.products_sum|floatformat:"0" }}</td>
+                    <td>{{ subtotal.teleph_target }}</td>
+                    <td>{{ subtotal.calls_cost|floatformat:"0" }}</td>
+                    <td>{{ subtotal.client_cost|floatformat:"0" }}</td>
+                    {% if subtotal.margin < 0 %}
+                    <td class="negative">{{ subtotal.margin|floatformat:"0" }}</td>
+                    {% else %}
+                    <td>{{ subtotal.margin|floatformat:"0" }}</td>
+                    {% endif %}
+                    {% if subtotal.profit < 0 %}
+                    <td class="negative">{{ subtotal.profit|floatformat:"0" }}</td>
+                    {% else %}
+                    <td>{{ subtotal.profit|floatformat:"0" }}</td>
+                    {% endif %}
+                </tr>
+                </tfoot>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        {% if clients_checked %}
+            selected_checkboxes({{ clients_checked|safe }}, 'client_checkbox', 'select_all_clients');
+        {% endif %}
+    });
+</script>
+
+{% endblock %}

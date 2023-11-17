@@ -14,6 +14,7 @@ import os
 import environ
 from pathlib import Path
 
+
 live_deploy = False
 
 env = environ.Env()
@@ -77,7 +78,14 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'rest_framework',
-    'statsapp.apps.StatsappConfig',
+
+    'applications.netcost',
+    'applications.autoconverter',
+    'applications.auction',
+    'applications.srav',
+    'libs.services',
+    'libs.autoru',
+    'libs.teleph',
 ]
 
 MIDDLEWARE = [
@@ -94,12 +102,15 @@ MIDDLEWARE_CLASSES = (
     'django_pdb.middleware.PdbMiddleware',
 )
 
-ROOT_URLCONF = 'statsapp.urls'
+ROOT_URLCONF = 'stats.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+            BASE_DIR / 'libs/services/templatetags',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -150,6 +161,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 if live_deploy:
     STATIC_ROOT = '/home/django/django_venv/src/staticfiles/'
@@ -222,6 +237,6 @@ EMAIL_HOST_PASSWORD = os.environ['EMAIL_PASSWORD']
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': os.path.join(BASE_DIR, 'statsapp_cache'),
+        'LOCATION': os.path.join(BASE_DIR, 'stats_cache'),
     }
 }

@@ -1,10 +1,9 @@
 import os
-import signal
-from celery import Celery, Task
-from celery.utils.log import get_task_logger
-from celery.signals import task_failure
-from django.core.mail import send_mail
 
+from celery import Celery
+from celery.signals import task_failure
+from celery.utils.log import get_task_logger
+from django.core.mail import send_mail
 
 # class MyBaseTask(Task):
 #     def __call__(self, *args, **kwargs):

@@ -950,20 +950,20 @@ def fill_in_auction_with_parsed_ads(parsed_ads: list) -> None:
 SELECT
   DISTINCT ma.mark, mo.model
 FROM
-  statsapp_autoruparsedads AS ads
-INNER JOIN statsapp_marks AS ma ON ads.mark_id = ma.id
-INNER JOIN statsapp_models AS mo ON ads.model_id = mo.id
+  srav_autoru_parsed_ad AS ads
+INNER JOIN services_mark AS ma ON ads.mark_id = ma.id
+INNER JOIN services_model AS mo ON ads.model_id = mo.id
 WHERE
-  datetime > '2023-10-31 00:00'
-  AND datetime < '2023-10-31 23:59'
+  datetime > '2023-11-17 00:00'
+  AND datetime < '2023-11-17 23:59'
   AND (ma.mark, mo.model) NOT IN (
     SELECT
       DISTINCT ma2.mark, mo2.model
     FROM
-      statsapp_autoruauctionhistory AS au
-    INNER JOIN statsapp_marks AS ma2 ON au.mark_id = ma2.id
-    INNER JOIN statsapp_models AS mo2 ON au.model_id = mo2.id
-    LEFT JOIN statsapp_clients AS cl ON au.client_id = cl.id
+      auction_autoru_auction_history AS au
+    INNER JOIN services_mark AS ma2 ON au.mark_id = ma2.id
+    INNER JOIN services_model AS mo2 ON au.model_id = mo2.id
+    LEFT JOIN services_client AS cl ON au.client_id = cl.id
     WHERE
       au.datetime > '2023-10-31 00:00'
       AND au.datetime < '2023-10-31 23:59'

@@ -35,3 +35,23 @@ def xlsx_column_width(sheet, custom_width: dict = None):
             sheet.column_dimensions[column_letter].width = adjusted_width
 
     return sheet
+
+
+def split_daterange(daterange: str) -> dict:
+    """
+    Разбивает период из форм на отдельные даты
+    :param daterange: строка периода из формы
+    :return: словарь с датой до и по. В виде строки и в виде datetime
+    """
+    dates = daterange.split(' ')
+    # Разбиваю дату на день, месяц, год
+    date_start = [int(i) for i in dates[0].split('.')]
+    date_end = [int(i) for i in dates[2].split('.')]
+    datefrom = datetime(date_start[2], date_start[1], date_start[0], 00, 00, 00, 629013)
+    dateto = datetime(date_end[2], date_end[1], date_end[0], 23, 59, 59, 629013)
+    return {
+        'start': date_start,
+        'end': date_end,
+        'from': datefrom,
+        'to': dateto,
+    }

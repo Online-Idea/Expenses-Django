@@ -47,9 +47,8 @@
                 {% if request.user|has_group:"admin" %}
                     <a class="nav-item nav-link" href="{% url 'home' %}">Себестоимость</a>
                     <a class="nav-item nav-link" href="{% url 'converter_manual' %}">Автоконвертер</a>
-                {% endif %}
-                {% if request.user|has_group:"admin,test" %}
                     <a class="nav-item nav-link" href="{% url 'auction' %}">Аукцион</a>
+                    <a class="nav-item nav-link" href="{% url 'srav' %}">Сравнительная</a>
                 {% endif %}
             </div>
             <div class="navbar-nav ms-auto">

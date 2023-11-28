@@ -121,6 +121,10 @@ def converter_template(task):
     else:
         return 'Неверный формат файла, должен быть xml или xlsx'
 
+    # Убираю лишние пробелы
+    template = template.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    template = template.applymap(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
+
     save_on_ftp(template_path)
     os.remove(stock_path)
 
@@ -238,6 +242,12 @@ def template_xml(stock_path, template_path, task):
     for row in reversed(range(1, sheet.max_row + 1)):
         if all(cell.value is None for cell in sheet[row]):
             sheet.delete_rows(row)
+
+    # Удаляю лишние пробелы
+    for row in workbook.active.iter_rows():
+        for cell in row:
+            if isinstance(cell.value, str):
+                cell.value = cell.value.rstrip()
 
     workbook.save(filename=template_path)
 
@@ -457,6 +467,8 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
     df_stock_copy = df_stock_copy[[v[0] for k, v in template_col.items()]]
     # В Опции и пакеты заменяю переносы строк на пробел
     df_stock_copy['Опции и пакеты'].replace(r'\n', ' ', regex=True, inplace=True)
+    # Убираю лишние пробелы
+    df_stock_copy = df_stock_copy .applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
     df_stock_copy.T.reset_index().T.to_excel(template_path, sheet_name='Шаблон', header=False, index=False)
 

@@ -1,0 +1,74 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load cache %}
+
+{% block headcontent %}
+
+<title>Сравнительная</title>
+
+{% include 'base/daterange_picker.html' %}
+
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-xl-12 center">
+            <h3 class="logo"><a href="{% url 'srav' %}">Сравнительная</a></h3>
+
+            <!--Выбор периода-->
+            <form method="POST" class="period">
+                {% csrf_token %}
+                {{ form.daterange }}
+                <button type="submit" class="btn btn-primary">Показать</button>
+                <button type="submit" class="btn btn-primary" formaction="{% url 'download_srav' %}">Скачать</button>
+
+
+                <!-- Список марок -->
+                <details>
+                    <summary>Марки</summary>
+                    <div class="content">
+                        <label for="id_select_all_marks">
+                            {{ form.select_all_marks }}
+                            Выбрать все
+                        </label>
+                        {{ form.mark_checkbox }}
+                    </div>
+                </details>
+
+                <!-- Список регионов -->
+                <details>
+                    <summary>Регионы</summary>
+                    <div class="content">
+                        <label for="id_select_all_regions">
+                            {{ form.select_all_regions }}
+                            Выбрать все
+                        </label>
+                        {{ form.region_checkbox }}
+                    </div>
+                </details>
+
+            </form>
+
+            {% if srav_data %}
+                {{ srav_data }}
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        {% if marks_checked %}
+            selected_checkboxes({{ marks_checked|safe }}, 'mark_checkbox', 'select_all_marks');
+        {% endif %}
+
+        {% if regions_checked %}
+            selected_checkboxes({{ regions_checked|safe }}, 'region_checkbox', 'select_all_regions');
+        {% endif %}
+    });
+</script>
+
+{% endblock %}

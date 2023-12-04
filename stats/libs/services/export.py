@@ -132,7 +132,8 @@ def export_calls_to_file() -> str:
 def export_calls_for_callback():
     from_, to = last_30_days()
     minus_3_days = to.date() - timedelta(days=3)
-    calls = TelephCall.objects.filter(~Q(client__teleph_id='Exeed_voronezh'), datetime__gte=from_, datetime__lte=to) \
+    client_filter = ['avilon_premium_legenda', 'avilon_premium_volg', 'Gate']
+    calls = TelephCall.objects.filter(client__teleph_id__in=client_filter, datetime__gte=from_, datetime__lte=to) \
         .values('client__name', 'datetime', 'num_from', 'target', 'call_status', 'comment')
 
     statuses = [

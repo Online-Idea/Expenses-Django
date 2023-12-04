@@ -78,7 +78,9 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'rest_framework',
+    'ajax_datatable',
 
+    # Мои
     'applications.netcost',
     'applications.autoconverter',
     'applications.auction',
@@ -168,6 +170,7 @@ STATICFILES_DIRS = [
 
 if live_deploy:
     STATIC_ROOT = '/home/django/django_venv/src/staticfiles/'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

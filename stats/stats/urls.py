@@ -18,6 +18,7 @@ from django.contrib import admin
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
     path('', include('libs.services.urls')),
     path('', include('applications.auction.urls')),
     path('', include('applications.autoconverter.urls')),

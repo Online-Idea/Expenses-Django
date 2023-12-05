@@ -67,6 +67,16 @@ else:
 # Application definition
 
 INSTALLED_APPS = [
+    # Мои
+    'applications.netcost.apps.NetcostConfig',
+    'applications.autoconverter.apps.AutoconverterConfig',
+    'applications.auction.apps.AuctionConfig',
+    'applications.srav.apps.SravConfig',
+    'applications.ads.apps.AdsConfig',
+    'libs.services.apps.ServicesConfig',
+    'libs.autoru.apps.AutoruConfig',
+    'libs.teleph.apps.TelephConfig',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -79,15 +89,6 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'rest_framework',
     'ajax_datatable',
-
-    # Мои
-    'applications.netcost',
-    'applications.autoconverter',
-    'applications.auction',
-    'applications.srav',
-    'libs.services',
-    'libs.autoru',
-    'libs.teleph',
 ]
 
 MIDDLEWARE = [

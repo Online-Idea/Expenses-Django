@@ -10,6 +10,11 @@ from .utils import last_30_days
 
 
 @shared_task
+def autoru_catalog():
+    update_autoru_catalog()
+
+
+@shared_task
 def autoru_products(from_=None, to=None, clients=None):
     if not from_ and not to:  # Если обе даты не заполнены то берём последние 30 дней
         from_, to = last_30_days()

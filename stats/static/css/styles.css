@@ -54,8 +54,7 @@ ul {
 
 
 
-/*----------------Таблица себестоимости--------------*/
-
+/*---------------- DataTables.net мои настройки --------------*/
 .table-responsive-stack tr {
   display: -webkit-box;
   display: -ms-flexbox;
@@ -112,9 +111,19 @@ ul {
     color: red;
 }
 
+th {
+   white-space: normal !important;
+   vertical-align: middle;
+}
+
+table.dataTable td,
+table.dataTable tr {
+ font-size: 14px;
+}
+
 /*---------------------------------------------------*/
 
-/*----------------График--------------*/
+/*---------------- График ---------------------------*/
 .graph {
     max-width: none;
 }

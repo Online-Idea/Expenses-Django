@@ -42,7 +42,8 @@ def srav(request):
         if not form.is_valid():
             return HttpResponse(status=400)
 
-        daterange = split_daterange(form.cleaned_data.get('daterange'))
+        daterange_str = form.cleaned_data.get('daterange')
+        daterange = split_daterange(daterange_str)
 
         # Выбранные марки
         marks_checked = [m for m in request.POST.getlist('mark_checkbox')]
@@ -50,27 +51,17 @@ def srav(request):
         regions_checked = [r for r in request.POST.getlist('region_checkbox')]
 
         filter_params = {
-            'datetime__gte': daterange['from'],
-            'datetime__lte': daterange['to'],
+            'daterange': daterange_str,
             'mark_id__in': marks_checked,
             'region__in': regions_checked
         }
-
-        srav_data = (
-            AutoruParsedAd.objects.select_related(
-                'mark', 'model', 'client'
-            )
-            .filter(**filter_params)
-            .order_by('-datetime', 'region', 'mark', 'model')
-        )
         context = {
             'form': form,
             'marks_checked': json.dumps(marks_checked),
             'regions_checked': json.dumps(regions_checked),
             'datefrom': daterange['start'],
             'dateto': daterange['end'],
-            'srav_data': srav_data,
-
+            'filter_params': filter_params,
         }
         return render(request, 'srav/srav.html', context)
 
@@ -90,7 +81,3 @@ def srav(request):
 @allowed_users(allowed_groups=['admin'])
 def download_srav(request):
     return HttpResponse('hey')
-
-
-def ajax_test(request):
-    return render(request, 'srav/srav.html')

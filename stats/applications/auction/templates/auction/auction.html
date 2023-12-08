@@ -66,7 +66,7 @@
                 {% csrf_token %}
                 {{ form.daterange }}
                 <button type="submit" class="btn btn-primary">Показать</button>
-                <button type="submit" class="btn btn-primary" formaction="{% url 'download_auction' %}">Скачать</button>
+                <button type="submit" class="btn btn-outline-primary" formaction="{% url 'download_auction' %}">Скачать</button>
 
 
                 <!-- Список марок -->

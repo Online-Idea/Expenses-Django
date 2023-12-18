@@ -1,0 +1,50 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="container">
+        <div class="my-card">
+            <div class="card-slider">
+                <div class="card-slider__nav slider-nav">
+                    {% for photo in ad.get_additional_photos %}
+                    <div class="slider-nav__item slider__item" tabindex="0">
+                        <img src="{{ photo }}" alt="">
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="card-slider__block slider-block">
+                    <div class="swiper-wrapper">
+                        {% for index, photo in additional_photos_enum %}
+                        <div class="swiper-slide">
+                            <a href="{{ photo }}" data-lightbox="photos" data-title="{{ ad.mark }} {{ ad.model }}">
+                                <img class="rounded" src="{{ photo }}" alt="{{ ad }}">
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <!-- Правая часть - подробная информация об авто -->
+
+            <div class="card-info">
+                <span class="datetime-update">{{ ad.datetime_updated|date:"Y-m-d H:i" }}</span>
+                <h1 class="title">{{ ad.mark }} {{ ad.model }}</h1>
+                <div class="price">
+                    <span class="price__current">{{ ad.get_price_display }}</span>
+                </div>
+                <p class="card-text">
+                    <strong>Комплектация:</strong> {{ ad.configuration }}<br>
+                    <strong>Кузов:</strong> {{ ad.body_type }}<br>
+                    <strong>Год выпуска:</strong> {{ ad.year }}<br>
+                    <strong>Цвет:</strong> {{ ad.color}}<br>
+                    <strong>Исходный VIN:</strong> {{ ad.vin }}
+                </p>
+                <p class="card-text">
+                    <strong>Описание:</strong><br>
+                    <textarea rows="4" cols="50" readonly>{{ ad.description }}</textarea>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

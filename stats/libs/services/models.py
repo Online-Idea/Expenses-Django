@@ -118,7 +118,7 @@ class Generation(BaseModel):
         verbose_name_plural = 'Поколения'
 
 
-class BodyTypeChoice(models.TextChoices):
+class BodyTypes(models.TextChoices):
     JEEP = 'Внедорожник', 'Внедорожник'
     JEEP_3 = 'Внедорожник 3 дв.' 'Внедорожник 3 дв.'
     JEEP_5 = 'Внедорожник 5 дв.', 'Внедорожник 5 дв.'
@@ -159,7 +159,7 @@ class Modification(BaseModel):
     generation = models.ForeignKey('Generation', on_delete=models.PROTECT, verbose_name='Поколение')
     complectation = models.ForeignKey('Complectation', related_name='modifications', null=True, blank=True,
                                       on_delete=models.PROTECT, verbose_name='Комплектация')
-    body_type = models.CharField(max_length=100, choices=BodyTypeChoice.choices,
+    body_type = models.CharField(max_length=100, choices=BodyTypes.choices,
                                  verbose_name='Кузов')  # Изменил значение choices
     engine_volume = models.IntegerField(null=True, blank=True, verbose_name='Объём двигателя')
     power = models.IntegerField(verbose_name='Мощность')

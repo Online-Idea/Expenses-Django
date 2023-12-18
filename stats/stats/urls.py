@@ -24,5 +24,6 @@ urlpatterns = [
     path('', include('applications.autoconverter.urls')),
     path('', include('applications.srav.urls')),
     path('', include('applications.netcost.urls')),
+    path('', include('applications.ads.urls', namespace='ads_app')),
     path('', include('libs.autoru.urls')),
 ]

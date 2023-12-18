@@ -129,3 +129,81 @@ ul {
     padding: 0;
     color: #CC0000;
 }
+/*------------------------Карточка объявления---------------------------*/
+
+.date-updated {
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+.update-date {
+  font-size: 14px;
+  color: #888;
+}
+
+.card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 25px;
+}
+
+.card-title a {
+  margin-right: 10px;
+}
+
+.card-text {
+  font-size: 20px;
+  margin-top: 20px;
+}
+
+/* стили для цены, года */
+.price {
+  font-weight: bold;
+}
+
+.year {
+  font-weight: 400;
+}
+
+#sort-label {
+    background-color: #4CAF50;
+    color: white;
+    padding: 4px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+#sort-label.hide {
+    display: none; /* Скрываем метку при добавлении класса "hide" */
+}
+
+#id_vin_search {
+    width: 250px;
+    margin-bottom: 15px;
+}
+
+.flex-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-left: 15px;
+    padding-top: 15px;
+
+}
+
+.flex-container > div {
+    flex: 1;
+}
+
+.form-container {
+    width: 65%;
+    flex: 0 0 auto;
+    padding-top: 15px;
+}
+
+.search-container {
+    margin-left: auto;
+    align-self: flex-start;
+}

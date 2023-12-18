@@ -1,0 +1,33 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Список объявлений</h1>
+    <!-- Форма сортировки -->
+    <div class="mb-2 flex-container">
+        <div>
+            <button id="toggle-sort" type="button" class="btn btn-secondary btn-sm">Показать сортировку ▶</button>
+            <span id="sort-label" class="ml-2"></span>
+            <form id="sort-form" method="post" class="d-none form-container">
+                {% csrf_token %}
+                {{ sort_form.as_p }}
+                <div id="sort-fields-container"></div>
+                <button id="add-sort-field" type="button" class="btn btn-primary">Добавить поле</button>
+                <button id="apply-sort" type="button" class="btn btn-primary">Применить</button>
+                <button id="reset-sort" type="button" class="btn btn-danger">Сбросить</button>
+            </form>
+        </div>
+
+        <div class="search-container">
+            <label for="id_vin_search">Поиск по VIN:</label>
+            <input type="text" name="vin_search" class="form-control" id="id_vin_search">
+            <button id="apply-search" type="button" class="btn btn-primary">Искать</button>
+        </div>
+
+    </div>
+
+
+    {% include 'ads/ads_block.html' %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,33 @@
+<div id="ads-container">
+        {% for ad in ads %}
+        <div class="container mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <a href="{{ ad.get_absolute_url }}" target="_blank" rel="noopener">
+                                <img class="img-fluid rounded" src="{{ ad.get_first_photo }}" alt="{{ ad }}">
+                            </a>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="date-updated">
+                                <span class="update-date">{{ ad.datetime_updated|date:"Y-m-d H:i" }}</span>
+                            </div>
+                            <div class="card-title">
+                                <a href="{{ ad.get_absolute_url }}" target="_blank" rel="noopener">{{ ad.mark }} {{ ad.model }}</a>
+                                <span class="price">{{ ad.get_price_display }}</span>
+                                <span class="year">{{ ad.year }}г</span>
+                            </div>
+                            <p class="card-text text-body-secondary">
+                                {{ ad.configuration }}<br>
+                                {{ ad.body_type }}<br>
+                                {{ ad.color }}<br>
+                                {{ ad.vin }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>

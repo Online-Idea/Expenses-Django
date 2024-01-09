@@ -56,7 +56,15 @@
                     <a class="nav-item nav-link" href="{% url 'home' %}">Себестоимость</a>
                     <a class="nav-item nav-link" href="{% url 'converter_manual' %}">Автоконвертер</a>
                     <a class="nav-item nav-link" href="{% url 'auction' %}">Аукцион</a>
-                    <a class="nav-item nav-link" href="{% url 'srav' %}">Сравнительная</a>
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Конкуренты
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'comparison' %}">Сравнительная</a></li>
+                            <li><a class="dropdown-item" href="{% url 'parsed_ads' %}">Выдача</a></li>
+                        </ul>
+                    </div>
                 {% endif %}
             </div>
             <div class="navbar-nav ms-auto">

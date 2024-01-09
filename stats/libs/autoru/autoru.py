@@ -7,11 +7,12 @@ from typing import Union, List, Dict
 import numpy as np
 import pandas as pd
 import requests
-from django.db.models import Q, Count
+from django.db.models import Q, Count, QuerySet
 from pandas import DataFrame
+from rest_framework.utils.serializer_helpers import ReturnList
 
 from applications.auction.models import AutoruAuctionHistory
-from applications.srav.models import AutoruParsedAd
+from applications.srav.models import AutoruParsedAd, SravPivot
 from stats.settings import env
 from .models import *
 
@@ -974,6 +975,67 @@ ORDER BY
   mo.model
 ;  
 """
+
+
+def fill_in_unique_cheapest_for_srav_pivot(qs: Union[QuerySet[AutoruParsedAd], ReturnList]) -> QuerySet[SravPivot]:
+    """
+    Со спарсенных объявлений берёт самые дешёвые и уникальные и заносит в базу
+    :param qs: спарсенные объявления, передавать все объявления с одного запуска парсера
+    :return: самые дешевые и уникальные как записи из SravPivot
+    """
+    if type(qs) == QuerySet[AutoruParsedAd]:
+        df = pd.DataFrame.from_records(qs.values())
+        common_cols = ['mark_id', 'model_id']
+    elif type(qs) == ReturnList:
+        df = pd.DataFrame.from_records(qs)
+        common_cols = ['mark', 'model']
+    else:
+        raise ValueError('Неверные данные, должны быть QuerySet[AutoruParsedAd] либо ReturnList')
+
+    common_cols.extend(['complectation', 'modification', 'year'])
+
+    # Сортирую
+    df = df.sort_values(by=common_cols+['price_with_discount'])
+
+    # Количество автомобилей
+    df_in_stock = df[df['in_stock'] == 'В наличии']
+    count_df = df_in_stock.groupby(common_cols+['dealer']) \
+        .size().reset_index(name='stock')
+    df = pd.merge(df, count_df, on=common_cols+['dealer'], how='left')
+
+    df_for_order = df[df['in_stock'].isin(['В пути', 'На заказ'])]
+    count_df = df_for_order.groupby(common_cols+['dealer']) \
+        .size().reset_index(name='for_order')
+    df = pd.merge(df, count_df, on=common_cols+['dealer'], how='left')
+
+    # Пустые на 0
+    df[['stock', 'for_order']] = df[['stock', 'for_order']].fillna(0)
+
+    # Удаляю дубликаты
+    df = df.drop_duplicates(subset=common_cols+['dealer'])
+
+    # Позиция по цене
+    df['position_price'] = df.groupby(common_cols).cumcount() + 1
+
+    # В базу
+    df_records = df.to_dict('records')
+
+    # id AutoruParsedAd
+    ids = [record['id'] for record in df_records]
+    ads = AutoruParsedAd.objects.filter(id__in=ids)
+    ad_dict = {ad.id: ad for ad in ads}
+
+    # Новые SravPivot
+    model_instances = [SravPivot(
+        autoru_parsed_ad=ad_dict[record['id']],
+        position_price=record['position_price'],
+        in_stock_count=record['stock'],
+        for_order_count=record['for_order']
+    ) for record in df_records]
+
+    objs = SravPivot.objects.bulk_create(model_instances)
+
+    return objs
 
 
 def get_feeds_settings(client_id: int) -> json:

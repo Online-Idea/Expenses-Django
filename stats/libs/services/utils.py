@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+from django.db import models
+from openpyxl.workbook import Workbook
 
 
 def last_30_days():
@@ -55,3 +57,46 @@ def split_daterange(daterange: str) -> dict:
         'from': datefrom,
         'to': dateto,
     }
+
+
+def get_all_fields_verbose_names(model, prefix='') -> dict:
+    """
+    Возвращает verbose_name всех полей модели.
+    Если есть внешние ключи то по ним также проходит.
+    :param model: Django модель
+    :param prefix:
+    :return: словарь {'field': verbose_name, 'fk_field__field': verbose_name}
+    """
+    result = {}
+    for field in model._meta.fields:
+        if isinstance(field, models.ForeignKey):
+            related_model = field.related_model
+            related_prefix = f'{prefix}{field.name}__'
+            related_result = get_all_fields_verbose_names(related_model, related_prefix)
+            result.update(related_result)
+        else:
+            result[f'{prefix}{field.name}'] = field.verbose_name
+    return result
+
+
+def make_xlsx_for_download(qs, headers) -> Workbook:
+    """
+    Создаёт xlsx файл для скачивания
+    :param qs: list of tuples
+    :param headers: list заголовков
+    :return: openpyxl Workbook
+    """
+    wb = Workbook()
+    ws = wb.active
+    ws.append(headers)
+
+    replacement_bool = {True: 'да', False: 'нет'}
+
+    for row in qs:
+        row = [dt.replace(tzinfo=None) if hasattr(dt, 'tzinfo') and dt.tzinfo else dt for dt in row]
+        row = [dt + timedelta(hours=3) if isinstance(dt, datetime) else dt for dt in row]
+        row = [replacement_bool[element] if isinstance(element, bool) else element for element in row]
+        ws.append(row)
+
+    ws = xlsx_column_width(ws)
+    return wb

@@ -6,7 +6,8 @@ from django.http import HttpResponse
 from django.shortcuts import render
 
 from libs.services.decorators import allowed_users
-from .auction import get_auction_data, plot_auction, make_xlsx_for_download
+from libs.services.utils import make_xlsx_for_download
+from .auction import get_auction_data, plot_auction
 from .forms import *
 
 
@@ -44,7 +45,11 @@ def auction(request):
 def download_auction(request):
     context = get_auction_data(request)
 
-    wb = make_xlsx_for_download(context)
+    qs = context['auction_data'].values_list('id', 'datetime', 'autoru_region', 'mark__mark', 'model__model',
+                                             'position', 'bid', 'dealer', 'competitors')
+    headers = ['id', 'Дата и время', 'Регион', 'Марка', 'Модель', 'Позиция', 'Ставка', 'Дилер',
+               'Количество конкурентов']
+    wb = make_xlsx_for_download(qs, headers)
 
     datefrom = datetime.date(*context['datefrom'][::-1]).strftime("%d.%m.%Y")
     dateto = datetime.date(*context['dateto'][::-1]).strftime("%d.%m.%Y")

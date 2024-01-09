@@ -108,7 +108,19 @@ ul {
 }
 
 .negative {
-    color: red;
+    background-color: #E0C2CD !important;
+}
+
+.positive {
+    background-color: #DDE8CB !important;
+}
+
+.chosen-dealer td {
+    background-color: #DEE6EF !important;
+}
+
+.thick-border td {
+    border-top: medium solid black;
 }
 
 th {

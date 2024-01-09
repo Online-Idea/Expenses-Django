@@ -101,24 +101,3 @@ def plot_auction(data: QuerySet):
     # Generate the HTML code for the plot
     return fig.to_html(full_html=False)
 
-
-def make_xlsx_for_download(context: dict) -> Workbook:
-    """
-    Создаёт xlsx файл для скачивания
-    :param context: словарь с данными аукциона
-    :return: openpyxl Workbook
-    """
-    wb = Workbook()
-    ws = wb.active
-    headers = ['id', 'Дата и время', 'Регион', 'Марка', 'Модель', 'Позиция', 'Ставка', 'Дилер',
-               'Количество конкурентов']
-    ws.append(headers)
-    data = context['auction_data'].values_list('id', 'datetime', 'autoru_region', 'mark__mark', 'model__model',
-                                               'position', 'bid', 'dealer', 'competitors')
-    for row in data:
-        row = [dt.replace(tzinfo=None) if hasattr(dt, 'tzinfo') and dt.tzinfo else dt for dt in row]
-        row = [dt + datetime.timedelta(hours=3) if isinstance(dt, datetime.datetime) else dt for dt in row]
-        ws.append(row)
-
-    ws = xlsx_column_width(ws)
-    return wb

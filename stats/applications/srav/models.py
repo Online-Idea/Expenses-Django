@@ -32,3 +32,18 @@ class AutoruParsedAd(BaseModel):
         db_table = 'srav_autoru_parsed_ad'
         verbose_name = 'Спарсенное объявление авто.ру'
         verbose_name_plural = 'Спарсенные объявления авто.ру'
+
+
+class SravPivot(BaseModel):
+    autoru_parsed_ad = models.ForeignKey(AutoruParsedAd, on_delete=models.CASCADE)
+    position_price = models.IntegerField(verbose_name='Позиция по цене')
+    in_stock_count = models.IntegerField(verbose_name='В наличии')
+    for_order_count = models.IntegerField(verbose_name='Под заказ')
+
+    def __str__(self):
+        return f'{self.autoru_parsed_ad} | {self.position_price}'
+
+    class Meta:
+        db_table = 'srav_srav_pivot'
+        verbose_name = 'Сравнительная'
+        verbose_name_plural = 'Сравнительная'

@@ -246,7 +246,6 @@ def get_dealers_for_comparison(request):
     return JsonResponse(salons_dict)
 
 
-
 class DealersForSravView(APIView):
     def get(self, request, format=None):
         datefrom = request.query_params.get('datefrom')

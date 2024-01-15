@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'rest_framework',
     'ajax_datatable',
+    "debug_toolbar",
 
     # Мои
     'applications.netcost',
@@ -91,6 +92,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -243,3 +245,18 @@ CACHES = {
         'LOCATION': os.path.join(BASE_DIR, 'stats_cache'),
     }
 }
+
+INTERNAL_IPS = (
+    "127.0.0.1",
+    "212.57.103.141",
+)
+
+
+# Принудительно показывает Django Debug Toolbar без ограничений по ip
+# def show_toolbar(request):
+#     return True
+#
+#
+# DEBUG_TOOLBAR_CONFIG = {
+#     "SHOW_TOOLBAR_CALLBACK": show_toolbar,
+# }

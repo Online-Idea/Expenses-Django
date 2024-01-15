@@ -24,4 +24,5 @@ urlpatterns = [
     path('', include('applications.srav.urls')),
     path('', include('applications.netcost.urls')),
     path('', include('libs.autoru.urls')),
+    path("__debug__/", include("debug_toolbar.urls")),
 ]

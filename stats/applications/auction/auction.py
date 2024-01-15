@@ -25,7 +25,8 @@ def get_auction_data(request):
     if not form.is_valid():
         return HttpResponse(status=400)
 
-    daterange = split_daterange(form.cleaned_data.get('daterange'))
+    daterange_str = form.cleaned_data.get('daterange')
+    daterange = split_daterange(daterange_str)
 
     # Выбранные марки
     marks_checked = [m for m in request.POST.getlist('mark_checkbox')]
@@ -57,6 +58,11 @@ def get_auction_data(request):
         .filter(**filter_params)
         .order_by("-datetime", "autoru_region", "mark", "model", "position")
     )
+
+    filter_params.pop('datetime__gte')
+    filter_params.pop('datetime__lte')
+    filter_params['daterange'] = daterange_str
+
     context = {
         'form': form,
         'marks_checked': json.dumps(marks_checked),
@@ -64,6 +70,7 @@ def get_auction_data(request):
         'datefrom': daterange['start'],
         'dateto': daterange['end'],
         'auction_data': auction_data,
+        'filter_params': filter_params,
     }
     return context
 

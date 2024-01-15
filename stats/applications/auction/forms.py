@@ -9,13 +9,16 @@ class AuctionChooseForm(forms.Form):
     daterange = forms.CharField(max_length=255, label='Период')
     select_all_marks = forms.BooleanField(required=False,
                                           widget=forms.CheckboxInput(attrs={'checked': True, 'class': 'selectAll'}))
-    mark_checkbox = cache.get('auction_mark_checkbox')
-    if not mark_checkbox:
-        mark_checkbox = forms.ModelMultipleChoiceField(
-            queryset=Mark.objects.filter(id__in=AutoruAuctionHistory.objects.values('mark').distinct()),
-            widget=forms.CheckboxSelectMultiple(attrs={'checked': True}),
-        )
-        cache.set('auction_mark_checkbox', mark_checkbox, 86400)
+
+    mark_values = cache.get('auction_mark_values')
+    if not mark_values:
+        mark_values = AutoruAuctionHistory.objects.values('mark').distinct()
+        cache.set('auction_mark_values', mark_values, 86400)
+
+    mark_checkbox = forms.ModelMultipleChoiceField(
+        queryset=Mark.objects.filter(id__in=[value['mark'] for value in mark_values]),
+        widget=forms.CheckboxSelectMultiple(attrs={'checked': True}),
+    )
 
     select_all_regions = forms.BooleanField(required=False,
                                             widget=forms.CheckboxInput(attrs={'checked': True, 'class': 'selectAll'}))

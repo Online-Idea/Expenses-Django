@@ -258,10 +258,10 @@ class DealersForSravView(APIView):
         marks = request.query_params.getlist('marks[]')
         regions = request.query_params.getlist('regions[]')
 
-        dealers = AutoruParsedAd.objects \
-            .filter(
-            datetime__gte=datefrom, datetime__lte=dateto,
-            mark__in=marks, region__in=regions) \
+        dealers = AutoruParsedAd.objects.filter(
+                datetime__gte=datefrom, datetime__lte=dateto,
+                mark__in=marks, region__in=regions
+            ) \
             .order_by('dealer') \
             .values_list('dealer', flat=True).distinct()
 

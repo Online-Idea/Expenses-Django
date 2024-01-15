@@ -1,3 +1,4 @@
+import io
 import re
 from collections import Counter
 import ftplib
@@ -123,7 +124,7 @@ def converter_template(task):
 
     # Убираю лишние пробелы
     template = template.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-    template = template.applymap(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
+    # template = template.applymap(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
 
     save_on_ftp(template_path)
     os.remove(stock_path)
@@ -182,7 +183,7 @@ def template_xml(stock_path, template_path, task):
                            value=car.findtext(fields.modification_code))
 
             if fields.options_code:
-                options = multi_tags(fields.options_code, car)  # Опции
+                options = multi_tags(fields.options_code, car, ' ')  # Опции
                 sheet.cell(row=i + 2, column=template_col['options_code'][1] + 1, value=options)
 
             if fields.images:
@@ -190,7 +191,7 @@ def template_xml(stock_path, template_path, task):
                     # Особая обработка фото от Авилона
                     images = avilon_photos(fields.images, car)
                 else:
-                    images = multi_tags(fields.images, car)  # Фото клиента
+                    images = multi_tags(fields.images, car, ' ')  # Фото клиента
                 sheet.cell(row=i + 2, column=template_col['images'][1] + 1, value=images)
 
             if ',' in fields.modification_explained:  # Расш. модификации
@@ -207,7 +208,8 @@ def template_xml(stock_path, template_path, task):
                     sheet.cell(row=i + 2, column=template_col['description'][1] + 1, value=' \n\n '.join(descr))
                 else:
                     sheet.cell(row=i + 2, column=template_col['description'][1] + 1,
-                               value=car.findtext(fields.description))
+                               # value=car.findtext(fields.description))
+                               value=multi_tags(fields.description, car, '\n'))
 
             # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
             extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
@@ -225,9 +227,9 @@ def template_xml(stock_path, template_path, task):
                     for cond in conditionals:
                         column_name = cond['field']
                         if '__stock' in column_name:
-                            value = multi_tags(column_name.replace('__stock', ''), car)
+                            value = multi_tags(column_name.replace('__stock', ''), car, ' ')
                         else:
-                            value = multi_tags(column_name, car)
+                            value = multi_tags(column_name, car, ' ')
 
                         if column_name not in template_col:
                             max_column = len(template_col)
@@ -601,11 +603,12 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
     return df
 
 
-def multi_tags(field, element):
+def multi_tags(field, element, delimiter):
     """
     Обрабатывает поля для которых данные собираются из нескольких тегов
     :param field: поле
     :param element: элемент из xml
+    :param delimiter: разделитель
     :return: готовые данные для шаблона
     """
     result = []
@@ -630,7 +633,7 @@ def multi_tags(field, element):
             if tags:
                 result = [tag.attrib[attribute] for tag in tags]
 
-    return ' '.join(result)
+    return delimiter.join(result)
 
 
 def converter_post(task):
@@ -708,6 +711,9 @@ def converter_process_result(process_id, template, task):
             r"\.0$": "",
             "é": "e",
             "\u2070": "0",
+            "\xb3": "",
+            "\uff08": "",
+            "\uff09": "",
         },
         regex=True,
     )
@@ -716,7 +722,14 @@ def converter_process_result(process_id, template, task):
 
     # Сохраняю в csv
     save_path = f'converter/{client}/prices/price_{client}.csv'
-    read_file.to_csv(save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
+
+    string_buffer = io.StringIO()
+    read_file.to_csv(string_buffer, sep=';', header=True, index=False, decimal=',')
+    csv_string = string_buffer.getvalue()
+
+    with open(save_path, 'w', encoding='cp1251', errors='ignore') as f:
+        f.write(csv_string)
+    # read_file.to_csv(save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
     save_on_ftp(save_path)
 
     os.remove(save_path_date)
@@ -816,17 +829,23 @@ def bot_messages(logs, logs_xlsx, price, task):
     :param price: прайс от converter_process_result
     :param task: строка из таблицы Задачи конвертера
     """
-    client_name = task.client.name
     client_slug = task.client.slug
 
     # Прайс в csv
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
     price_save_path = f'converter/{client_slug}/prices/price_{client_slug}_{file_date}.csv'
-    price.to_csv(price_save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
+
+    string_buffer = io.StringIO()
+    price.to_csv(string_buffer, sep=';', header=True, index=False, decimal=',')
+    csv_string = string_buffer.getvalue()
+
+    with open(price_save_path, 'w', encoding='cp1251', errors='ignore') as f:
+        f.write(csv_string)
+    # price.to_csv(price_save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
 
     # Отправка логов и прайса через бота телеграма
     chat_ids = ConverterLogsBotData.objects.all()
-    logs = f'🟢 {client_name}\n\n{logs}'
+    logs = f'🟢 {task.name}\n\n{logs}'
     for chat_id in chat_ids:
         if len(logs) > 4095:  # У телеграма ограничение на 4096 символов в сообщении
             for x in range(0, len(logs), 4095):

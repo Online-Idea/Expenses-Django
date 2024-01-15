@@ -4,14 +4,14 @@ from libs.services.models import BaseModel, Mark, Model, Client, CustomBooleanFi
 
 
 class AutoruParsedAd(BaseModel):
-    datetime = models.DateTimeField(verbose_name='Дата и время')
-    region = models.CharField(max_length=500, verbose_name='Регион')
-    mark = models.ForeignKey(Mark, on_delete=models.PROTECT)
+    datetime = models.DateTimeField(verbose_name='Дата и время', db_index=True)
+    region = models.CharField(max_length=500, verbose_name='Регион', db_index=True)
+    mark = models.ForeignKey(Mark, on_delete=models.PROTECT, db_index=True)
     model = models.ForeignKey(Model, on_delete=models.PROTECT)
     complectation = models.CharField(null=True, blank=True, max_length=500, verbose_name='Комплектация')
     modification = models.CharField(null=True, blank=True, max_length=500, verbose_name='Модификация')
     year = models.IntegerField(verbose_name='Год')
-    dealer = models.CharField(max_length=500, verbose_name='Имя дилера')
+    dealer = models.CharField(max_length=500, verbose_name='Имя дилера', db_index=True)
     client = models.ForeignKey(Client, on_delete=models.PROTECT, null=True, blank=True)
     price_with_discount = models.IntegerField(verbose_name='Цена со скидками')
     price_no_discount = models.IntegerField(verbose_name='Цена без скидок')

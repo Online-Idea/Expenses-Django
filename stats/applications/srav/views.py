@@ -5,10 +5,12 @@ import urllib.parse
 import pandas as pd
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from applications.srav.filters import AutoruParsedAdFilter
 from applications.srav.forms import AutoruParsedAdChooseForm, ComparisonChooseForm
 from applications.srav.models import AutoruParsedAd, SravPivot
 from applications.srav.serializers import AutoruParsedAdSerializer
@@ -22,6 +24,8 @@ from libs.services.utils import make_xlsx_for_download, get_all_fields_verbose_n
 class AutoruParsedAdViewSet(viewsets.ModelViewSet):
     queryset = AutoruParsedAd.objects.all()
     serializer_class = AutoruParsedAdSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = AutoruParsedAdFilter
 
     def create(self, request, *args, **kwargs):
         df_received, parser_datetime, region = pickle.loads(request.body)

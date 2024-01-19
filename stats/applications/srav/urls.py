@@ -5,6 +5,7 @@ from .views import *
 
 urlpatterns = [
     path('api/v1/autoru_parsed_ads/create', AutoruParsedAdViewSet.as_view({'post': 'create'}), name='autoru_parsed_ads_create'),
+    path('api/v1/autoru_parsed_ads/filter', AutoruParsedAdViewSet.as_view({'get': 'list'}), name='autoru_parsed_ads_filter'),
     path('parsed_ads', parsed_ads, name='parsed_ads'),
     path('download_parsed_ads', download_parsed_ads, name='download_parsed_ads'),
     path('ajax_datatable/autoru_parsed_ad', ajax_datatable_views.AutoruParsedAdAjaxDatatableView.as_view(),

@@ -11,6 +11,10 @@ class AuctionAjaxDatatableView(AjaxDatatableView):
     title = 'Аукцион'
     initial_order = [
         ['datetime', 'desc'],
+        ['autoru_region', 'asc'],
+        ['mark', 'asc'],
+        ['model', 'asc'],
+        ['position', 'asc'],
     ]
     length_menu = [[10, 20, 50, 100], [10, 20, 50, 100]]
     search_values_separator = '+'

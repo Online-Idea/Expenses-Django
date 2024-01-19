@@ -20,7 +20,7 @@ class AutoruParsedAdAjaxDatatableView(AjaxDatatableView):
         ['year', 'asc'],
         ['position_actual', 'asc'],
     ]
-    length_menu = [[10, 20, 50, 100], [10, 20, 50, 100]]
+    length_menu = [[10, 20, 50, 100, 250, 500, 1000], [10, 20, 50, 100, 250, 500, 1000]]
     search_values_separator = '+'
 
     column_defs = [
@@ -77,7 +77,7 @@ class ComparisonDatatableView(AjaxDatatableView):
         ['year', 'asc'],
         ['position_price', 'asc'],
     ]
-    length_menu = [[10, 20, 50, 100], [10, 20, 50, 100]]
+    length_menu = [[10, 20, 50, 100, 250, 500, 1000], [10, 20, 50, 100, 250, 500, 1000]]
     search_values_separator = '+'
 
     column_defs = [

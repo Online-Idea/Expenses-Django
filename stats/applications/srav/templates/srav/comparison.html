@@ -111,11 +111,11 @@
 
             drawCallback: function(settings) {
               // Добавляю границы над уникальными автомобилями
-              var prev_car = '';
-              var curr_car, mark, model, complectation, year;
+              let prev_car = '';
+              let curr_car, mark, model, complectation, year;
 
               $("#datatable_comparison tr").each(function () {
-                var $tr = $(this);
+                const $tr = $(this);
                 mark = $tr.find('td:eq(1)').text();
                 model = $tr.find('td:eq(2)').text();
                 complectation = $tr.find('td:eq(3)').text();
@@ -170,7 +170,7 @@
     const dateto = drp.endDate.format('YYYY-MM-DD');
 
     const marks_elements = document.querySelectorAll('input[name="mark_checkbox"]');
-    var marks = [];
+    let marks = [];
     marks_elements.forEach(mark => {
     if (mark.checked) {
       marks.push(mark.value);
@@ -178,7 +178,7 @@
     });
 
     const regions_elements = document.querySelectorAll('input[name="region_checkbox"]');
-    var regions = [];
+    let regions = [];
     regions_elements.forEach(region => {
     if (region.checked) {
       regions.push(region.value);

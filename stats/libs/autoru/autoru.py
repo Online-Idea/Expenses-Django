@@ -18,16 +18,8 @@ from .models import *
 
 ENDPOINT = 'https://apiauto.ru/1.0'
 
-# Список id клиентов на новом агентском аккаунте
-clients_newcard = [48572, 50793, 50877, 51128, 50048, 47554, 53443, 39014, 25832, 26648]
-
 API_KEY = {
     'x-authorization': env('AUTORU_API_KEY'),
-    'Accept': 'application/json',
-    'Content-Type': 'application/json'
-}
-API_KEY2 = {
-    'x-authorization': env('AUTORU_API_KEY2'),
     'Accept': 'application/json',
     'Content-Type': 'application/json'
 }
@@ -55,9 +47,8 @@ def autoru_errors(data):
             return True
         elif error == 'NO_AUTH':
             print('Слетела авторизация, захожу повторно')
-            global session_id, session_id2
+            global session_id
             session_id = autoru_authenticate(env('AUTORU_LOGIN'), env('AUTORU_PASSWORD'))
-            session_id2 = autoru_authenticate(env('AUTORU_LOGIN2'), env('AUTORU_PASSWORD2'))
             return True
 
 
@@ -97,10 +88,7 @@ def get_autoru_products(from_, to, client_id):
     # Удаляю текущие записи чтобы вместо них добавить записи с актуальными данными
     delete_autoru_products(from_, to, client_id)
 
-    if client_id not in clients_newcard:
-        dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
-    else:
-        dealer_headers = {**API_KEY, **session_id2, 'x-dealer-id': f'{client_id}'}
+    dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
     current_date = from_
     # За каждый день собираю статистику по всем видам услуг
     while current_date <= to:
@@ -185,10 +173,7 @@ def get_autoru_daily(from_, to, client_id):
     # https://yandex.ru/dev/autoru/doc/reference/dealer-wallet-product-activations-daily-stats.html
     # GET /dealer/wallet/product/activations/daily-stats
     wallet = '/dealer/wallet/product/activations/daily-stats'
-    if client_id not in clients_newcard:
-        dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
-    else:
-        dealer_headers = {**API_KEY, **session_id2, 'x-dealer-id': f'{client_id}'}
+    dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
 
     wallet_params = {
         'service': 'autoru',
@@ -258,10 +243,7 @@ def get_autoru_calls(from_, to, client_id):
     delete_autoru_calls(from_, to, client_id)
 
     calltracking = 'calltracking'
-    if client_id not in clients_newcard:
-        dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
-    else:
-        dealer_headers = {**API_KEY, **session_id2, 'x-dealer-id': f'{client_id}'}
+    dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
 
     calls_body = {
         "pagination": {
@@ -366,7 +348,6 @@ def delete_autoru_calls(from_, to, client_id):
 
 
 session_id = autoru_authenticate(env('AUTORU_LOGIN'), env('AUTORU_PASSWORD'))
-session_id2 = autoru_authenticate(env('AUTORU_LOGIN2'), env('AUTORU_PASSWORD2'))
 
 
 def update_autoru_catalog():
@@ -519,10 +500,7 @@ def get_auction_history(client: Client) -> Union[None, dict]:
     :param client: клиент из базы
     """
     url = 'https://apiauto.ru/1.0/dealer/auction/current-state'
-    if client.autoru_id not in clients_newcard:
-        dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client.autoru_id}'}
-    else:
-        dealer_headers = {**API_KEY, **session_id2, 'x-dealer-id': f'{client.autoru_id}'}
+    dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client.autoru_id}'}
 
     auction_response = requests.get(url=url, headers=dealer_headers).json()
 
@@ -712,8 +690,10 @@ def auction_history_drop_unknown(all_bids: DataFrame) -> DataFrame:
                                           (client_df['position'] == row.iloc[4]) &
                                           (client_df['client'].isna())])
 
-    rows_to_drop = pd.concat(rows_to_drop)
-    all_bids = all_bids.drop(rows_to_drop.index, axis=0)
+    if rows_to_drop:
+        rows_to_drop = pd.concat(rows_to_drop)
+        all_bids = all_bids.drop(rows_to_drop.index, axis=0)
+
     # Здесь удаляю дубли в случае если мы не участвуем в аукционе
     all_bids = all_bids.drop_duplicates(subset=uniqueness)
 
@@ -1049,10 +1029,7 @@ def get_feeds_settings(client_id: int) -> json:
 
     req_url = 'feeds/settings'
 
-    if client_id not in clients_newcard:
-        dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
-    else:
-        dealer_headers = {**API_KEY, **session_id2, 'x-dealer-id': f'{client_id}'}
+    dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
 
     feeds_response = requests.get(url=f'{ENDPOINT}/{req_url}', headers=dealer_headers)
     return feeds_response.json()
@@ -1077,10 +1054,7 @@ def post_feeds_task(client_id: int, section: str, price_url: str,
 
     req_url = f'feeds/task/cars/{section}'
 
-    if client_id not in clients_newcard:
-        dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
-    else:
-        dealer_headers = {**API_KEY, **session_id2, 'x-dealer-id': f'{client_id}'}
+    dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
 
     req_body = {
         "internal_url": price_url,

@@ -5,8 +5,6 @@ from libs.services.serializers import MarkSerializer
 
 
 class AutoruParsedAdSerializer(serializers.ModelSerializer):
-    mark = MarkSerializer(read_only=True)
-
     class Meta:
         model = AutoruParsedAd
         fields = "__all__"

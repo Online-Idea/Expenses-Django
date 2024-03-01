@@ -1,11 +1,12 @@
 from django.http import JsonResponse
-from django.shortcuts import render
 from django.template.loader import render_to_string
-from django.utils.encoding import force_str
 from django.views.generic import ListView, DetailView
 from .models import Ad
 from .forms import SortForm
-from pprint import pprint
+
+from .utils.filter import AdFilter
+from .utils.search import AdSearcher
+from .utils.sorting import AdSorter
 
 
 class AdListView(ListView):
@@ -20,6 +21,7 @@ class AdListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['sort_form'] = self.sort_form
+        context['marks'] = Ad.objects.values_list('mark__id', 'mark__mark').distinct()
         return context
 
     def get_queryset(self):
@@ -31,49 +33,31 @@ class AdListView(ListView):
 
     def post(self, request, *args, **kwargs):
         if 'apply-sort' in request.POST:
-            # Логика формирования списка для сортировки
-            for_sorting = [f'-{request.POST[f"field_{i}"]}'
-                           if request.POST[f"order_{i}"] == 'desc'
-                           else request.POST[f"field_{i}"]
-                           for i in range(len(request.POST) // 2)]
+            sorter = AdSorter(self.get_queryset(), request.POST)
+            sorted_queryset = sorter.sort_ads()
+            return self.get_ajax_response(sorted_queryset)
 
-            # Выполняем сортировку
-            queryset = self.get_queryset()
-            sorted_queryset = queryset.order_by(*for_sorting)
-
-            # Возвращаем JSON с отсортированным queryset
-            response_data = {
-                'html': render_to_string('ads/ads_block.html', {'ads': sorted_queryset}, request),
-                'success': True,
-            }
-            return JsonResponse(response_data)
-
-        if 'reset-sort' in request.POST:
-            queryset = self.get_queryset()
-            sorted_queryset = queryset
-            # Очищаем таблицу
-            self.sort_form = self.form_class()  # Обнуляем форму сортировки
-            # Возвращаем карточки в изначальный порядок
-            response_data = {
-                'html': render_to_string('ads/ads_block.html', {'ads': sorted_queryset}, request),
-                'success': True,
-            }
-            return JsonResponse(response_data)
+        if 'reset' in request.POST:
+            self.sort_form = self.form_class()
+            return self.get_ajax_response(self.get_queryset())
 
         if 'apply-search' in request.POST:
-            vin_search = request.POST.get('vin_search', '').strip()
-            queryset = self.get_queryset()
-            print(vin_search, queryset, '*' * 100)
-            if vin_search:
-                queryset = queryset.filter(vin__icontains=vin_search)
-                print(vin_search, queryset, '*' * 100)
+            searcher = AdSearcher(self.get_queryset(), request.POST.get('vin_search', '').strip())
+            searched_queryset = searcher.search_ads()
+            return self.get_ajax_response(searched_queryset)
 
+        if 'filter' in request.POST:
+            filter_ = AdFilter(self.get_queryset(), request.POST.get('value', '').split(','))
+            filtered_queryset = filter_.filter_ads()
+            return self.get_ajax_response(filtered_queryset)
 
-            response_data = {
-                'html': render_to_string('ads/ads_block.html', {'ads': queryset}, request),
-                'success': True,
-            }
-            return JsonResponse(response_data)
+    def get_ajax_response(self, queryset):
+        html = render_to_string('ads/ads_block.html', {'ads': queryset}, self.request)
+        response_data = {
+            'html': html,
+            'success': True,
+        }
+        return JsonResponse(response_data)
 
 
 class AdDetailView(DetailView):
@@ -83,5 +67,5 @@ class AdDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['additional_photos_enum'] = self.object.get_additional_photos_enum()
+        context['photos_enum'] = self.object.get_photos_enum()
         return context

@@ -1,5 +1,5 @@
 <div id="ads-container">
-        {% for ad in ads %}
+    {% for ad in ads %}
         <div class="container mt-4">
             <div class="card">
                 <div class="card-body">
@@ -10,24 +10,46 @@
                             </a>
                         </div>
                         <div class="col-md-8">
-                            <div class="date-updated">
-                                <span class="update-date">{{ ad.datetime_updated|date:"Y-m-d H:i" }}</span>
-                            </div>
+{#                            <div class="date-updated-container">#}
+{#                                <span class="card-datetime-updated">{{ ad.datetime_updated|date:"Y-m-d H:i" }}</span>#}
+{#                            </div>#}
                             <div class="card-title">
-                                <a href="{{ ad.get_absolute_url }}" target="_blank" rel="noopener">{{ ad.mark }} {{ ad.model }}</a>
-                                <span class="price">{{ ad.get_price_display }}</span>
-                                <span class="year">{{ ad.year }}г</span>
+                                <a href="{{ ad.get_absolute_url }}" target="_blank"
+                                   rel="noopener">{{ ad.mark }} <br> {{ ad.model }}</a>
+                                <div class="price-container">
+                                    <div class="card-price">
+                                        <span class="detail-price">{{ ad.get_price_display }}</span>
+                                        {% if ad.get_price_nds_display == "Да" %}
+                                            <span class="sticker nds-yes">с НДС</span>
+                                        {% elif ad.get_price_nds_display == "Нет" %}
+                                            <span class="sticker nds-no">без НДС</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="good">
+                                        <span class="good-price">{{ ad.get_good_price }}</span>
+                                        <span class="sticker discount">Минимальная</span>
+                                    </div>
+                                </div>
+                                <span class="card-year">{{ ad.year }} г</span>
                             </div>
-                            <p class="card-text text-body-secondary">
-                                {{ ad.configuration }}<br>
-                                {{ ad.body_type }}<br>
-                                {{ ad.color }}<br>
-                                {{ ad.vin }}
-                            </p>
+                            <div class="card-text">
+                                <p class="card-text__prev text-body-secondary">
+                                    {{ ad.configuration }}<br>
+                                    {{ ad.get_modification_display }}  <br>
+                                    {{ ad.body_type }} <br>
+                                    {{ ad.color }}<br>
+                                    {{ ad.original_vin }}<br>
+                                    
+                                </p>
+                                <p class="card-text__prev text-body-secondary">
+                                    {{ ad.get_run_display }} <br>
+                                    {{ ad.get_availability_display }}<br>
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        {% endfor %}
-    </div>
+    {% endfor %}
+</div>

@@ -7,6 +7,27 @@ import argparse
 from typing import Union
 
 
+def replace_nan(value: Union[float, None]) -> Union[float, None]:
+    """
+    Замена NaN на None для корректного хранения в числовых полях базы данных.
+
+    :param value: Значение для проверки.
+
+    :return: Значение, замененное на None, если оно было NaN.
+    """
+    return None if pd.isna(value) else value
+
+
+def capital_name(value: Union[str, None]) -> str:
+    if value is not None and isinstance(value, str):
+        return value.capitalize()
+
+
+def divide_volume(value: Union[int, None]) -> Union[float, None]:
+    if value is not None and isinstance(value, (int, float)):
+        return round(value / 1000, 1)
+
+
 class Command(BaseCommand):
     """
     Команда Django для заполнения базы данных тестовыми данными из CSV файла.
@@ -55,40 +76,45 @@ class Command(BaseCommand):
                     model=model,
                     configuration=row['Комплектация'],
                     price=row['Цена'],
-                    body_type=row['Кузов'],
+                    body_type=capital_name(row['Кузов']),
                     year=row['Год выпуска'],
-                    color=row['Цвет'],
+                    color=capital_name(row['Цвет']),
                     description=row['Описание'],
                     original_vin=row['Исходный VIN'],
-                    vin=row['VIN'],
+                    vin=replace_nan(row['VIN']),
                     photo=row['Фото'],
-                    price_nds=row.get('Цена с НДС'),
-                    engine_capacity=self.replace_nan(row.get('Объем двигателя')),
-                    power=row.get('Мощность'),
-                    engine_type=row.get('Тип двигателя'),
-                    transmission=row.get('Коробка передач'),
-                    drive=row.get('Привод'),
-                    trade_in=self.replace_nan(row.get('Трейд-ин')),
-                    credit=self.replace_nan(row.get('Кредит')),
-                    insurance=self.replace_nan(row.get('Страховка')),
-                    max_discount=row.get('Максималка'),
-                    condition=row.get('Состояние'),
-                    run=self.replace_nan(row.get('Пробег')),
-                    modification_code=row.get('Код модификации'),
-                    color_code=row.get('Код цвета'),
-                    interior_code=row.get('Код интерьера'),
-                    configuration_codes=row.get('Коды опций комплектации'),
-                    stickers_autoru=row.get('Стикеры авто.ру'),
-                    video=row.get('Ссылка на видео'),
-                    configuration_autoru=row.get('Комплектация авто.ру')
+                    price_nds=capital_name(replace_nan(row['Цена с НДС'])),
+                    engine_capacity=divide_volume(replace_nan(row['Объем двигателя'])),
+                    power=row['Мощность'],
+                    engine_type=capital_name(row['Тип двигателя']),
+                    transmission=capital_name(row['Коробка передач']),
+                    drive=capital_name(row['Привод']),
+                    trade_in=replace_nan(row['Трейд-ин']),
+                    credit=replace_nan(row['Кредит']),
+                    insurance=replace_nan(row['Страховка']),
+                    max_discount=row['Максималка'],
+                    condition=capital_name(row['Состояние']),
+                    run=replace_nan(row['Пробег']),
+                    modification_code=row['Код модификации'],
+                    color_code=row['Код цвета'],
+                    interior_code=row['Код интерьера'],
+                    configuration_codes=row['Коды опций комплектации'],
+                    stickers_autoru=replace_nan(row['Стикеры (авто.ру)']),
+                    video=replace_nan(row['Ссылка на видео']),
+                    configuration_autoru=row['Авто.ру Комплектация'],
+                    telephone=row['Номер телефона'],
+                    availability=capital_name(row['Наличие']),
+                    id_model_autoru=replace_nan(row['ID модели авто.ру']),
+                    id_modification_autoru=replace_nan(row['ID модификации авто.ру']),
+                    modification_autoru=replace_nan(row['Модификация авто.ру']),
+                    status=capital_name(row['Статус продажи']),
+                    id_client=replace_nan(row['ID от клиента']),
                 )
-
                 ads_to_create.append(ad)
 
-            # Массовое создание экземпляров Ad для оптимизации записи в базу данных
             Ad.objects.bulk_create(ads_to_create)
 
-        self.stdout.write(self.style.SUCCESS("База данных заполнена тестовыми данными"))
+        self.stdout.write(self.style.SUCCESS("База данных обновлена"))
 
     def clear_database(self) -> None:
         """
@@ -97,13 +123,4 @@ class Command(BaseCommand):
         Ad.objects.all().delete()
         Model.objects.all().delete()
         Mark.objects.all().delete()
-
-    def replace_nan(self, value: Union[float, None]) -> Union[float, None]:
-        """
-        Замена NaN на None для корректного хранения в числовых полях базы данных.
-
-        :param value: Значение для проверки.
-
-        :return: Значение, замененное на None, если оно было NaN.
-        """
-        return None if pd.isna(value) else value
+        self.stdout.write(self.style.NOTICE("Старые данные удаленны"))

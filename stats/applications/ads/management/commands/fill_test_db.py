@@ -74,7 +74,7 @@ class Command(BaseCommand):
                 ad = Ad(
                     mark=mark,
                     model=model,
-                    configuration=row['Комплектация'],
+                    complectation=row['Комплектация'],
                     price=row['Цена'],
                     body_type=capital_name(row['Кузов']),
                     year=row['Год выпуска'],
@@ -110,6 +110,7 @@ class Command(BaseCommand):
                     status=capital_name(row['Статус продажи']),
                     id_client=replace_nan(row['ID от клиента']),
                 )
+                ad.modification = ad.get_modification_display()
                 ads_to_create.append(ad)
 
             Ad.objects.bulk_create(ads_to_create)

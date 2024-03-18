@@ -12,22 +12,46 @@ from . import serializers
 
 class FilterAdsView(APIView):
     def get(self, request, *args, **kwargs):
-        # Получение параметров фильтрации из запроса
         print(request.query_params)
-        selected_marks = request.query_params.getlist('marks')
-        selected_models = request.query_params.getlist('models')
-        # selected_modifications = request.query_params.getlist('modifications')
-        # selected_bodies = request.query_params.getlist('bodies')
-        # selected_configurations = request.query_params.getlist('configurations')
-        # selected_colors = request.query_params.getlist('colors')
-        # Фильтруем по выбранным маркам
-        filtered_ads = Ad.objects.filter(mark__id__in=selected_marks)
-        # Если выбраны модели, исключаем из марок те, по которым уже выбраны модели
-        if selected_models:
-            filtered_ads = Ad.objects.filter(model__id__in=selected_models)
+        # Получение параметров фильтрации из запроса
+        filters = {}
 
-        if not selected_marks:
-            filtered_ads = Ad.objects.all()
+        # Мапа между ключами из запроса и полями модели
+        field_mapping = {
+            'marks': 'mark__id',
+            'models': 'model__id',
+            'modifications': 'modification',
+            'bodies': 'body_type',
+            'complectations': 'complectation',
+            'colors': 'color',
+            'priceFrom': 'price__gte',
+            'priceTo': 'price__lte',
+            'yearFrom': 'year__gte',
+            'yearTo': 'year__lte',
+            'runFrom': 'run__gte',
+            'runTo': 'run__lte',
+        }
+
+        # Итерируем по параметрам запроса
+        for key in request.query_params:
+            values = request.query_params.getlist(key)
+            # Пропускаем специальные параметры, которые не являются фильтрами
+            if key in ['page', 'format']:
+                continue
+            # Преобразуем ключ из запроса в соответствующее поле модели, если такое отображение существует
+            field_name = field_mapping.get(key)
+            if field_name:
+                # Если параметр имеет множественное значение, например, марки или модели
+                if len(values) > 1:
+                    filters[f'{field_name}__in'] = values
+                else:
+                    # Если параметр имеет одно значение
+                    filters[field_name] = values[0]
+
+        print(filters)
+        # Применяем фильтры к объявлениям
+        filtered_ads = Ad.objects.filter(**filters)
+        print(filtered_ads)
         serializer = serializers.AdSerializer(filtered_ads, many=True)
         return Response(serializer.data)
 
@@ -38,7 +62,7 @@ class MarkListView(ListAPIView):
 
 
 class ModelsByMarkView(ListAPIView):
-    serializer_class = serializers.ModelSerializer  # Исправлено
+    serializer_class = serializers.ModelSerializer
 
     def get_queryset(self):
         marks = self.request.query_params.getlist('marks')
@@ -74,23 +98,13 @@ class BodiesByModelView(ListAPIView):
         return Response(bodies)
 
 
-class BodiesByModelView(ListAPIView):
-    def list(self, request, *args, **kwargs):
-        model_ids = self.request.query_params.getlist('models')
-        if not model_ids:
-            return Response({'error': 'No models provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-        bodies = Ad.objects.filter(model_id__in=model_ids).values('body_type').distinct()
-        return Response(bodies)
-
-
 class ConfigurationsByModelView(ListAPIView):
     def list(self, request, *args, **kwargs):
         model_ids = self.request.query_params.getlist('models')
         if not model_ids:
             return Response({'error': 'No models provided'}, status=status.HTTP_400_BAD_REQUEST)
 
-        configurations = Ad.objects.filter(model_id__in=model_ids).values('configuration').distinct()
+        configurations = Ad.objects.filter(model_id__in=model_ids).values('complectation').distinct()
         return Response(configurations)
 
 
@@ -102,15 +116,3 @@ class ColorsByModelView(ListAPIView):
 
         colors = Ad.objects.filter(model_id__in=model_ids).values('color').distinct()
         return Response(colors)
-
-    # def get(self, request, *args, **kwargs):
-    #     model_ids = self.request.query_params.getlist('models')
-    #
-    #     model_ids = [int(model_id) if model_id else '0' for model_id in model_ids[0].strip().split(',')]
-    #
-    #     query_condition = Q()
-    #     for model_id in model_ids:
-    #         query_condition |= Q(model_id=model_id)
-    #     # Добавляются "серый" и "Серый"
-    #     colors = Ad.objects.filter(query_condition).values_list('color', flat=True).distinct()
-    #     return Response({'color': list(colors)}, status=status.HTTP_200_OK)

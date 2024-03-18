@@ -11,11 +11,13 @@ from libs.services.models import BaseModel, Client, Model, Mark, BodyTypes, Colo
 
 # TODO доделать эту если придут мысли что ещё добавить
 class Salon(BaseModel):
-    client = models.ManyToManyField(Client)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='salons')
     name = models.CharField(max_length=255, verbose_name='Название')
     price_url = models.CharField(max_length=2000, verbose_name='Ссылка на прайс')
     datetime_updated = models.DateTimeField(verbose_name='Время последнего обновления')
-    # дописать
+    city = models.CharField(max_length=255, verbose_name='Город салона')
+    adress = models.CharField(max_length=255, verbose_name='Адрес')
+    telephone = models.CharField(max_length=255, verbose_name='Телефон')
 
 
 class Ad(BaseModel):
@@ -24,7 +26,7 @@ class Ad(BaseModel):
     """
     mark = models.ForeignKey(Mark, on_delete=models.PROTECT, related_name='ads', verbose_name='Марка')
     model = models.ForeignKey(Model, on_delete=models.PROTECT, related_name='ads', verbose_name='Модель')
-    configuration = models.CharField(max_length=255, verbose_name='Комплектация')
+    complectation = models.CharField(max_length=255, verbose_name='Комплектация')
     price = models.IntegerField(verbose_name='Цена')
     body_type = models.CharField(max_length=64, choices=BodyTypes.choices, verbose_name='Кузов')
     year = models.IntegerField(verbose_name='Год выпуска')
@@ -40,6 +42,7 @@ class Ad(BaseModel):
     engine_type = models.CharField(max_length=32, blank=True, verbose_name='Тип двигателя')
     transmission = models.CharField(max_length=16, blank=True, verbose_name='Коробка передач')
     drive = models.CharField(max_length=32, blank=True, verbose_name='Привод')
+    modification = models.CharField(max_length=128, blank=True, verbose_name='Модификация')
     trade_in = models.IntegerField(null=True, blank=True, verbose_name='Трейд-ин')
     credit = models.IntegerField(null=True, blank=True, verbose_name='Кредит')
     insurance = models.IntegerField(null=True, blank=True, verbose_name='Страховка')
@@ -219,14 +222,31 @@ class Ad(BaseModel):
         return None
 
     def get_sum_discount_display(self) -> int:
-        return self.max_discount or sum([num for num in
-                                         [self.trade_in, self.credit, self.insurance] if num])
+        return self.max_discount or sum(
+            [num for num in
+             [self.trade_in, self.credit, self.insurance]
+             if num]
+        )
 
     def get_good_price(self) -> str:
         new_price = self.price - self.get_sum_discount_display()
         return Ad.get_formatted_price(new_price)
 
     def get_modification_display(self) -> str:
-        return (f"{self.get_engine_display()} / {self.get_power_display()} / "
-                f"{self.engine_type} / {self.transmission} / {self.drive}")
+        return (
+            f"{self.get_engine_display()} / {self.get_power_display()} / "
+            f"{self.engine_type} / {self.transmission} / {self.drive}"
+        )
 
+
+# class ClientManager(BaseUserManager):
+#     def create_user(self, email, password=None, **extra_fields):
+#         # Создание обычного пользователя
+#         extra_fields.setdefault('is_staff', False)
+#         # остальная логика создания пользователя
+#
+#     def create_superuser(self, email, password=None, **extra_fields):
+#         # Создание суперпользователя
+#         extra_fields.setdefault('is_staff', True)
+#         extra_fields.setdefault('is_superuser', True)
+#         # остальная логика создания суперпользователя

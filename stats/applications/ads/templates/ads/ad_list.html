@@ -43,7 +43,7 @@
                 <select class="body-select" multiple>
                     <option value="">Кузов</option>
                 </select>
-                <select class="configuration-select" multiple>
+                <select class="complectation-select" multiple>
                     <option value="">Комплектация</option>
                 </select>
                 <select class="color-select" multiple>
@@ -52,39 +52,51 @@
             </div>
             <div class="filter-row">
                 <div class="block-select">
-                    <div class="price-container__input">
-                        <input class="price-input input-from" type="text" placeholder="Цена от">
+                    <div class="container__input">
+                        <input class="price-input input-from" type="number" min="0">
+                        <span class="placeholder_custom">Цена от</span>
                         <span class="focus-border">
                 <i></i>
               </span>
                     </div>
-                    <div class="price-container__input">
-                        <input class="price-input input-to" type="text" placeholder="Цена до">
-                        <span class="focus-border">
-                <i></i>
-              </span>
-                    </div>
-                </div>
-                <div class="block-select">
-                    <div class="price-container__input">
-                        <input class="price-input input-from" type="text" placeholder="Год от">
-                        <span class="focus-border">
-                <i></i>
-              </span>
-                    </div>
-                    <div class="price-container__input">
-                        <input class="price-input input-to" type="text" placeholder="Год до">
+                    <div class="container__input">
+                        <input class="price-input input-to" type="number" min="0">
+                        <span class="placeholder_custom">до</span>
                         <span class="focus-border">
                 <i></i>
               </span>
                     </div>
                 </div>
                 <div class="block-select">
-                    <div class="item">
-                        <div class="checkbox-rect2">
-                            <input type="checkbox" id="checkbox-rect2" name="check">
-                            <label for="checkbox-rect2">С пробегом</label>
-                        </div>
+                    <div class="container__input">
+                        <input class="year-input input-from" type="number">
+                        <span class="placeholder_custom">Год от</span>
+                        <span class="focus-border">
+                <i></i>
+              </span>
+                    </div>
+                    <div class="container__input">
+                        <input class="year-input input-to" type="number">
+                        <span class="placeholder_custom">до</span>
+                        <span class="focus-border">
+                <i></i>
+              </span>
+                    </div>
+                </div>
+                <div class="block-select">
+                    <div class="container__input">
+                        <input class="run-input input-from" type="number">
+                        <span class="placeholder_custom">Пробег от</span>
+                        <span class="focus-border">
+                <i></i>
+              </span>
+                    </div>
+                    <div class="container__input">
+                        <input class="run-input input-to" type="number">
+                        <span class="placeholder_custom">до</span>
+                        <span class="focus-border">
+                <i></i>
+              </span>
                     </div>
                 </div>
             </div>
@@ -94,7 +106,6 @@
 {% endblock %}
 {% block js_scripts %}
     <script src="{% static 'js/choices.min.js' %}"></script>
-    <script src="{% static 'js/sorting.js' %}"></script>
-    <script src="{% static 'js/filters.js' %}"></script>
+    <script src="{% static 'js/data-handler.js' %}"></script>
 {% endblock %}
 

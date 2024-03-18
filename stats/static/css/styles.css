@@ -147,17 +147,19 @@ ul {
 
 .card {
     box-shadow: 10px 12px 12px rgba(42, 53, 64, 0.1);
-    transition: box-shadow 0.5s ease;
+    transition: all 250ms ease-in-out;
     border-radius: 15px;
+    --bs-border-color-translucent: none;
 }
 
 .card:hover {
-    box-shadow: 15px 18px 14px rgba(27, 37, 47, 0.1);
+    box-shadow: 15px 18px 15px rgba(27, 37, 47, 0.1);
+    background-color: rgba(241, 241, 241, 0.4);
+    border: none;
 }
 
 .card-body {
     padding: 15px;
-
 }
 
 .date-updated-container {
@@ -551,7 +553,7 @@ ul {
     display: flex;
 }
 
-/* Стили для кнопок "Применить" и "Искать" */
+/* Стили для кнопок "Применить" и "Искать" и крестик */
 
 .btn-primary, .btn-secondary {
     background-color: #2a3540;
@@ -570,11 +572,12 @@ ul {
 .reset-label {
     cursor: pointer;
     transition: all 280ms ease-in-out;
+    margin: 7px 5px;
 }
 
+
 .reset-label:hover {
-    transform: scale(1.1);
-    color: #e76565;
+    color: #a44545;
 }
 
 .remove-button {
@@ -724,91 +727,48 @@ ul {
     border-top-left-radius: 1px;
 }
 
-/*чекбокс*/
-
-.checkbox-rect2 input[type="checkbox"] {
-    display: none;
-}
-
-.checkbox-rect2 input[type="checkbox"] + label {
-    display: block;
-    position: relative;
-    padding-left: 35px;
-    margin-bottom: 20px;
-    font: 16px/20px "Montserrat", sans-serif;
-    opacity: 0.9;
-    cursor: pointer;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    top: 12px;
-    left: 5px
-}
-
-.checkbox-rect2 input[type="checkbox"]:hover + label:hover {
-    color: #1b252f;
-    opacity: 1;
-}
-
-.checkbox-rect2 input[type="checkbox"]:hover + label:before {
-    border: 1px solid #1b252f;
-    box-shadow: 2px 1px 0 #1b252f;
-}
-
-.checkbox-rect2 input[type="checkbox"] + label:last-child {
-    margin-bottom: 0;
-}
-
-.checkbox-rect2 input[type="checkbox"] + label:before {
-    content: "";
-    display: block;
-    width: 1.4em;
-    height: 1.4em;
-    border: 1px solid #343a3f;
-    border-radius: 0.2em;
-    position: absolute;
-    left: 0;
-    top: 0;
-    -webkit-transition: all 0.2s, background 0.2s ease-in-out;
-    transition: all 0.2s, background 0.2s ease-in-out;
-    background: rgba(255, 255, 255, 0.03);
-    box-shadow: -2px -1px 0 #343a3f;
-    background: #f3f3f3;
-}
-
-.checkbox-rect2 input[type="checkbox"]:checked + label:before {
-    border: 2px solid #fff;
-    border-radius: 0.3em;
-    background: #1b252f;
-    box-shadow: 2px 1px 0 #50565a;
-}
-
-
 /*инпуты*/
 
 :focus {
     outline: none;
 }
 
-input[type="text"] {
-    color: #575a5d;
+input[type="number"] {
+    color: #242425;
     width: 100%;
     box-sizing: border-box;
     letter-spacing: 1px;
 }
 
-.price-container__input {
+/* Скрыть стрелочки для числовых инпутов */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.container__input {
     float: left;
     width: 50%;
     position: relative;
 }
 
 
-.price-input {
+.price-input,
+.year-input,
+.run-input {
     border: 1px solid #ccc;
-    padding: 7px 14px 9px;
+    padding: 20px 14px 12px;
     height: 46px;
     font-size: 15px;
+    position: relative;
+    color:  #595a5b;
+}
+
+.price-input:focus,
+.year-input:focus,
+.run-input:focus {
+    border: 1px #afaeae solid;
 }
 
 .input-from {
@@ -821,3 +781,25 @@ input[type="text"] {
     border-top-right-radius: 15px;
 }
 
+/* Серая надпись в инпуте*/
+.placeholder_custom {
+    position: absolute;
+    top: 14px; /* отступ от верхнего края */
+    left: 15px; /* отступ от левого края */
+    padding-bottom: 10px;
+    color: #696a6b;
+    font-size: 13px;
+    pointer-events: none; /* чтобы надпись не мешала вводу */
+    transition: all 0.3s ease;
+}
+.placeholder_custom.focused {
+    top: 5px; /* смещаем кастомную надпись при фокусе или наличии введенного значения */
+    font-size: 9px; /* уменьшаем размер кастомной надписи при фокусе или наличии введенного значения */
+    color: #858484; /* меняем цвет кастомной надписи при фокусе или наличии введенного значения */
+}
+
+.container__input input:focus + .placeholder_custom {
+    top: 5px; /* смещаем кастомную надпись при фокусе */
+    font-size: 9px; /* уменьшаем размер кастомной надписи при фокусе */
+    color: #858484; /* меняем цвет кастомной надписи при фокусе */
+}

@@ -1,3 +1,6 @@
+import json
+from pprint import pprint
+
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.views.generic import ListView, DetailView
@@ -32,24 +35,33 @@ class AdListView(ListView):
         return queryset
 
     def post(self, request, *args, **kwargs):
-        if 'apply-sort' in request.POST:
-            sorter = AdSorter(self.get_queryset(), request.POST)
-            sorted_queryset = sorter.sort_ads()
-            return self.get_ajax_response(sorted_queryset)
+        body_unicode = request.body.decode('utf-8')
+        body_data = json.loads(body_unicode)
+        print(body_data)
+        queryset = self.get_queryset()
 
-        if 'reset' in request.POST:
-            self.sort_form = self.form_class()
-            return self.get_ajax_response(self.get_queryset())
+        # if 'reset' in body_data:
+        #     self.sort_form = self.form_class()
+        #     return self.get_ajax_response(self.get_queryset())
 
-        if 'apply-search' in request.POST:
-            searcher = AdSearcher(self.get_queryset(), request.POST.get('vin_search', '').strip())
-            searched_queryset = searcher.search_ads()
-            return self.get_ajax_response(searched_queryset)
+        # if 'search' in body_data:
+        #     searcher = AdSearcher(self.get_queryset(), body_data['search'].get('vin_search', '').strip())
+        #     queryset = searcher.search_ads()
+        #     return self.get_ajax_response(queryset)
+        for key, value in body_data.items():
+            if key == 'sort':
+                sorter = AdSorter(self.get_queryset(), value)
+                queryset = sorter.sort_ads()
+            if key == 'search':
+                searcher = AdSearcher(queryset, body_data['search'].get('vin_search', '').strip())
+                queryset = searcher.search_ads()
 
-        if 'filter' in request.POST:
-            filter_ = AdFilter(self.get_queryset(), request.POST.get('value', '').split(','))
-            filtered_queryset = filter_.filter_ads()
-            return self.get_ajax_response(filtered_queryset)
+        return self.get_ajax_response(queryset)
+
+        # if 'filter' in request.POST:
+        #     filter_ = AdFilter(self.get_queryset(), request.POST.get('value', '').split(','))
+        #     filtered_queryset = filter_.filter_ads()
+        #     return self.get_ajax_response(filtered_queryset)
 
     def get_ajax_response(self, queryset):
         html = render_to_string('ads/ads_block.html', {'ads': queryset}, self.request)

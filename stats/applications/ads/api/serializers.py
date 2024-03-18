@@ -18,7 +18,7 @@ class AdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ad
         fields = [
-            'mark_name', 'model_name', 'configuration', 'body_type', 'year', 'color', 'original_vin',
+            'mark_name', 'model_name', 'complectation', 'body_type', 'year', 'color', 'original_vin',
             'good_price', 'price_display', 'run_display', 'price_nds_display', 'availability_display',
             'absolute_url', 'first_photo', 'modification_display'
         ]
@@ -61,10 +61,6 @@ class MarkSerializer(serializers.ModelSerializer):
         model = Mark
         fields = ['id', 'mark']
 
-
-# class ModelSerializer(serializers.Serializer):
-#     id = serializers.IntegerField()
-#     model = serializers.CharField()
 
 class ModelSerializer(serializers.ModelSerializer):
     class Meta:

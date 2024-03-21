@@ -143,6 +143,7 @@ def export_calls_for_callback():
         'КЦ не взял трубку',
         'Не слышно клиента',
         'Обратный звонок. Клиент не взял трубку',
+        'Никто не взял трубку',
     ]
 
     df = pd.DataFrame.from_records(calls)

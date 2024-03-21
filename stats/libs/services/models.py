@@ -1,3 +1,5 @@
+from django import forms
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
 from slugify import slugify
@@ -203,4 +205,23 @@ class ModificationCode(BaseModel):
         verbose_name_plural = 'Коды модификации'
 
 
+class _TypedMultipleChoiceField(forms.TypedMultipleChoiceField):
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('base_field', None)
+        kwargs.pop('max_length', None)
+        super().__init__(*args, **kwargs)
 
+
+class ChoiceArrayField(ArrayField):
+    """
+    Кастомное поле для множественного выбора
+    """
+    def formfield(self, **kwargs):
+        defaults = {
+            'form_class': _TypedMultipleChoiceField,
+            'choices': self.base_field.choices,
+            'coerce': self.base_field.to_python,
+            # 'widget': forms.CheckboxSelectMultiple,
+        }
+        defaults.update(kwargs)
+        return super().formfield(**defaults)

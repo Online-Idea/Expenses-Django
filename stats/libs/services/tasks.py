@@ -3,6 +3,7 @@ from celery import shared_task
 
 from applications.autoconverter.converter import get_converter_tasks, get_price
 from libs.autoru.autoru import *
+from .exkavator import modify_exkavator_xml
 from .export import export_calls_to_file, export_calls_for_callback
 from .models import Client
 from libs.teleph.teleph import get_teleph_clients, get_teleph_calls
@@ -116,3 +117,8 @@ def post_autoru_xml(client_id: int, section: str, price_url: str,
                     delete_sale: bool = True, leave_services: bool = True,
                     leave_added_images: bool = False, is_active: bool = True):
     response = post_feeds_task(client_id, section, price_url, delete_sale, leave_services, leave_added_images, is_active)
+
+
+@shared_task
+def exkavator_feed():
+    modify_exkavator_xml()

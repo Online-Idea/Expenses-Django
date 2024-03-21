@@ -856,7 +856,7 @@ def fill_in_auction_with_parsed_ads(parsed_ads: list) -> None:
     :param parsed_ads: спарсенные объявления
     """
     parsed_datetime = parsed_ads[0].datetime
-    minus_1_hour = parsed_datetime - timedelta(hours=1)
+    start_of_day = parsed_datetime.replace(hour=0, minute=0)
     region = parsed_ads[0].region
     marks = list(set(d.mark for d in parsed_ads))
     models = list(set(d.model for d in parsed_ads))
@@ -864,7 +864,8 @@ def fill_in_auction_with_parsed_ads(parsed_ads: list) -> None:
     # Данные аукциона
     auction_data = AutoruAuctionHistory.objects \
         .filter(autoru_region__contains=region, mark__in=marks, model__in=models,
-                datetime__lte=parsed_datetime, datetime__gte=minus_1_hour)
+                datetime__lte=parsed_datetime, datetime__gte=start_of_day) \
+        .order_by('-datetime')
 
     # Делаю повторный запрос к базе чтобы получить те же спарсенные объявления но как queryset а не list
     parsed_ads_qs = AutoruParsedAd.objects.filter(
@@ -1069,3 +1070,80 @@ def post_feeds_task(client_id: int, section: str, price_url: str,
 
     feeds_task_response = requests.post(url=f'{ENDPOINT}/{req_url}', headers=dealer_headers, json=req_body)
     return feeds_task_response
+
+
+def get_autoru_ads(client_id: int) -> list[dict]:
+    """
+    Возвращает список объявлений пользователя.
+    https://yandex.ru/dev/autoru/doc/reference/user-offers-category.html
+    GET /user/offers/{category}
+    :param client_id: id клиента на авто.ру
+    :return: список объявлений
+    """
+    url = f'{ENDPOINT}/user/offers/cars'
+    dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
+    req_body = {
+       'page': 1,
+       'page_size': 100,
+    }
+    ads_response = requests.get(url=url, headers=dealer_headers, params=req_body).json()
+
+    if autoru_errors(ads_response):
+        get_autoru_ads(client_id)
+
+    ads = []
+    if ads_response['pagination']['total_offers_count'] > 0:
+        ads.extend(ads_response['offers'])
+        page_count = ads_response['pagination']['total_page_count']
+        if page_count > 1:
+            for page in range(2, page_count + 1):
+                req_body['page'] = page
+                ads_response = requests.get(url=url, headers=dealer_headers, params=req_body).json()
+                ads.extend(ads_response['offers'])
+
+    return ads
+
+
+def activate_autoru_ads(ads_ids: Union[List[str], List[Dict[str, str]]], client_id: int) -> None:
+    """
+    Активирует объявления, снятые с продажи
+    https://yandex.ru/dev/autoru/doc/reference/user-offers-category-offer-id-activate.html
+    POST /user/offers/{category}/{offerID}/activate
+    :param ads_ids: список авто.ру-идентификаторов объявлений
+    :param client_id: id клиента на авто.ру
+    :return:
+    """
+    url = f'f{ENDPOINT}/user/offers/cars/offerID/activate'
+    dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
+
+    ads_ids = take_out_ids(ads_ids)
+
+    for ad_id in ads_ids:
+        url_with_id = url.replace('offerID', ad_id)
+        requests.post(url=url_with_id, headers=dealer_headers)
+
+
+def take_out_ids(ads: Union[List[str], List[Dict[str, str]]]) -> list:
+    # Если передают полные данные объявлений с get_autoru_ads то вытаскиваю из них id
+    if 'id' in ads[0]:
+        return [ad['id'] for ad in ads]
+    return ads
+
+
+def stop_autoru_ads(ads_ids: Union[List[str], List[Dict[str, str]]], client_id: int) -> None:
+    """
+    Снимает объявления с продажи.
+    https://yandex.ru/dev/autoru/doc/reference/user-offers-category-offer-id-hide.html
+    PUT /user/offers/{category}/{offerID}/hide
+    :param ads_ids: список авто.ру-идентификаторов объявлений
+    :param client_id: id клиента на авто.ру
+    :return:
+    """
+    url = f'{ENDPOINT}/user/offers/cars/offerID/hide'
+    dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
+
+    ads_ids = take_out_ids(ads_ids)
+
+    for ad_id in ads_ids:
+        url_with_id = url.replace('offerID', ad_id)
+        requests.put(url=url_with_id, headers=dealer_headers)

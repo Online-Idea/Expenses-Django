@@ -186,3 +186,4 @@ stats/.handler-saves/
 # Лишние файлы
 *.swp
 *.bat
+/stats/test_price.csv

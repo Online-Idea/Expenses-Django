@@ -20,9 +20,10 @@ from pandas import DataFrame
 from telebot.types import InputFile
 
 from applications.autoconverter.models import *
+from applications.autoconverter.onllline_base import onllline_worker
 from stats.settings import env
 from libs.services.email_sender import send_email
-from libs.services.management.commands.bot import bot
+from libs.services.management.commands.bot import bot, break_message_to_parts
 
 
 # Список Конфигураций: POST http://151.248.118.19/Api/Configurations/GetList
@@ -55,10 +56,12 @@ def get_price(task):
     price = converter_process_result(process_id, template, task)
     logs = converter_logs(process_id)
     logs_xlsx = logs_to_xlsx(logs, template, task)
-    bot_messages(logs, logs_xlsx, price, task)
+    import_result = onllline_worker(task)
+    message = f'Логи конвертера:\n{logs}\n\nОтчет импорта базы:\n{import_result}'
+    bot_messages(message, logs_xlsx, price, task)
     save_on_ftp(logs_xlsx)
     os.remove(logs_xlsx)
-    print(f'Клиент {task.client.slug} - прайс готов')
+    print(f'Клиент {task.slug} - прайс готов')
     return
 
 
@@ -69,7 +72,7 @@ def converter_template(task):
     :return: шаблон как pandas dataframe
     """
     # Сохраняю сток клиента, делаю по нему шаблон для конвертера
-    slug = task.client.slug
+    slug = task.slug
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
     stock_path = f'converter/{slug}/stocks/stock_{slug}_{file_date}'
 
@@ -589,13 +592,21 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
 
         # Проставляю новые значения
         # Когда нужно брать значение из другого столбца
-        if change.new_value[:4] == '%col':
+        if change.new_value and change.new_value[:4] == '%col':
             column = re.findall(r'"(.*?)"', change.new_value)[0]
             if change.source == 'Сток':
                 column += '__stock_template'
             df.loc[combined_mask, change.price_column_to_change] = df[column]
-        # Иначе одно прописанное значение на все
-        else:
+        # Когда нужно добавить в начало
+        elif change.change_type == 'Добавить в начало':
+            df.loc[combined_mask, change.price_column_to_change] = df.loc[combined_mask, change.price_column_to_change] \
+                .apply(lambda x: change.new_value + str(x))
+        # Когда нужно добавить в конец
+        elif change.change_type == 'Добавить в конец':
+            df.loc[combined_mask, change.price_column_to_change] = df.loc[combined_mask, change.price_column_to_change] \
+                .apply(lambda x: str(x) + change.new_value)
+        # Когда нужно заменить полностью
+        elif change.change_type == 'Полностью':
             df.loc[combined_mask, change.price_column_to_change] = change.new_value
 
     df = df.drop(df.filter(regex='_template').columns, axis=1)
@@ -670,7 +681,7 @@ def converter_process_result(process_id, template, task):
     :param template: шаблон как pandas dataframe - если из шаблона нужны данные для прайса
     :param task: строка из таблицы Задачи конвертера
     """
-    client = task.client.slug
+    client = task.slug
 
     # Получаю прайс от конвертера по process_id
     url = 'http://151.248.118.19/Api/Stock/GetProcessResult'
@@ -723,14 +734,18 @@ def converter_process_result(process_id, template, task):
     # Сохраняю в csv
     save_path = f'converter/{client}/prices/price_{client}.csv'
 
-    string_buffer = io.StringIO()
-    read_file.to_csv(string_buffer, sep=';', header=True, index=False, decimal=',')
-    csv_string = string_buffer.getvalue()
-
-    with open(save_path, 'w', encoding='cp1251', errors='ignore') as f:
-        f.write(csv_string)
-    # read_file.to_csv(save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
+    # string_buffer = io.StringIO()
+    # read_file.to_csv(string_buffer, sep=';', header=True, index=False, decimal=',')
+    # csv_string = string_buffer.getvalue()
+    #
+    # with open(save_path, 'w', encoding='cp1251', errors='ignore') as f:
+    #     f.write(csv_string)
+    read_file.to_csv(save_path, sep=';', header=True, index=False, decimal=',', encoding='cp1251', errors='ignore',
+                     lineterminator='\n')
     save_on_ftp(save_path)
+
+    task.price = save_path
+    task.save()
 
     os.remove(save_path_date)
     os.remove(save_path)
@@ -769,7 +784,7 @@ def logs_to_xlsx(logs, template, task):
         # 'Фото': только количество без фото
     }
     client_name = task.client.name
-    client_slug = task.client.slug
+    client_slug = task.slug
 
     # Переделываю логи в словарь
     lines = logs.split('\n')[:-2]  # Последние 2 убираю т.к. там Время обработки и пустая строка
@@ -829,29 +844,33 @@ def bot_messages(logs, logs_xlsx, price, task):
     :param price: прайс от converter_process_result
     :param task: строка из таблицы Задачи конвертера
     """
-    client_slug = task.client.slug
+    client_slug = task.slug
 
     # Прайс в csv
     file_date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')
     price_save_path = f'converter/{client_slug}/prices/price_{client_slug}_{file_date}.csv'
 
-    string_buffer = io.StringIO()
-    price.to_csv(string_buffer, sep=';', header=True, index=False, decimal=',')
-    csv_string = string_buffer.getvalue()
-
-    with open(price_save_path, 'w', encoding='cp1251', errors='ignore') as f:
-        f.write(csv_string)
-    # price.to_csv(price_save_path, sep=';', header=True, encoding='cp1251', index=False, decimal=',')
+    # string_buffer = io.StringIO()
+    # price.to_csv(string_buffer, sep=';', header=True, index=False, decimal=',')
+    # csv_string = string_buffer.getvalue()
+    #
+    # with open(price_save_path, 'w', encoding='cp1251', errors='ignore') as f:
+    #     f.write(csv_string)
+    price.to_csv(price_save_path, sep=';', header=True, index=False, decimal=',', encoding='cp1251', errors='ignore',
+                 lineterminator='\n')
 
     # Отправка логов и прайса через бота телеграма
     chat_ids = ConverterLogsBotData.objects.all()
     logs = f'🟢 {task.name}\n\n{logs}'
     for chat_id in chat_ids:
-        if len(logs) > 4095:  # У телеграма ограничение на 4096 символов в сообщении
-            for x in range(0, len(logs), 4095):
-                bot.send_message(chat_id.chat_id, logs[x:x + 4095])
-        else:
-            bot.send_message(chat_id.chat_id, logs)
+        split_message = break_message_to_parts(logs)
+        for message in split_message:
+            bot.send_message(chat_id.chat_id, message)
+        # if len(logs) > 4095:  # У телеграма ограничение на 4096 символов в сообщении
+        #     for x in range(0, len(logs), 4095):
+        #         bot.send_message(chat_id.chat_id, logs[x:x + 4095])
+        # else:
+        #     bot.send_message(chat_id.chat_id, logs)
         bot.send_document(chat_id.chat_id, InputFile(logs_xlsx))
         bot.send_document(chat_id.chat_id, InputFile(price_save_path))
 

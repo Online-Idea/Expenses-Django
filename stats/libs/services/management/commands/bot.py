@@ -1,3 +1,5 @@
+from typing import Union
+
 from django.core.management.base import BaseCommand
 from telebot import TeleBot
 
@@ -50,6 +52,38 @@ def unsubscribe(message):
     else:
         bot.send_message(chat_id, 'Ты не в базе, чтобы подписаться: /subscribe')
 
+
+def break_message_to_parts(message: str) -> list[str]:
+    """
+    Разбивает сообщение если оно больше лимита телеграма в 4096 символов
+    :param message: str с сообщением
+    :return: список строк с частями сообщения меньше 4096 символов
+    """
+    if len(message) < 4096:
+        return [message]
+
+    start = 0
+    end = 4096
+    split_message = []
+    next_part = message[start:end]
+
+    while next_part:
+        # Ищу перенос строки с конца
+        split_point = message[start:end].rfind('\n')
+        # Если переноса строки нет то ищу пробел
+        if split_point == -1:
+            split_point = message[start:end].rfind(' ')
+        # Если пробела нет то выхожу из цикла
+        if split_point == -1:
+            break
+        # Добавляю часть сообщения в список
+        split_message.append(message[start:start + split_point])
+        # Следующая часть
+        start += split_point + 1
+        end = start + 4095
+        next_part = message[start:end]
+
+    return split_message
 
 # # Handle all other messages with content_type 'text' (content_types defaults to ['text'])
 # @bot.message_handler(func=lambda message: True)

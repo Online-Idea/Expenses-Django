@@ -5,6 +5,7 @@ import time
 import requests
 import undetected_chromedriver as uc
 from selenium import webdriver
+from selenium.common.exceptions import JavascriptException
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -74,6 +75,7 @@ def onllline_import_export(driver, task: ConverterTask):
     time.sleep(0.5)
     wait = WebDriverWait(driver, 120)
     wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+    time.sleep(0.5)
 
     import_input = driver.find_element(By.NAME, 'import_file_text')
     import_input.send_keys(price)
@@ -106,7 +108,10 @@ def onllline_import_export(driver, task: ConverterTask):
             importing = False
 
     # Удаляю лишний текст с отчета импорта
-    driver.execute_script("document.querySelector('div.img-info label[class=blue-dash]').remove();")
+    try:
+        driver.execute_script("document.querySelector('div.img-info label[class=blue-dash]').remove();")
+    except JavascriptException:
+        pass
     driver.execute_script("document.getElementById('salon_copyimages').remove();")
     import_result = driver.find_element(By.ID, 'import_result').text
     lines = import_result.splitlines()

@@ -8,9 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton: document.querySelector('#apply-sort'),           // Кнопка применения сортировки
         resetSortLabel: document.querySelector('#reset-sort-label'),   // Крестик сброса сортировки
         toggleButton: document.querySelector('#toggle-sort'),          // Кнопка переключения видимости сортировочной формы
+        toggleButtonFilter: document.querySelector('#toggle-filter'),
         searchButton: document.querySelector('#apply-search'),         // Кнопка применения поиска по VIn
         resetSearchLabel: document.querySelector('#reset-search-label'),    // Кнопка сброса поиска по Vin
-        sortForm: document.querySelector('#sort-form'),                // Форма для сортировки
+        sortForm: document.querySelector('#sort-form'),  // Форма для сортировки
+        filterForm: document.querySelector('.filter-container'),
         sortLabel: document.querySelector('#sort-label'),              // Метка с информацией о примененной сортировке
         csrfToken: document.querySelector('input[name="csrfmiddlewaretoken"]').value,  // CSRF-токен
         vinSearchInput: document.querySelector('#id_vin_search'),
@@ -126,9 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.removeChild(tr);
         // Если удаляется последнее поле сортировки, то удаляется вся таблица и всё скрывается
         if (tbody.children.length === 0) {
-            state.container.removeChild(state.container.firstChild);
-            state.tableCreated = false;
-            state.submitButton.classList.add('d-none');
+            resetTemplate('sort')
         }
         updateRowNumbers();
     }
@@ -139,6 +139,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleSortForm() {
         state.sortForm.classList.toggle('d-none');
         state.toggleButton.textContent = state.sortForm.classList.contains('d-none') ? 'Сортировка ▶' : 'Сортировка ▼';
+    }
+
+    function toggleFilterForm() {
+        state.filterForm.classList.toggle('d-none');
+        state.toggleButtonFilter.textContent = state.filterForm.classList.contains('d-none') ? 'Фильтр ▶' : 'Фильтр ▼';
     }
 
     /**
@@ -189,11 +194,55 @@ document.addEventListener('DOMContentLoaded', () => {
         return data
     }
 
+// Объект для отслеживания выбранных виджетов
+    const handleTracker = {
+        widgets: {},
+
+        // Метод для добавления значений виджета
+        addField(field, values) {
+            if (field === 'sort') {
+                this.widgets[field] = {};
+                values.forEach((sortField, index) => {
+                    this.widgets[field][`field_${index}`] = sortField.field;
+                    this.widgets[field][`order_${index}`] = sortField.order;
+                });
+            } else if (field === 'search') {
+                this.widgets[field] = {};
+                // const vinValue = state.vinSearchInput.value.trim();
+                this.widgets[field]['vin_search'] = values;
+            } else if (field === 'filters') {
+                this.widgets[field] = values
+            }
+        },
+
+        // Метод для удаления значений виджета
+        removeField(field) {
+            if (field in this.widgets) {
+                delete this.widgets[field]
+            } else {
+                console.error(`Виджет с полем ${field} не существует.`);
+            }
+        },
+        // Метод для получения применённых виджетов
+        getField(field) {
+            return this.widgets[field];
+        },
+
+        // Метод для получения применённых виджетов
+        getState() {
+            return this.widgets;
+        },
+        // Метод для очистки всех выбранных виджетов
+        clearState() {
+            this.widgets = {}
+        }
+    };
     function resetTemplate(widget) {
-        const data = {};
-        data[widget] = {};
+        // const data = {};
+        // data[widget] = {};
+        handleTracker.removeField(widget)
         const endpointURL = '/ads/';
-        const dataJSON = JSON.stringify(data)
+        const dataJSON = JSON.stringify(handleTracker.getState())
         fetch(endpointURL, {
             method: 'POST',
             body: dataJSON,
@@ -229,12 +278,14 @@ document.addEventListener('DOMContentLoaded', () => {
     state.sortLabel.classList.add('hide');
     state.resetSortLabel.classList.add('d-none');
     state.submitButton.classList.add('d-none');
+    state.filterForm.classList.toggle('d-none');
     state.resetSearchLabel.classList.add('d-none');
     state.sortLabel.textContent = 'Применена';
 
     // Обработчики событий
 
     state.toggleButton.addEventListener('click', toggleSortForm);
+    state.toggleButtonFilter.addEventListener('click', toggleFilterForm);
     state.resetSortLabel.addEventListener('click', () => resetTemplate('sort'));
     state.resetSearchLabel.addEventListener('click', () => resetTemplate('search'));
 
@@ -247,17 +298,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     state.submitButton.addEventListener('click', () => {
-        // const dataSort = {};
-        // dataSort['sort'] = {};
         state.sortLabel.classList.remove('hide');
         state.sortApplied = true;
-        // state.sortFields.forEach((sortField, index) => {
-        //     dataSort['sort'][`field_${index}`] = sortField.field;
-        //     dataSort['sort'][`order_${index}`] = sortField.order;
-        // });
-        const data = collectData()
-        const dataJSON = JSON.stringify(data)
-
+        handleTracker.addField('sort', state.sortFields);
+        const dataJSON = JSON.stringify(handleTracker.getState());
         const endpointURL = '/ads/';
         fetch(endpointURL, {
             method: 'POST',
@@ -287,39 +331,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     state.searchButton.addEventListener('click', () => {
         const vinValue = state.vinSearchInput.value.trim();
+        console.log(vinValue)
 
-        if (vinValue !== '') {
-            const data = {};
-            data['search'] = {};
-            data['search']['vin_search'] = vinValue;
-            const dataJSON = JSON.stringify(data)
-            const endpointURL = '/ads/';
-
-
-            fetch(endpointURL, {
-                method: 'POST',
-                body: dataJSON,
-                headers: {
-                    'X-CSRFToken': state.csrfToken,
-                    'Accept': 'application/json, text/plain, */*',
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const adsContainer = document.querySelector('#ads-container');
-                        adsContainer.innerHTML = data.html;
-                        state.resetSearchLabel.classList.remove('d-none');
-                    } else {
-                        console.error('Ошибка при получении данных с сервера');
-                    }
-                })
-                .catch(error => {
-                    console.error('Ошибка при отправке данных:', error);
-                });
+        if (vinValue === '') {
+            handleTracker.removeField('search')
+        } else {
+            handleTracker.addField('search', vinValue)
         }
+        const dataJSON = JSON.stringify(handleTracker.getState())
+        const endpointURL = '/ads/';
+
+        fetch(endpointURL, {
+            method: 'POST',
+            body: dataJSON,
+            headers: {
+                'X-CSRFToken': state.csrfToken,
+                'Accept': 'application/json, text/plain, */*',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const adsContainer = document.querySelector('#ads-container');
+                    adsContainer.innerHTML = data.html;
+                    state.resetSearchLabel.classList.remove('d-none');
+                } else {
+                    console.error('Ошибка при получении данных с сервера');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при отправке данных:', error);
+            });
+
     });
 
     class RenderTemplate {
@@ -472,9 +517,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // }
             try {
                 const url = '/ads/';
-                console.log(filters)
+                console.log(filterTracker.state, '----')
+                if (Object.keys(filterTracker.state).length) {
+                    handleTracker.addField('filters', filterTracker.getFilters())
+                } else {
+                    handleTracker.removeField(filters)
+                }
+                console.log(handleTracker.getState())
                 // Преобразование объекта фильтров в строку JSON
-                const filtersJSON = JSON.stringify(filters);
+                const filtersJSON = JSON.stringify(handleTracker.getState());
                 console.log(filtersJSON)
                 // Отправляем запрос на сервер для фильтрации объявлений
                 const filterResponse = await fetch(url, {
@@ -494,8 +545,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Получаем отфильтрованные данные
                 const filteredData = await filterResponse.json();
+                const adsContainer = document.querySelector('#ads-container');
+                adsContainer.innerHTML = filteredData.html;
                 // и отрисовываем страницу
-                await this.render.renderAds(filteredData);
+                // await this.render.renderAds(filteredData);
             } catch (error) {
                 console.error('Произошла ошибка при фильтрации объявлений:', error.message);
             }
@@ -601,6 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.clearSelect(selects.colorSelect.choices)
                     this.clearSelect(selects.bodySelect.choices)
                     filterTracker.clearFilters()
+                    handleTracker.removeField('filters')
                 }
                 await this.handlerFetch.filterAds(filterTracker.getFilters())
             })

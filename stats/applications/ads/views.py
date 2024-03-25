@@ -28,17 +28,17 @@ class AdListView(ListView):
         return context
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        self.original_queryset = super().get_queryset()
         self.sort_form.fields['fields'].choices = [
             (field.name, field.verbose_name) for field in Ad._meta.get_fields()
         ]
-        return queryset
+        return self.original_queryset
 
     def post(self, request, *args, **kwargs):
         body_unicode = request.body.decode('utf-8')
         body_data = json.loads(body_unicode)
         print(body_data)
-        queryset = self.get_queryset()
+        self.get_queryset()
 
         # if 'reset' in body_data:
         #     self.sort_form = self.form_class()
@@ -50,13 +50,15 @@ class AdListView(ListView):
         #     return self.get_ajax_response(queryset)
         for key, value in body_data.items():
             if key == 'sort':
-                sorter = AdSorter(self.get_queryset(), value)
-                queryset = sorter.sort_ads()
+                sorter = AdSorter(self.original_queryset, value)
+                self.original_queryset = sorter.sort_ads()
             if key == 'search':
-                searcher = AdSearcher(queryset, body_data['search'].get('vin_search', '').strip())
-                queryset = searcher.search_ads()
-
-        return self.get_ajax_response(queryset)
+                searcher = AdSearcher(self.original_queryset, value.get('vin_search', '').strip())
+                self.original_queryset = searcher.search_ads()
+            if key == 'filters':
+                filter = AdFilter(self.original_queryset, value)
+                self.original_queryset = filter.filter_ads()
+        return self.get_ajax_response(self.original_queryset)
 
         # if 'filter' in request.POST:
         #     filter_ = AdFilter(self.get_queryset(), request.POST.get('value', '').split(','))

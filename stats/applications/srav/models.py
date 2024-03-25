@@ -3,6 +3,8 @@ from django.db import models
 from libs.services.models import BaseModel, Mark, Model, Client, CustomBooleanField
 
 
+# from applications.accounts.models import Client
+
 class AutoruParsedAd(BaseModel):
     datetime = models.DateTimeField(verbose_name='Дата и время')
     region = models.CharField(max_length=500, verbose_name='Регион')

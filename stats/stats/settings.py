@@ -68,6 +68,7 @@ else:
 
 INSTALLED_APPS = [
     # Мои
+    # 'applications.accounts.apps.AccountsConfig',
     'applications.netcost.apps.NetcostConfig',
     'applications.autoconverter.apps.AutoconverterConfig',
     'applications.auction.apps.AuctionConfig',
@@ -134,19 +135,20 @@ WSGI_APPLICATION = 'stats.wsgi.application'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.accounts.password_validation.UserAttributeSimilarityValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.accounts.password_validation.MinimumLengthValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'django.contrib.accounts.password_validation.CommonPasswordValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': 'django.contrib.accounts.password_validation.NumericPasswordValidator',
     },
 ]
 
+# AUTH_USER_MODEL = 'accounts.Client'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/

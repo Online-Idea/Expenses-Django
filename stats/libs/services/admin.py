@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from libs.services.admin_helpers import *
 from libs.services.models import *
-
+# from applications.accounts.models import Client
 
 class ClientAdmin(admin.ModelAdmin):
     list_display = (
@@ -92,7 +92,7 @@ class ComplectationAdmin(admin.ModelAdmin):
         js = ('js/dynamic_fields.js',)
 
 
-admin.site.register(Client, ClientAdmin)
+# admin.site.register(Client, ClientAdmin)
 admin.site.register(Mark, MarkAdmin)
 admin.site.register(Model, ModelAdmin)
 admin.site.register(Generation, GenerationAdmin)

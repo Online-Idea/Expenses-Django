@@ -1,6 +1,7 @@
 from django.db import models
 
 from libs.services.models import BaseModel, Client
+# from applications.accounts.models import Client
 
 
 class TelephCall(BaseModel):

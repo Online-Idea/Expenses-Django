@@ -27,76 +27,79 @@
             </div>
         </div>
         <!-- Панель с фильтрами -->
-        <div class="filter-container">
-            <div class="filter-row">
-                <select class="mark-select" multiple>
-                    <option value="">Марка</option>
-                </select>
-                <select class="model-select" multiple>
-                    <option value="">Модель</option>
-                </select>
-                <select class="modification-select" multiple>
-                    <option value="">Модификация</option>
-                </select>
-            </div>
-            <div class="filter-row">
-                <select class="body-select" multiple>
-                    <option value="">Кузов</option>
-                </select>
-                <select class="complectation-select" multiple>
-                    <option value="">Комплектация</option>
-                </select>
-                <select class="color-select" multiple>
-                    <option value="">Цвет</option>
-                </select>
-            </div>
-            <div class="filter-row">
-                <div class="block-select">
-                    <div class="container__input">
-                        <input class="price-input input-from" type="number" min="0">
-                        <span class="placeholder_custom">Цена от</span>
-                        <span class="focus-border">
-                <i></i>
-              </span>
-                    </div>
-                    <div class="container__input">
-                        <input class="price-input input-to" type="number" min="0">
-                        <span class="placeholder_custom">до</span>
-                        <span class="focus-border">
-                <i></i>
-              </span>
-                    </div>
+        <div class="filter-block">
+            <button id="toggle-filter" type="button" class="btn btn-secondary btn-sm">Фильтр ▶</button>
+            <div class="filter-container">
+                <div class="filter-row">
+                    <select class="mark-select" multiple>
+                        <option value="">Марка</option>
+                    </select>
+                    <select class="model-select" multiple>
+                        <option value="">Модель</option>
+                    </select>
+                    <select class="modification-select" multiple>
+                        <option value="">Модификация</option>
+                    </select>
                 </div>
-                <div class="block-select">
-                    <div class="container__input">
-                        <input class="year-input input-from" type="number">
-                        <span class="placeholder_custom">Год от</span>
-                        <span class="focus-border">
-                <i></i>
-              </span>
-                    </div>
-                    <div class="container__input">
-                        <input class="year-input input-to" type="number">
-                        <span class="placeholder_custom">до</span>
-                        <span class="focus-border">
-                <i></i>
-              </span>
-                    </div>
+                <div class="filter-row">
+                    <select class="body-select" multiple>
+                        <option value="">Кузов</option>
+                    </select>
+                    <select class="complectation-select" multiple>
+                        <option value="">Комплектация</option>
+                    </select>
+                    <select class="color-select" multiple>
+                        <option value="">Цвет</option>
+                    </select>
                 </div>
-                <div class="block-select">
-                    <div class="container__input">
-                        <input class="run-input input-from" type="number">
-                        <span class="placeholder_custom">Пробег от</span>
-                        <span class="focus-border">
+                <div class="filter-row">
+                    <div class="block-select">
+                        <div class="container__input">
+                            <input class="price-input input-from" type="number" min="0">
+                            <span class="placeholder_custom">Цена от</span>
+                            <span class="focus-border">
                 <i></i>
               </span>
+                        </div>
+                        <div class="container__input">
+                            <input class="price-input input-to" type="number" min="0">
+                            <span class="placeholder_custom">до</span>
+                            <span class="focus-border">
+                <i></i>
+              </span>
+                        </div>
                     </div>
-                    <div class="container__input">
-                        <input class="run-input input-to" type="number">
-                        <span class="placeholder_custom">до</span>
-                        <span class="focus-border">
+                    <div class="block-select">
+                        <div class="container__input">
+                            <input class="year-input input-from" type="number">
+                            <span class="placeholder_custom">Год от</span>
+                            <span class="focus-border">
                 <i></i>
               </span>
+                        </div>
+                        <div class="container__input">
+                            <input class="year-input input-to" type="number">
+                            <span class="placeholder_custom">до</span>
+                            <span class="focus-border">
+                <i></i>
+              </span>
+                        </div>
+                    </div>
+                    <div class="block-select">
+                        <div class="container__input">
+                            <input class="run-input input-from" type="number">
+                            <span class="placeholder_custom">Пробег от</span>
+                            <span class="focus-border">
+                <i></i>
+              </span>
+                        </div>
+                        <div class="container__input">
+                            <input class="run-input input-to" type="number">
+                            <span class="placeholder_custom">до</span>
+                            <span class="focus-border">
+                <i></i>
+              </span>
+                        </div>
                     </div>
                 </div>
             </div>

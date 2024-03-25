@@ -533,8 +533,8 @@ ul {
     display: flex;
     justify-content: space-around;
     margin-bottom: 16px;
-    padding-left: 15px;
-    padding-top: 15px;
+    padding-left: 12px;
+    padding-top: 12px;
 
 }
 
@@ -689,6 +689,11 @@ ul {
 .choices[data-type*=select-multiple] .choices__button, .choices[data-type*=text] .choices__button {
     border-left: 1px solid #949494;
 }
+
+#toggle-filter {
+    margin: 12px;
+}
+
 
 .filter-container {
     box-shadow: 10px 12px 12px rgba(42, 53, 64, 0.1);

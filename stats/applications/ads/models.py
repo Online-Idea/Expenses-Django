@@ -6,7 +6,8 @@ from typing import Union, List, Tuple, Any
 from django.db import models
 from django.urls import reverse
 
-from libs.services.models import BaseModel, Client, Model, Mark, BodyTypes, Colors
+from libs.services.models import BaseModel, Model, Mark, Client, BodyTypes, Colors
+# from applications.accounts.models import Client
 
 
 # TODO доделать эту если придут мысли что ещё добавить

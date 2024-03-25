@@ -1,7 +1,9 @@
 from django.db import models
 
-from libs.services.models import BaseModel, Client, Mark, Model
+from libs.services.models import BaseModel, Mark, Model, Client
 
+
+# from applications.accounts.models import Client
 
 class AutoruCall(BaseModel):
     ad_id = models.CharField(max_length=255, null=True, verbose_name='id объявления')

@@ -731,6 +731,16 @@ def converter_process_result(process_id, template, task):
     read_file = read_file.map(lambda x: demoji.replace(x, ''))
     read_file['Описание'] = read_file['Описание'].replace('_x000d_', '', regex=True)
 
+    # Добавляю объявления, которых нет в стоке клиента, с другого файла
+    if task.add_to_price:
+        if task.add_to_price.endswith('.csv'):
+            add_manually_df = pd.read_csv(task.add_to_price, decimal=',', sep=';', header=0, encoding='cp1251')
+        elif task.add_to_price.endswith('.xlsx'):
+            add_manually_df = pd.read_excel(task.add_to_price, decimal=',')
+        else:
+            raise ValueError('Файл с добавлением объявлений должен быть csv или xlsx')
+        read_file = pd.concat([read_file, add_manually_df], axis=0)
+
     # Сохраняю в csv
     save_path = f'converter/{client}/prices/price_{client}.csv'
 

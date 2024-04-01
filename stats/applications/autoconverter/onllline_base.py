@@ -5,7 +5,7 @@ import time
 import requests
 import undetected_chromedriver as uc
 from selenium import webdriver
-from selenium.common.exceptions import JavascriptException
+from selenium.common.exceptions import JavascriptException, NoSuchElementException
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -45,8 +45,10 @@ def onllline_authorize(driver):
     """
     login_input = driver.find_element(By.NAME, 'auth_login')
     login_input.send_keys(os.getenv('ONLLLINE_AUTH_LOGIN'))
+    time.sleep(0.2)
     password_input = driver.find_element(By.NAME, 'auth_password')
     password_input.send_keys(os.getenv('ONLLLINE_AUTH_PASSWORD'))
+    time.sleep(0.2)
     submit_btn = driver.find_element(By.NAME, 'auth_go')
     submit_btn.click()
     time.sleep(0.5)
@@ -75,7 +77,7 @@ def onllline_import_export(driver, task: ConverterTask):
     time.sleep(0.5)
     wait = WebDriverWait(driver, 120)
     wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-    time.sleep(0.5)
+    time.sleep(1)
 
     import_input = driver.find_element(By.NAME, 'import_file_text')
     import_input.send_keys(price)

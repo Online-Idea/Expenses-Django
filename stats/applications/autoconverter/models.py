@@ -55,6 +55,9 @@ class ConverterTask(BaseModel):
         'onllline_import_options': 'Для выбора нескольких удерживай Ctrl',
         'export_to_onllline': 'Если отмечено то после импорта выгрузит на площадки по списку из Экспорт на площадки',
         'export_to_websites': 'Для выбора нескольких удерживай Ctrl',
+        'add_to_price': 'Если нужно добавить объявления к прайсу после конвертера то укажи здесь ссылку на прайс с'
+                        'этими объявлениями. Прайс размещай на наш ftp, '
+                        'в папке converter/имя_клиента/add/имя_файла.xlsx',
     }
 
     active = models.BooleanField(default=True, verbose_name='Активна')
@@ -82,6 +85,8 @@ class ConverterTask(BaseModel):
     configuration = models.ForeignKey(to='Configuration', on_delete=models.SET_NULL, blank=True, null=True,
                                       verbose_name='Конфигурация')
     price = models.URLField(null=True, blank=True, verbose_name='Прайс')
+    add_to_price = models.URLField(null=True, blank=True, help_text=HELP_TEXTS['add_to_price'],
+                                   verbose_name='Добавить к прайсу')
 
     # База onllline.ru
     import_to_onllline = models.BooleanField(default=False, help_text=HELP_TEXTS['import_to_onllline'],
@@ -96,7 +101,8 @@ class ConverterTask(BaseModel):
     )
     onllline_import_multiply_price = models.IntegerField(blank=True, null=True, verbose_name='Размножить сток')
 
-    export_to_onllline = models.BooleanField(default=False, help_text=HELP_TEXTS['export_to_onllline'], verbose_name='Экспортировать на площадки')
+    export_to_onllline = models.BooleanField(default=False, help_text=HELP_TEXTS['export_to_onllline'],
+                                             verbose_name='Экспортировать на площадки')
     export_to_websites = ChoiceArrayField(models.CharField(
         max_length=255, choices=EXPORT_WEBSITES_CHOICES, blank=True, null=True, default=list),
         blank=True, null=True, help_text=HELP_TEXTS['export_to_websites'], verbose_name='Экспорт на площадки'

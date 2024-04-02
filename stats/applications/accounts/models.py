@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, PermissionsMixin, BaseUserManager
 from django.db.models import Q
 from slugify import slugify
+from django.db import models
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 class ClientManager(BaseUserManager):
@@ -27,20 +30,17 @@ class ClientManager(BaseUserManager):
 
 
 class Client(AbstractUser, PermissionsMixin):
-    CALLS = 'звонки'
-    COMMISSION_PERCENT = 'комиссия процент'
-    COMMISSION_SUM = 'комиссия сумма'
-    CHARGE_TYPE_CHOICES = [
-        (CALLS, 'звонки'),
-        (COMMISSION_PERCENT, 'комиссия процент'),
-        (COMMISSION_SUM, 'комиссия сумма'),
-    ]
-    name = models.CharField(max_length=255, verbose_name='Имя')
+    class ChargeType(models.TextChoices):
+        CALLS = 'звонки', _('Звонки')
+        COMMISSION_PERCENT = 'комиссия процент', _('Комиссия Процент')
+        COMMISSION_SUM = 'комиссия сумма', _('Комиссия Сумма')
+
+    username = models.CharField(max_length=255, verbose_name='Имя')
     email = models.EmailField(unique=True)
     slug = models.SlugField(max_length=300, allow_unicode=True, db_index=True, verbose_name='Slug')
     manager = models.CharField(max_length=255, null=True, verbose_name='Менеджер')
     active = models.BooleanField(default='1', verbose_name='Активен')
-    charge_type = models.CharField(max_length=255, choices=CHARGE_TYPE_CHOICES, default='звонки', verbose_name='Тип')
+    charge_type = models.CharField(max_length=255, choices=ChargeType.choices, default='звонки', verbose_name='Тип')
     commission_size = models.FloatField(null=True, blank=True, verbose_name='Размер комиссии')
     teleph_id = models.CharField(max_length=255, null=True, blank=True, unique=True, verbose_name='Имя в телефонии')
     autoru_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авто.ру')
@@ -51,15 +51,15 @@ class Client(AbstractUser, PermissionsMixin):
 
     objects = ClientManager()
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name']
+    REQUIRED_FIELDS = ['username']
 
     def __str__(self):
-        return self.name
+        return self.username
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
-        self.slug = slugify(self.name)
+        self.slug = slugify(self.username)
         if not self.slug:
-            slug_str = f'{self.name}'
+            slug_str = f'{self.username}'
             self.slug = slugify(slug_str)
         slug_exists = Client.objects.filter(~Q(id=self.id), slug=self.slug)
         if slug_exists.count() > 0:
@@ -69,4 +69,33 @@ class Client(AbstractUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Клиент'
         verbose_name_plural = 'Клиенты'
-        ordering = ['name']
+        ordering = ['username']
+
+
+class Application(models.Model):
+    class Status(models.TextChoices):
+        NEW = 'new', 'Новая'
+        ACCEPTED = 'accepted', 'Принята'
+        REJECTED = 'rejected', 'Отклонена'
+
+    username = models.CharField(max_length=255, verbose_name="Имя")
+    email = models.EmailField(verbose_name="Электронная почта")
+    comment = models.TextField(verbose_name="Комментарий")
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.NEW,
+        verbose_name="Статус"
+    )
+    admin_comment = models.TextField(blank=True, verbose_name="Комментарий администратора")
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="Дата создания")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
+    user_ip = models.GenericIPAddressField(blank=True, null=True, verbose_name="IP адрес пользователя")
+
+    def __str__(self):
+        return f"{self.name} - {self.get_status_display()}"
+
+    class Meta:
+        verbose_name = "Заявка на регистрацию"
+        verbose_name_plural = "Заявки на регистрацию"
+        ordering = ['-created_at']

@@ -1,8 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
-from libs.services.models import Client
-# from applications.accounts.models import Client
+# from libs.services.models import Client
+from applications.accounts.models import Client
 
 class ClientChooseForm(forms.Form):
     daterange = forms.CharField(max_length=255, label='Период')

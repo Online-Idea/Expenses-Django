@@ -1,0 +1,13 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="profile-container">
+    <h2>Профиль пользователя</h2>
+    <div class="profile-info">
+        <p><strong>Имя:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <!-- Добавьте другую информацию о пользователе здесь -->
+    </div>
+</div>
+{% endblock %}

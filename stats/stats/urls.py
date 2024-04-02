@@ -18,12 +18,12 @@ from django.contrib import admin
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
     path('', include('libs.services.urls')),
     path('', include('applications.auction.urls')),
     path('', include('applications.autoconverter.urls')),
     path('', include('applications.srav.urls')),
     path('', include('applications.netcost.urls')),
-    path('', include('applications.ads.urls', namespace='ads_app')),
+    path('stock/', include('applications.ads.urls', namespace='ads_app')),
+    path('accounts/', include('applications.accounts.urls', namespace='accounts_app')),
     path('', include('libs.autoru.urls')),
 ]

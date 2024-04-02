@@ -13,6 +13,7 @@
             crossorigin="anonymous"></script>
 
     <!-- Custom slider and gallery styles for ads_app-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
     <link rel="stylesheet" href="{% static 'css/choices.min.css' %}" >
@@ -50,6 +51,7 @@
 
 <!--Navbar-->
 <div class="container">
+    {% if request.user|has_group:"admin" %}
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
                 aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,18 +59,18 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
             <div class="navbar-nav">
-                {% if request.user|has_group:"admin" %}
+
                     <a class="nav-item nav-link" href="{% url 'home' %}">Себестоимость</a>
                     <a class="nav-item nav-link" href="{% url 'converter_manual' %}">Автоконвертер</a>
                     <a class="nav-item nav-link" href="{% url 'auction' %}">Аукцион</a>
                     <a class="nav-item nav-link" href="{% url 'srav' %}">Сравнительная</a>
                     <a class="nav-item nav-link" href="{% url 'ads_app:ads' %}">Объявления</a>
-                {% endif %}
             </div>
+        {% endif %}
             <div class="navbar-nav ms-auto">
                 {% if request.user.is_authenticated %}
-                    <a class="nav-item nav-link" href="#">{{ user.username }}</a>
-                    <a class="nav-item nav-link" href="{% url 'logout' %}">Выйти</a>
+                    <a class="nav-item nav-link" href="{% url 'accounts_app:profile' %}">{{ user.username }}</a>
+                    <a class="nav-item nav-link" href="{% url 'accounts_app:logout' %}">Выйти</a>
                 {% endif %}
             </div>
         </div>

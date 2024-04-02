@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from libs.services.models import Client
-# from applications.accounts.models import Client
+# from libs.services.models import Client
+from applications.accounts.models import Client
 
 
 class ClientSerializer(serializers.ModelSerializer):

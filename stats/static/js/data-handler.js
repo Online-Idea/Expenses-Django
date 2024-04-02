@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // const data = {};
         // data[widget] = {};
         handleTracker.removeField(widget)
-        const endpointURL = '/ads/';
+        const endpointURL = '/stock/ads/';
         const dataJSON = JSON.stringify(handleTracker.getState())
         fetch(endpointURL, {
             method: 'POST',
@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.sortApplied = true;
         handleTracker.addField('sort', state.sortFields);
         const dataJSON = JSON.stringify(handleTracker.getState());
-        const endpointURL = '/ads/';
+        const endpointURL = '/stock/ads/';
         fetch(endpointURL, {
             method: 'POST',
             body: dataJSON,
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
             handleTracker.addField('search', vinValue)
         }
         const dataJSON = JSON.stringify(handleTracker.getState())
-        const endpointURL = '/ads/';
+        const endpointURL = '/stock/ads/';
 
         fetch(endpointURL, {
             method: 'POST',
@@ -516,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
             //     console.error('Произошла ошибка при фильтрации объявлений:', error.message);
             // }
             try {
-                const url = '/ads/';
+                const url = '/stock/ads/';
                 console.log(filterTracker.state, '----')
                 if (Object.keys(filterTracker.state).length) {
                     handleTracker.addField('filters', filterTracker.getFilters())
@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Метод для получения данных о марках с сервера
         async fetchFillData() {
-            let data = await this.handlerFetch.fillSelect('/api/marks/', 'mark')
+            let data = await this.handlerFetch.fillSelect('/stock/api/marks/', 'mark')
             this.initData(this.choices, data)
         }
 
@@ -673,7 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Метод для получения данных о моделях с сервера в зависимости от выбранных марок
         async fetchFillData() {
             let data = await this.handlerFetch.fetchDataSelect(
-                '/api/models/', 'marks', filterTracker.state['marks'], 'model'
+                '/stock/api/models/', 'marks', filterTracker.state['marks'], 'model'
             );
             this.initData(this.choices, data)
         }
@@ -722,7 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedModels = filterTracker.state['models']
 
             let dataModifications = await this.handlerFetch.fetchDataSelect(
-                '/api/modifications/', 'models', selectedModels, 'modification_display'
+                '/stock/api/modifications/', 'models', selectedModels, 'modification_display'
             )
             this.initData(this.choices, dataModifications)
         }
@@ -755,7 +755,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedModels = filterTracker.state['models']
 
             let dataBodies = await this.handlerFetch.fetchDataSelect(
-                '/api/bodies/', 'models', selectedModels, 'body_type'
+                '/stock/api/bodies/', 'models', selectedModels, 'body_type'
             )
             this.initData(this.choices, dataBodies)
         }
@@ -787,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedModels = filterTracker.state['models']
 
             let dataModifications = await this.handlerFetch.fetchDataSelect(
-                '/api/complectations/', 'models', selectedModels, 'complectation'
+                '/stock/api/complectations/', 'models', selectedModels, 'complectation'
             )
             this.initData(this.choices, dataModifications)
         }
@@ -821,7 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedModels = filterTracker.state['models']
 
             let dataColors = await this.handlerFetch.fetchDataSelect(
-                '/api/colors/', 'models', selectedModels, 'color'
+                '/stock/api/colors/', 'models', selectedModels, 'color'
             )
             this.initData(this.choices, dataColors)
         }

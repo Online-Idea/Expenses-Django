@@ -27,17 +27,15 @@ from .models import Client
 class ClientAdmin(UserAdmin):
     model = Client
     list_display = (
-        'id', 'name', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'autoru_name',
+        'id', 'username', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'autoru_name',
         'avito_id', 'drom_id')
-    list_display_links = ('id', 'name')
+    list_display_links = ('id', 'username')
     search_fields = ('name', 'manager', 'teleph_id', 'autoru_id', 'autoru_name', 'avito_id', 'drom_id')
     list_editable = ('active',)
     list_filter = ('manager', 'active', 'charge_type', 'is_staff', 'is_superuser')
-    fields = (
-        'id', 'name', 'slug', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id',
-        'autoru_name', 'avito_id', 'drom_id')
+
     fieldsets = (
-        (None, {'fields': ('email', 'password', 'name', 'slug')}),
+        (None, {'fields': ('email', 'password', 'username', 'slug')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
         ('Additional Info', {'fields': (
@@ -46,7 +44,7 @@ class ClientAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'name', 'password1', 'password2', 'active', 'is_staff', 'is_superuser'),
+            'fields': ('email', 'username', 'password1', 'password2', 'active', 'is_staff', 'is_superuser'),
         }),
     )
     readonly_fields = ('id',)

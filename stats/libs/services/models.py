@@ -1,3 +1,5 @@
+from django import forms
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
 from slugify import slugify
@@ -104,6 +106,7 @@ class Generation(BaseModel):
     mark = models.ForeignKey('Mark', on_delete=models.PROTECT, verbose_name='Марка')
     model = models.ForeignKey('Model', on_delete=models.PROTECT, verbose_name='Модель')
     generation = models.CharField(max_length=255, verbose_name='Поколение')
+    # TODO года выпуска добавить
     teleph = models.CharField(max_length=255, null=True, blank=True, verbose_name='Телефония')
     autoru = models.CharField(max_length=255, null=True, blank=True, verbose_name='Авто.ру')
     avito = models.CharField(max_length=255, null=True, blank=True, verbose_name='Авито')
@@ -234,6 +237,7 @@ class ModificationCode(BaseModel):
         verbose_name_plural = 'Коды модификации'
 
 
+
 class Colors(models.TextChoices):
     BEIGE = 'бежевый', 'бежевый'
     WHITE = 'белый', 'белый'
@@ -253,3 +257,24 @@ class Colors(models.TextChoices):
     BLUE = 'синий', 'синий'
     VIOLET = 'фиолетовый', 'фиолетовый'
     BLACK = 'чёрный', 'чёрный'
+    
+class _TypedMultipleChoiceField(forms.TypedMultipleChoiceField):
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('base_field', None)
+        kwargs.pop('max_length', None)
+        super().__init__(*args, **kwargs)
+
+
+class ChoiceArrayField(ArrayField):
+    """
+    Кастомное поле для множественного выбора
+    """
+    def formfield(self, **kwargs):
+        defaults = {
+            'form_class': _TypedMultipleChoiceField,
+            'choices': self.base_field.choices,
+            'coerce': self.base_field.to_python,
+            # 'widget': forms.CheckboxSelectMultiple,
+        }
+        defaults.update(kwargs)
+        return super().formfield(**defaults)

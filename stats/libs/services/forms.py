@@ -23,4 +23,3 @@ class LoginUserForm(AuthenticationForm):
         'class': 'form-control',
         'placeholder': 'Пароль'
     }))
-

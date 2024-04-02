@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django import forms
+from django.utils.html import linebreaks
 
 from applications.autoconverter.models import *
 
@@ -9,10 +11,41 @@ class ConverterTaskAdmin(admin.ModelAdmin):
     list_editable = ('active',)
     search_fields = ('name',)
     list_filter = ('client', 'active')
-    fields = ('id', 'client', 'name', 'stock_source', 'stock_url', 'stock_post_host', 'stock_post_login',
-              'stock_post_password', 'active', 'photos_folder', 'front', 'back', 'interior', 'salon_only', 'template',
-              'stock_fields', 'configuration', 'notifications_email')
-    readonly_fields = ('id', 'template')
+    # fields = ('id', 'client', 'name', 'stock_source', 'stock_url', 'stock_post_host', 'stock_post_login',
+    #           'stock_post_password', 'active', 'photos_folder', 'front', 'back', 'interior', 'salon_only', 'template',
+    #           'stock_fields', 'configuration', 'price', 'notifications_email', 'import_to_onllline',
+    #           'onllline_salon_to_import', 'onllline_import_mode', 'onllline_import_options',
+    #           'onllline_import_multiply_price', 'export_to_onllline', 'export_to_websites')
+    fieldsets = [
+        (
+            None,
+            {
+                'fields': ['id', 'active', 'client', 'name', 'slug', 'notifications_email', ],
+            },
+        ),
+        (
+            'Сток',
+            {
+                'fields': ['stock_source', 'stock_url', 'stock_post_host', 'stock_post_login', 'stock_post_password',],
+            },
+        ),
+        (
+            'Конвертер',
+            {
+                'fields': ['photos_folder', 'front', 'back', 'interior', 'salon_only', 'template', 'stock_fields',
+                           'configuration', 'price', 'add_to_price', ]
+            },
+        ),
+        (
+            'База onllline.ru',
+            {
+                'fields': ['import_to_onllline', 'onllline_salon_to_import', 'onllline_import_mode',
+                           'onllline_import_options', 'onllline_import_multiply_price', 'export_to_onllline',
+                           'export_to_websites']
+            }
+        )
+    ]
+    readonly_fields = ('id', 'template', 'price')
     save_on_top = True
 
 
@@ -70,13 +103,18 @@ class ConditionalInline(admin.TabularInline):
 
 class ConverterExtraProcessingAdmin(admin.ModelAdmin):
     inlines = [ConditionalInline, ]
-    list_display = ('id', 'converter_task', 'source', 'price_column_to_change', 'new_value')
+    list_display = ('id', 'converter_task', 'source', 'price_column_to_change', 'new_value', 'change_type')
     list_display_links = ('id', 'converter_task')
     search_fields = ('converter_task__name', 'price_column_to_change', 'new_value')
     list_filter = ('converter_task',)
-    fields = ('id', 'converter_task', 'source', 'price_column_to_change', 'new_value')
+    fields = ('id', 'converter_task', 'source', 'price_column_to_change', 'new_value', 'change_type')
     readonly_fields = ('id',)
     ordering = ('converter_task', 'price_column_to_change')
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        if db_field.name == 'new_value':
+            kwargs['widget'] = forms.Textarea(attrs={'rows': 5, 'cols': 40})
+        return super().formfield_for_dbfield(db_field, **kwargs)
 
 
 admin.site.register(ConverterTask, ConverterTaskAdmin)

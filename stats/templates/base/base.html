@@ -33,8 +33,10 @@
     <!-- django-ajax-datatable CSS -->
     <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet"/>
     <!-- DataTables.net CSS -->
-    <link href="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.css"
-          rel="stylesheet">
+    <link href="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.css" rel="stylesheet">
+    <!-- django-ajax-datatable CSS -->
+    <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet" />
+
 
     <!-- django-ajax-datatable JavaScript -->
     <script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
@@ -42,6 +44,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
     <script src="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.js"></script>
     <script src="https://cdn.datatables.net/plug-ins/1.10.15/sorting/datetime-moment.js"></script>
+
+    <!-- Custom styles -->
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
 
     {% block headcontent %}
     {% endblock %}
@@ -63,8 +68,17 @@
                     <a class="nav-item nav-link" href="{% url 'home' %}">Себестоимость</a>
                     <a class="nav-item nav-link" href="{% url 'converter_manual' %}">Автоконвертер</a>
                     <a class="nav-item nav-link" href="{% url 'auction' %}">Аукцион</a>
-                    <a class="nav-item nav-link" href="{% url 'srav' %}">Сравнительная</a>
                     <a class="nav-item nav-link" href="{% url 'ads_app:ads' %}">Объявления</a>
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Конкуренты
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'comparison' %}">Сравнительная</a></li>
+                            <li><a class="dropdown-item" href="{% url 'parsed_ads' %}">Выдача</a></li>
+                        </ul>
+                    </div>
+                {% endif %}
             </div>
         {% endif %}
             <div class="navbar-nav ms-auto">

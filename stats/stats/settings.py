@@ -67,16 +67,6 @@ else:
 # Application definition
 
 INSTALLED_APPS = [
-    # Мои
-    'applications.accounts.apps.AccountsConfig',
-    'applications.netcost.apps.NetcostConfig',
-    'applications.autoconverter.apps.AutoconverterConfig',
-    'applications.auction.apps.AuctionConfig',
-    'applications.srav.apps.SravConfig',
-    'applications.ads.apps.AdsConfig',
-    'libs.services.apps.ServicesConfig',
-    'libs.autoru.apps.AutoruConfig',
-    'libs.teleph.apps.TelephConfig',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -90,9 +80,22 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'rest_framework',
     'ajax_datatable',
+    "debug_toolbar",
+      # Мои
+    'applications.accounts.apps.AccountsConfig',
+    'applications.netcost.apps.NetcostConfig',
+    'applications.autoconverter.apps.AutoconverterConfig',
+    'applications.auction.apps.AuctionConfig',
+    'applications.srav.apps.SravConfig',
+    'applications.ads.apps.AdsConfig',
+    'libs.services.apps.ServicesConfig',
+    'libs.autoru.apps.AutoruConfig',
+    'libs.teleph.apps.TelephConfig',
+
 ]
 
 MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -249,4 +252,23 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
         'LOCATION': os.path.join(BASE_DIR, 'stats_cache'),
     }
+}
+
+INTERNAL_IPS = (
+    "127.0.0.1",
+    "212.57.103.141",
+)
+
+
+# Принудительно показывает Django Debug Toolbar без ограничений по ip
+# def show_toolbar(request):
+#     return True
+#
+#
+# DEBUG_TOOLBAR_CONFIG = {
+#     "SHOW_TOOLBAR_CALLBACK": show_toolbar,
+# }
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 }

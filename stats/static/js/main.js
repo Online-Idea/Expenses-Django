@@ -125,6 +125,7 @@ document.querySelectorAll('details').forEach((el) => {
 //            checkboxes[i].checked = source.checked;
 //    }
 //}
+
 // Отмечает те чекбоксы которые были ранее выбраны
 function selected_checkboxes(elements, checkboxName, selectAllName) {
     var checkboxes = document.getElementsByName(checkboxName);

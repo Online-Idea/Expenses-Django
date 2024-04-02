@@ -1,9 +1,13 @@
 import json
 
 from django.db import models
+from django.db.models import Q
+from django.utils.html import strip_tags
+from slugify import slugify
 
 from libs.services.models import BaseModel
 from applications.accounts.models import Client
+from libs.services.models import BaseModel, ChoiceArrayField
 
 
 class ConverterTask(BaseModel):
@@ -11,28 +15,113 @@ class ConverterTask(BaseModel):
         ('Ссылка', 'Ссылка'),
         ('POST-запрос', 'POST-запрос'),
     ]
+    ONLLLINE_IMPORT_MODE_CHOICES = [
+        ('Hide', 'Добавить объявления + скрытые'),
+        ('AddDel', 'Добавить объявления + удалить'),
+        ('Del', 'Удалить все + добавить'),
+        ('Add', 'Добавить к имеющимся'),
+    ]
+    ONLLLINE_IMPORT_OPTIONS_CHOICES = [
+        ('-----', '-----'),
+        ('save_images', 'Сохранить названия фото'),
+        ('save_services', 'Оставлять услуги'),
+        ('ad_add_vin', 'Присваивать ВИН модели'),
+    ]
+    EXPORT_WEBSITES_CHOICES = [
+        ('-----', '-----'),
+        ('autoru', 'auto.ru (новый каталог)'),
+        ('avito', 'avito.ru'),
+        ('drom', 'drom.ru'),
+        ('yandexYml', 'Yandex Market'),
+        ('110km', '110km.ru'),
+        ('automobile', 'am.ru'),
+        ('comautoru', 'auto.ru (ком. транспорт)'),
+        ('navigator', 'autonavigator.ru'),
+        ('avto25', 'avto25.ru'),
+        ('bibika', 'bibika.ru'),
+        ('carcopy', 'carcopy.ru'),
+        ('car', 'car.ru'),
+        ('cars', 'cars.ru'),
+        ('carsguru', 'carsguru.ru'),
+        ('clubrussia', 'Club Russia'),
+        ('dmir', 'dmir.ru'),
+        ('irr2', 'irr.ru'),
+        ('quto', 'quto.ru'),
+        ('usedcars', 'usedcars.ru'),
+        ('yandexYml', 'yandex.yml'),
+        ('vk', 'vk.com'),
+        ('csv', 'файл для Excel'),
+    ]
+    HELP_TEXTS = {
+        'import_to_onllline': 'Если отмечено то после конвертера прайс будет импортирован в салон в базе onllline.ru',
+        'onllline_import_options': 'Для выбора нескольких удерживай Ctrl',
+        'export_to_onllline': 'Если отмечено то после импорта выгрузит на площадки по списку из Экспорт на площадки',
+        'export_to_websites': 'Для выбора нескольких удерживай Ctrl',
+        'add_to_price': 'Если нужно добавить объявления к прайсу после конвертера то укажи здесь ссылку на прайс с'
+                        'этими объявлениями. Прайс размещай на наш ftp, '
+                        'в папке converter/имя_клиента/add/имя_файла.xlsx',
+    }
+
+    active = models.BooleanField(default=True, verbose_name='Активна')
     client = models.ForeignKey(to=Client, on_delete=models.SET_NULL, null=True, verbose_name='Клиент')
     name = models.CharField(max_length=500, verbose_name='Название')
+    slug = models.SlugField(max_length=500, allow_unicode=True, db_index=True, verbose_name='Slug')
+    notifications_email = models.CharField(max_length=500, blank=True, null=True, verbose_name='Почта для уведомлений')
+
+    # Сток
     stock_source = models.CharField(max_length=500, choices=STOCK_SOURCE_CHOICES, verbose_name='Источник стока')
     stock_url = models.URLField(blank=True, null=True, verbose_name='Ссылка стока')
     stock_post_host = models.URLField(blank=True, null=True, verbose_name='POST-запрос Хост')
     stock_post_login = models.CharField(max_length=500, blank=True, null=True, verbose_name='POST-запрос Логин')
     stock_post_password = models.CharField(max_length=500, blank=True, null=True, verbose_name='POST-запрос Пароль')
-    active = models.BooleanField(default=True, verbose_name='Активна')
+
+    # Конвертер
     photos_folder = models.ForeignKey(to='PhotoFolder', on_delete=models.SET_NULL, null=True,
                                       verbose_name='Папка с фото')
     front = models.IntegerField(default=10, verbose_name='Начало')
     back = models.IntegerField(default=10, verbose_name='Конец')
     interior = models.IntegerField(default=10, verbose_name='Фото интерьеров', blank=True, null=True)
     salon_only = models.BooleanField(verbose_name='Только фото салона', default=False)
-    template = models.URLField(verbose_name='Шаблон')
+    template = models.URLField(null=True, blank=True, verbose_name='Шаблон')
     stock_fields = models.ForeignKey(to='StockFields', on_delete=models.PROTECT, verbose_name='Поля стока')
     configuration = models.ForeignKey(to='Configuration', on_delete=models.SET_NULL, blank=True, null=True,
                                       verbose_name='Конфигурация')
-    notifications_email = models.CharField(max_length=500, blank=True, null=True, verbose_name='Почта для уведомлений')
+    price = models.URLField(null=True, blank=True, verbose_name='Прайс')
+    add_to_price = models.URLField(null=True, blank=True, help_text=HELP_TEXTS['add_to_price'],
+                                   verbose_name='Добавить к прайсу')
+
+    # База onllline.ru
+    import_to_onllline = models.BooleanField(default=False, help_text=HELP_TEXTS['import_to_onllline'],
+                                             verbose_name='Импортировать в базу')
+    onllline_salon_to_import = models.IntegerField(blank=True, null=True, verbose_name='Номер салона onllline.ru')
+    onllline_import_mode = models.CharField(
+        max_length=255, choices=ONLLLINE_IMPORT_MODE_CHOICES, default=ONLLLINE_IMPORT_MODE_CHOICES[1],
+        blank=True, null=True, verbose_name='Вариант импорта')
+    onllline_import_options = ChoiceArrayField(models.CharField(
+        max_length=255, choices=ONLLLINE_IMPORT_OPTIONS_CHOICES, blank=True, null=True, default=list),
+        blank=True, null=True, help_text=HELP_TEXTS['onllline_import_options'], verbose_name='Опции импорта'
+    )
+    onllline_import_multiply_price = models.IntegerField(blank=True, null=True, verbose_name='Размножить сток')
+
+    export_to_onllline = models.BooleanField(default=False, help_text=HELP_TEXTS['export_to_onllline'],
+                                             verbose_name='Экспортировать на площадки')
+    export_to_websites = ChoiceArrayField(models.CharField(
+        max_length=255, choices=EXPORT_WEBSITES_CHOICES, blank=True, null=True, default=list),
+        blank=True, null=True, help_text=HELP_TEXTS['export_to_websites'], verbose_name='Экспорт на площадки'
+    )
 
     def __str__(self):
         return self.name
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
+        self.slug = slugify(self.name)
+        if not self.slug:
+            slug_str = f'{self.name}'
+            self.slug = slugify(slug_str)
+        slug_exists = ConverterTask.objects.filter(~Q(id=self.id), slug=self.slug)
+        if slug_exists.count() > 0:
+            self.slug = f'{self.slug}-2'
+        super(ConverterTask, self).save(*args, **kwargs)
 
     class Meta:
         db_table = 'autoconverter_converter_task'
@@ -183,7 +272,8 @@ class ConverterFilter(BaseModel):
 
     converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.PROTECT)
     field = models.CharField(max_length=500, verbose_name='Поле')
-    condition = models.CharField(max_length=500, choices=CONDITION_CHOICES, verbose_name='Условие')
+    condition = models.CharField(max_length=500, choices=CONDITION_CHOICES,
+                                 default=CONDITION_CHOICES[2], verbose_name='Условие')
     value = models.CharField(max_length=500, help_text=value_help_text, verbose_name='Значение')
 
     def __str__(self):
@@ -202,16 +292,33 @@ class ConverterExtraProcessing(BaseModel):
         ('Сток', 'Сток'),
         ('Прайс', 'Прайс')
     ]
+    CHANGE_TYPE_CHOICES = [
+        ('Полностью', 'Полностью'),
+        ('Добавить в начало', 'Добавить в начало'),
+        ('Добавить в конец', 'Добавить в конец'),
+    ]
     new_value_help = 'Если одно значение для всех то пиши его, если из другого столбца то пиши имя столбца' \
                      'в формате: %col:"имя_столбца"'
 
     converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.PROTECT)
     source = models.CharField(max_length=500, choices=SOURCE_CHOICES, verbose_name='Источник')
     price_column_to_change = models.CharField(max_length=500, verbose_name='Столбец прайса в котором менять')
-    new_value = models.CharField(max_length=5000, help_text=new_value_help, verbose_name='Новое значение')
+    new_value = models.CharField(max_length=5000, null=True, blank=True, help_text=new_value_help,
+                                 verbose_name='Новое значение')
+    change_type = models.CharField(max_length=255, choices=CHANGE_TYPE_CHOICES, verbose_name='Как заменять',
+                                   default=CHANGE_TYPE_CHOICES[0])
 
     def __str__(self):
         return f'{self.converter_task.name} {self.source} -> {self.price_column_to_change} {self.new_value}'
+
+    def save(self, *args, **kwargs):
+        # Добавляю переносы строк
+        if self.new_value:
+            if self.change_type == 'Добавить в начало':
+                self.new_value += '\n\n'
+            elif self.change_type == 'Добавить в конец':
+                self.new_value = '\n\n' + self.new_value
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'autoconverter_converter_extra_processing'
@@ -222,8 +329,9 @@ class ConverterExtraProcessing(BaseModel):
 class Conditional(BaseModel):
     converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.PROTECT)
     field = models.CharField(max_length=500, help_text=StockFields.multi_tags_help, verbose_name='Поле')
-    condition = models.CharField(max_length=500, choices=ConverterFilter.CONDITION_CHOICES, verbose_name='Условие')
-    value = models.CharField(max_length=500, help_text=ConverterFilter.value_help_text, verbose_name='Значение')
+    condition = models.CharField(max_length=500, choices=ConverterFilter.CONDITION_CHOICES,
+                                 default=ConverterFilter.CONDITION_CHOICES[2], verbose_name='Условие')
+    value = models.CharField(max_length=5000, help_text=ConverterFilter.value_help_text, verbose_name='Значение')
 
     def __str__(self):
         return f'{self.converter_extra_processing} {self.field} {self.condition} {self.value}'

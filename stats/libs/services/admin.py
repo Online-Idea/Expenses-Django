@@ -31,7 +31,6 @@ class MarkAdmin(admin.ModelAdmin):
 class ModelAdmin(admin.ModelAdmin):
     list_display = ('id', marks_mark, 'model', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
     list_display_links = ('id', marks_mark, 'model')
-    # TODO добавить поиск по марке
     search_fields = ('mark__mark', 'model', 'human_name')
     fields = ('id', 'mark', 'model', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
     readonly_fields = ('id',)

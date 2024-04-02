@@ -26,4 +26,5 @@ urlpatterns = [
     path('stock/', include('applications.ads.urls', namespace='ads_app')),
     path('accounts/', include('applications.accounts.urls', namespace='accounts_app')),
     path('', include('libs.autoru.urls')),
+    path("__debug__/", include("debug_toolbar.urls")),
 ]

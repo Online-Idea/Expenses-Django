@@ -29,7 +29,7 @@ class AutoruCall(BaseModel):
 class AutoruProduct(BaseModel):
     ad_id = models.CharField(max_length=255, null=True, verbose_name='id объявления')
     vin = models.CharField(max_length=17, null=True, verbose_name='VIN')
-    client = models.ForeignKey(Client, to_field='autoru_id', on_delete=models.PROTECT, verbose_name='id клиента')
+    client = models.ForeignKey(Client, to_field='autoru_id', on_delete=models.CASCADE, verbose_name='id клиента')
     date = models.DateField(verbose_name='Дата')
     mark = models.CharField(max_length=255, null=True, verbose_name='Марка')
     model = models.CharField(max_length=255, null=True, verbose_name='Модель')

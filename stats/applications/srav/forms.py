@@ -5,25 +5,40 @@ from applications.srav.models import AutoruParsedAd
 from libs.services.models import Mark
 
 
-class SravChooseForm(forms.Form):
+class AutoruParsedAdChooseForm(forms.Form):
     daterange = forms.CharField(max_length=255, label='Период')
-    select_all_marks = forms.BooleanField(required=False,
-                                          widget=forms.CheckboxInput(attrs={'checked': True, 'class': 'selectAll'}))
-    mark_checkbox = cache.get('srav_mark_checkbox')
-    if not mark_checkbox:
-        mark_checkbox = forms.ModelMultipleChoiceField(
-            queryset=Mark.objects.filter(id__in=AutoruParsedAd.objects.values('mark').distinct()),
-            widget=forms.CheckboxSelectMultiple(attrs={'checked': True}),
-        )
-        cache.set('srav_mark_checkbox', mark_checkbox, 86400)
 
-    select_all_regions = forms.BooleanField(required=False,
-                                            widget=forms.CheckboxInput(attrs={'checked': True, 'class': 'selectAll'}))
+    mark_values = cache.get('autoru_parsed_ad_mark_values')
+    if not mark_values:
+        mark_values = AutoruParsedAd.objects.values('mark').distinct()
+        cache.set('autoru_parsed_ad_mark_values', mark_values, 86400)
 
-    region_choices = cache.get('srav_region_choices')
+    mark_checkbox = forms.ModelMultipleChoiceField(
+        queryset=Mark.objects.filter(id__in=[value['mark'] for value in mark_values]),
+        widget=forms.CheckboxSelectMultiple(attrs={'checked': False}),
+    )
+
+    region_choices = cache.get('autoru_parsed_ad_region_choices')
     if not region_choices:
         region_choices = [(region, region) for region in
                           AutoruParsedAd.objects.order_by('region').values_list('region', flat=True).distinct()]
-        cache.set('srav_region_choices', region_choices, 86400)
+        cache.set('autoru_parsed_ad_region_choices', region_choices, 86400)
     region_checkbox = forms.MultipleChoiceField(required=False, choices=region_choices,
-                                                widget=forms.CheckboxSelectMultiple(attrs={'checked': True}))
+                                                widget=forms.CheckboxSelectMultiple(attrs={'checked': False}))
+
+
+class ComparisonChooseForm(AutoruParsedAdChooseForm):
+    dealer = forms.ChoiceField(label='Сравнить для', choices=[('-----', '-----')])
+
+    def __init__(self, *args, **kwargs):
+        super(ComparisonChooseForm, self).__init__(*args, **kwargs)
+
+        # Выбор дилеров перенёс сюда чтобы не подставлялись в форму на сайте, но были для валидации
+        dealer_choices = cache.get('comparison_dealer')
+        if not dealer_choices:
+            dealer_choices = [('-----', '-----')] + [
+                (dealer, dealer) for dealer in AutoruParsedAd.objects.all().values_list('dealer', flat=True).distinct()
+            ]
+            cache.set('comparison_dealer', dealer_choices, 86400)
+        if self.is_bound:
+            self.fields['dealer'].choices = dealer_choices

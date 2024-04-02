@@ -60,9 +60,10 @@ ul {
 
 /*---------------------------------------------------*/
 
-
 /*----------------Таблица себестоимости--------------*/
 
+
+/*---------------- DataTables.net мои настройки --------------*/
 .table-responsive-stack tr {
     display: -webkit-box;
     display: -ms-flexbox;
@@ -117,12 +118,34 @@ ul {
 }
 
 .negative {
-    color: red;
+    background-color: #E0C2CD !important;
+}
+
+.positive {
+    background-color: #DDE8CB !important;
+}
+
+.chosen-dealer td {
+    background-color: #DEE6EF !important;
+}
+
+.thick-border td {
+    border-top: medium solid black;
+}
+
+th {
+   white-space: normal !important;
+   vertical-align: middle;
+}
+
+table.dataTable td,
+table.dataTable tr {
+ font-size: 14px;
 }
 
 /*---------------------------------------------------*/
 
-/*----------------График--------------*/
+/*---------------- График ---------------------------*/
 .graph {
     max-width: none;
 }

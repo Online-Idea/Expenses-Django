@@ -9,9 +9,10 @@ from django.shortcuts import render
 from libs.autoru.models import AutoruCall, AutoruProduct
 from libs.services.decorators import allowed_users
 from libs.services.forms import ClientChooseForm
-from libs.services.models import Client
+# from libs.services.models import Client
 from libs.services.utils import split_daterange
 from libs.teleph.models import TelephCall
+from applications.accounts.models import Client
 
 
 @login_required(login_url='login')

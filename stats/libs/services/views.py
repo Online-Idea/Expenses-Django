@@ -16,25 +16,24 @@ def get_models_for_mark(request, mark_id):
     return JsonResponse(list(models), safe=False)
 
 
-class ClientCreateAPIView(generics.CreateAPIView):
-    queryset = Client.objects.all()
-    serializer_class = ClientSerializer
-
-    def post(self, request, *args, **kwargs):
-        # меняй данные в request перед тем как отправлять их на create
-        # request.data['name'] = f"{request.data['name']} | ye"
-        # request.data = [f"{i['name']} | ye" for i in request.data]
-        return self.create(request, *args, **kwargs)
-
-
-class LoginUser(LoginView):
-    form_class = LoginUserForm
-    template_name = 'services/login.html'
-
-    def get_success_url(self):
-        return reverse_lazy('home')
+# class ClientCreateAPIView(generics.CreateAPIView):
+#     queryset = Client.objects.all()
+#     serializer_class = ClientSerializer
+#
+#     def post(self, request, *args, **kwargs):
+#         # меняй данные в request перед тем как отправлять их на create
+#         # request.data['name'] = f"{request.data['name']} | ye"
+#         # request.data = [f"{i['name']} | ye" for i in request.data]
+#         return self.create(request, *args, **kwargs)
 
 
-def logout_user(request):
-    logout(request)
-    return redirect('login')
+# class LoginUser(LoginView):
+#     template_name = 'services/login.html'
+#
+#     def get_success_url(self):
+#         return reverse_lazy('home')
+#
+#
+# def logout_user(request):
+#     logout(request)
+#     return redirect('login')

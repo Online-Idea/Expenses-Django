@@ -2,21 +2,21 @@ from django.contrib import admin
 
 from libs.services.admin_helpers import *
 from libs.services.models import *
+from applications.accounts.models import Client
 
-
-class ClientAdmin(admin.ModelAdmin):
-    list_display = (
-        'id', 'name', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'autoru_name',
-        'avito_id', 'drom_id')
-    list_display_links = ('id', 'name')
-    search_fields = ('name', 'manager', 'teleph_id', 'autoru_id', 'autoru_name', 'avito_id', 'drom_id')
-    list_editable = ('active',)
-    list_filter = ('manager', 'active', 'charge_type')
-    fields = (
-        'id', 'name', 'slug', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id',
-        'autoru_name', 'avito_id', 'drom_id')
-    readonly_fields = ('id',)
-    save_on_top = True
+# class ClientAdmin(admin.ModelAdmin):
+#     list_display = (
+#         'id', 'name', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'autoru_name',
+#         'avito_id', 'drom_id')
+#     list_display_links = ('id', 'name')
+#     search_fields = ('name', 'manager', 'teleph_id', 'autoru_id', 'autoru_name', 'avito_id', 'drom_id')
+#     list_editable = ('active',)
+#     list_filter = ('manager', 'active', 'charge_type')
+#     fields = (
+#         'id', 'name', 'slug', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id',
+#         'autoru_name', 'avito_id', 'drom_id')
+#     readonly_fields = ('id',)
+#     save_on_top = True
 
 
 class MarkAdmin(admin.ModelAdmin):
@@ -91,7 +91,7 @@ class ComplectationAdmin(admin.ModelAdmin):
         js = ('js/dynamic_fields.js',)
 
 
-admin.site.register(Client, ClientAdmin)
+# admin.site.register(Client, ClientAdmin)
 admin.site.register(Mark, MarkAdmin)
 admin.site.register(Model, ModelAdmin)
 admin.site.register(Generation, GenerationAdmin)

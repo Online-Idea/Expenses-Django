@@ -67,6 +67,7 @@ else:
 # Application definition
 
 INSTALLED_APPS = [
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -80,15 +81,17 @@ INSTALLED_APPS = [
     'rest_framework',
     'ajax_datatable',
     "debug_toolbar",
+      # Мои
+    'applications.accounts.apps.AccountsConfig',
+    'applications.netcost.apps.NetcostConfig',
+    'applications.autoconverter.apps.AutoconverterConfig',
+    'applications.auction.apps.AuctionConfig',
+    'applications.srav.apps.SravConfig',
+    'applications.ads.apps.AdsConfig',
+    'libs.services.apps.ServicesConfig',
+    'libs.autoru.apps.AutoruConfig',
+    'libs.teleph.apps.TelephConfig',
 
-    # Мои
-    'applications.netcost',
-    'applications.autoconverter',
-    'applications.auction',
-    'applications.srav',
-    'libs.services',
-    'libs.autoru',
-    'libs.teleph',
 ]
 
 MIDDLEWARE = [
@@ -148,6 +151,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = 'accounts.Client'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
@@ -238,6 +242,10 @@ EMAIL_PORT = os.environ['EMAIL_PORT']
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ['EMAIL_LOGIN']
 EMAIL_HOST_PASSWORD = os.environ['EMAIL_PASSWORD']
+
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+SERVER_EMAIL = EMAIL_HOST_USER
+EMAIL_ADMIN = EMAIL_HOST_USER
 
 CACHES = {
     'default': {

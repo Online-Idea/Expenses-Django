@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from libs.services.models import Client, Mark
+from applications.accounts.models import Client
+from libs.services.models import Mark
 
 
 class ClientSerializer(serializers.ModelSerializer):

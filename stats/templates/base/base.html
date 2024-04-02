@@ -12,6 +12,14 @@
             integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
             crossorigin="anonymous"></script>
 
+    <!-- Custom slider and gallery styles for ads_app-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+    <link rel="stylesheet" href="{% static 'css/choices.min.css' %}" >
+    <link rel="stylesheet" href="{% static 'css/slider.css' %}">
+    <!-- Custom global styles -->
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
     <!-- Favicon -->
     <link rel="shortcut icon" href="{% static 'img/table-icon.png' %}">
 
@@ -22,10 +30,13 @@
 
     <!-- DataTables.net -->
     <!-- Downloader options: DataTables, FixedColumns, FixedHeader, Responsive, RowGroup, Select, Minify, Concatenate -->
+    <!-- django-ajax-datatable CSS -->
+    <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet"/>
     <!-- DataTables.net CSS -->
     <link href="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.css" rel="stylesheet">
     <!-- django-ajax-datatable CSS -->
     <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet" />
+
 
     <!-- django-ajax-datatable JavaScript -->
     <script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
@@ -45,6 +56,7 @@
 
 <!--Navbar-->
 <div class="container">
+    {% if request.user|has_group:"admin" %}
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
                 aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,10 +64,11 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
             <div class="navbar-nav">
-                {% if request.user|has_group:"admin" %}
+
                     <a class="nav-item nav-link" href="{% url 'home' %}">Себестоимость</a>
                     <a class="nav-item nav-link" href="{% url 'converter_manual' %}">Автоконвертер</a>
                     <a class="nav-item nav-link" href="{% url 'auction' %}">Аукцион</a>
+                    <a class="nav-item nav-link" href="{% url 'ads_app:ads' %}">Объявления</a>
                     <div class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Конкуренты
@@ -67,10 +80,11 @@
                     </div>
                 {% endif %}
             </div>
+        {% endif %}
             <div class="navbar-nav ms-auto">
                 {% if request.user.is_authenticated %}
-                    <a class="nav-item nav-link" href="#">{{ user.username }}</a>
-                    <a class="nav-item nav-link" href="{% url 'logout' %}">Выйти</a>
+                    <a class="nav-item nav-link" href="{% url 'accounts_app:profile' %}">{{ user.username }}</a>
+                    <a class="nav-item nav-link" href="{% url 'accounts_app:logout' %}">Выйти</a>
                 {% endif %}
             </div>
         </div>
@@ -83,7 +97,7 @@
 {% endblock %}
 
 <script>
-<!-- Navbar, выделяет текущую страницу активной -->
+    <!-- Navbar, выделяет текущую страницу активной -->
     document.querySelectorAll(".nav-link").forEach((link) => {
         if (link.href === window.location.href) {
             link.classList.add("active");
@@ -91,5 +105,9 @@
         }
     });
 </script>
+<!-- Custom slider and gallery js for ads_app-->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://kit.fontawesome.com/f56ce7249b.js" crossorigin="anonymous"></script>
+{% block js_scripts %} {% endblock %}
 </body>
 </html>

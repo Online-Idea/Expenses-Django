@@ -1,6 +1,7 @@
 from django.db import models
 
-from libs.services.models import BaseModel, Mark, Model, Client
+from libs.services.models import BaseModel, Mark, Model
+from applications.accounts.models import Client
 
 
 class AutoruAuctionHistory(BaseModel):

@@ -5,7 +5,9 @@ from django.db.models import Q
 from django.utils.html import strip_tags
 from slugify import slugify
 
-from libs.services.models import BaseModel, Client, ChoiceArrayField
+from libs.services.models import BaseModel
+from applications.accounts.models import Client
+from libs.services.models import BaseModel, ChoiceArrayField
 
 
 class ConverterTask(BaseModel):

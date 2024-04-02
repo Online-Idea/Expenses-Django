@@ -27,44 +27,44 @@ class CustomBooleanField(models.BooleanField):
         return super().to_python(value)
 
 
-class Client(BaseModel):
-    CALLS = 'звонки'
-    COMMISSION_PERCENT = 'комиссия процент'
-    COMMISSION_SUM = 'комиссия сумма'
-    CHARGE_TYPE_CHOICES = [
-        (CALLS, 'звонки'),
-        (COMMISSION_PERCENT, 'комиссия процент'),
-        (COMMISSION_SUM, 'комиссия сумма'),
-    ]
-    name = models.CharField(max_length=255, verbose_name='Имя')
-    slug = models.SlugField(max_length=300, allow_unicode=True, db_index=True, verbose_name='Slug')
-    manager = models.CharField(max_length=255, null=True, verbose_name='Менеджер')
-    active = models.BooleanField(default='1', verbose_name='Активен')
-    charge_type = models.CharField(max_length=255, choices=CHARGE_TYPE_CHOICES, default='звонки', verbose_name='Тип')
-    commission_size = models.FloatField(null=True, blank=True, verbose_name='Размер комиссии')
-    teleph_id = models.CharField(max_length=255, null=True, blank=True, unique=True, verbose_name='Имя в телефонии')
-    autoru_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авто.ру')
-    autoru_name = models.CharField(max_length=500, null=True, blank=True, verbose_name='Имя на авто.ру')
-    avito_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авито')
-    drom_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id drom')
-
-    def __str__(self):
-        return self.name
-
-    def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
-        self.slug = slugify(self.name)
-        if not self.slug:
-            slug_str = f'{self.name}'
-            self.slug = slugify(slug_str)
-        slug_exists = Client.objects.filter(~Q(id=self.id), slug=self.slug)
-        if slug_exists.count() > 0:
-            self.slug = f'{self.slug}-2'
-        super(Client, self).save(*args, **kwargs)
-
-    class Meta:
-        verbose_name = 'Клиент'
-        verbose_name_plural = 'Клиенты'
-        ordering = ['name']
+# class Client(BaseModel):
+#     CALLS = 'звонки'
+#     COMMISSION_PERCENT = 'комиссия процент'
+#     COMMISSION_SUM = 'комиссия сумма'
+#     CHARGE_TYPE_CHOICES = [
+#         (CALLS, 'звонки'),
+#         (COMMISSION_PERCENT, 'комиссия процент'),
+#         (COMMISSION_SUM, 'комиссия сумма'),
+#     ]
+#     name = models.CharField(max_length=255, verbose_name='Имя')
+#     slug = models.SlugField(max_length=300, allow_unicode=True, db_index=True, verbose_name='Slug')
+#     manager = models.CharField(max_length=255, null=True, verbose_name='Менеджер')
+#     active = models.BooleanField(default='1', verbose_name='Активен')
+#     charge_type = models.CharField(max_length=255, choices=CHARGE_TYPE_CHOICES, default='звонки', verbose_name='Тип')
+#     commission_size = models.FloatField(null=True, blank=True, verbose_name='Размер комиссии')
+#     teleph_id = models.CharField(max_length=255, null=True, blank=True, unique=True, verbose_name='Имя в телефонии')
+#     autoru_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авто.ру')
+#     autoru_name = models.CharField(max_length=500, null=True, blank=True, verbose_name='Имя на авто.ру')
+#     avito_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авито')
+#     drom_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id drom')
+#
+#     def __str__(self):
+#         return self.name
+#
+#     def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
+#         self.slug = slugify(self.name)
+#         if not self.slug:
+#             slug_str = f'{self.name}'
+#             self.slug = slugify(slug_str)
+#         slug_exists = Client.objects.filter(~Q(id=self.id), slug=self.slug)
+#         if slug_exists.count() > 0:
+#             self.slug = f'{self.slug}-2'
+#         super(Client, self).save(*args, **kwargs)
+#
+#     class Meta:
+#         verbose_name = 'Клиент'
+#         verbose_name_plural = 'Клиенты'
+#         ordering = ['name']
 
 
 class Mark(BaseModel):
@@ -121,6 +121,37 @@ class Generation(BaseModel):
         verbose_name_plural = 'Поколения'
 
 
+class BodyTypes(models.TextChoices):
+    JEEP = 'Внедорожник', 'Внедорожник'
+    JEEP_3 = 'Внедорожник 3 дв.' 'Внедорожник 3 дв.'
+    JEEP_5 = 'Внедорожник 5 дв.', 'Внедорожник 5 дв.'
+    JEEP_COUPE = 'Внедорожник Coupe', 'Внедорожник Coupe'
+    JEEP_ESV = 'Внедорожник ESV', 'Внедорожник ESV'
+    JEEP_GRAND = 'Внедорожник Grand', 'Внедорожник Grand'
+    JEEP_L = 'Внедорожник L', 'Внедорожник L'
+    JEEP_LONG = 'Внедорожник Long', 'Внедорожник Long'
+    JEEP_X = 'Внедорожник X', 'Внедорожник X'
+    CABRIOLET = 'Кабриолет', 'Кабриолет'
+    COMPACT = 'Компактвэн', 'Компактвэн'
+    COUPE = 'Купе', 'Купе'
+    LIFTBACK = 'Лифтбек', 'Лифтбек'
+    MICROBUS = 'Микроавтобус', 'Микроавтобус'
+    MINIVAN = 'Минивэн', 'Минивэн'
+    MINIVAN_LONG = 'Минивэн Long', 'Минивэн Long'
+    PICKUP = 'Пикап', 'Пикап'
+    ROADSTER = 'Родстер', 'Родстер'
+    SEDAN = 'Седан', 'Седан'
+    SEDAN_LONG = 'Седан Long', 'Седан Long'
+    SEDAN_PULLMAN = 'Седан Pullman', 'Седан Pullman'
+    TARGA = 'Тарга', 'Тарга'
+    UNIVERSAL = 'Универсал', 'Универсал'
+    UNIVERSAL_CROSS = 'Универсал Cross', 'Универсал Cross'
+    HATCHBACK = 'Хэтчбек', 'Хэтчбек'
+    HATCHBACK_3 = 'Хэтчбек 3 дв.', 'Хэтчбек 3 дв.'
+    HATCHBACK_5 = 'Хэтчбек 5 дв.', 'Хэтчбек 5 дв.'
+    METAL_VAN = 'Цельнометаллический Фургон', 'Цельнометаллический Фургон'
+
+
 class Modification(BaseModel):
     code = models.ForeignKey('ModificationCode', related_name='modification_codes', null=True, blank=True,
                              on_delete=models.PROTECT, verbose_name='Коды модификации')
@@ -131,7 +162,8 @@ class Modification(BaseModel):
     generation = models.ForeignKey('Generation', on_delete=models.PROTECT, verbose_name='Поколение')
     complectation = models.ForeignKey('Complectation', related_name='modifications', null=True, blank=True,
                                       on_delete=models.PROTECT, verbose_name='Комплектация')
-    body_type = models.CharField(max_length=100, choices=choices.BODY_TYPE_CHOICES, verbose_name='Кузов')
+    body_type = models.CharField(max_length=100, choices=BodyTypes.choices,
+                                 verbose_name='Кузов')  # Изменил значение choices
     engine_volume = models.IntegerField(null=True, blank=True, verbose_name='Объём двигателя')
     power = models.IntegerField(verbose_name='Мощность')
     transmission = models.CharField(max_length=100, choices=choices.TRANSMISSION_CHOICES,
@@ -205,6 +237,27 @@ class ModificationCode(BaseModel):
         verbose_name_plural = 'Коды модификации'
 
 
+
+class Colors(models.TextChoices):
+    BEIGE = 'бежевый', 'бежевый'
+    WHITE = 'белый', 'белый'
+    BRONZE = 'бронзовый', 'бронзовый'
+    CHERRY = 'вишнёвый', 'вишнёвый'
+    LIGHTBLUE = 'голубой', 'голубой'
+    YELLOW = 'жёлтый', 'жёлтый'
+    GREEN = 'зелёный', 'зелёный'
+    GOLD = 'золотистый', 'золотистый'
+    INDIVIDUAL_COLOR = 'индивидуальная окраска', 'индивидуальная окраска'
+    BROWN = 'коричневый', 'коричневый'
+    RED = 'красный', 'красный'
+    ORANGE = 'оранжевый', 'оранжевый'
+    PURPLE = 'пурпурный', 'пурпурный'
+    SILVER = 'серебристый', 'серебристый'
+    GRAY = 'серый', 'серый'
+    BLUE = 'синий', 'синий'
+    VIOLET = 'фиолетовый', 'фиолетовый'
+    BLACK = 'чёрный', 'чёрный'
+    
 class _TypedMultipleChoiceField(forms.TypedMultipleChoiceField):
     def __init__(self, *args, **kwargs):
         kwargs.pop('base_field', None)

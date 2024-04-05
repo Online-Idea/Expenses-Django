@@ -239,15 +239,3 @@ class Ad(BaseModel):
             f"{self.engine_type} / {self.transmission} / {self.drive}"
         )
 
-
-# class ClientManager(BaseUserManager):
-#     def create_user(self, email, password=None, **extra_fields):
-#         # Создание обычного пользователя
-#         extra_fields.setdefault('is_staff', False)
-#         # остальная логика создания пользователя
-#
-#     def create_superuser(self, email, password=None, **extra_fields):
-#         # Создание суперпользователя
-#         extra_fields.setdefault('is_staff', True)
-#         extra_fields.setdefault('is_superuser', True)
-#         # остальная логика создания суперпользователя

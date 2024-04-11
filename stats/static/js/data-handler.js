@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         vinSearchInput: document.querySelector('#id_vin_search'),
         sortFields: [],         // Массив объектов с информацией о сортировочных полях
     };
+    console.log(state)
 
     /**
      * Создает таблицу для отображения сортировочных полей
@@ -241,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // const data = {};
         // data[widget] = {};
         handleTracker.removeField(widget)
-        const endpointURL = '/stock/ads/';
+        const endpointURL = '/ads/';
         const dataJSON = JSON.stringify(handleTracker.getState())
         fetch(endpointURL, {
             method: 'POST',
@@ -288,21 +289,21 @@ document.addEventListener('DOMContentLoaded', () => {
     state.toggleButtonFilter.addEventListener('click', toggleFilterForm);
     state.resetSortLabel.addEventListener('click', () => resetTemplate('sort'));
     state.resetSearchLabel.addEventListener('click', () => resetTemplate('search'));
-
-    state.fieldSelect.addEventListener('change', () => {
-        const selectedField = state.fieldSelect.options[state.fieldSelect.selectedIndex];
-        if (selectedField) {
-            const {value, text} = selectedField;
-            addSortField(value, text);
-        }
-    });
+    //
+    // state.fieldSelect.addEventListener('change', () => {
+    //     const selectedField = state.fieldSelect.options[state.fieldSelect.selectedIndex];
+    //     if (selectedField) {
+    //         const {value, text} = selectedField;
+    //         addSortField(value, text);
+    //     }
+    // });
 
     state.submitButton.addEventListener('click', () => {
         state.sortLabel.classList.remove('hide');
         state.sortApplied = true;
         handleTracker.addField('sort', state.sortFields);
         const dataJSON = JSON.stringify(handleTracker.getState());
-        const endpointURL = '/stock/ads/';
+        const endpointURL = '/ads/';
         fetch(endpointURL, {
             method: 'POST',
             body: dataJSON,
@@ -339,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
             handleTracker.addField('search', vinValue)
         }
         const dataJSON = JSON.stringify(handleTracker.getState())
-        const endpointURL = '/stock/ads/';
+        const endpointURL = '/ads/';
 
         fetch(endpointURL, {
             method: 'POST',
@@ -516,8 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
             //     console.error('Произошла ошибка при фильтрации объявлений:', error.message);
             // }
             try {
-                const url = '/stock/ads/';
-                console.log(filterTracker.state, '----')
+                const url = '/ads/';
                 if (Object.keys(filterTracker.state).length) {
                     handleTracker.addField('filters', filterTracker.getFilters())
                 } else {
@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Метод для получения данных о марках с сервера
         async fetchFillData() {
-            let data = await this.handlerFetch.fillSelect('/stock/api/marks/', 'mark')
+            let data = await this.handlerFetch.fillSelect('/ads/api/marks/', 'mark')
             this.initData(this.choices, data)
         }
 
@@ -673,7 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Метод для получения данных о моделях с сервера в зависимости от выбранных марок
         async fetchFillData() {
             let data = await this.handlerFetch.fetchDataSelect(
-                '/stock/api/models/', 'marks', filterTracker.state['marks'], 'model'
+                '/ads/api/models/', 'marks', filterTracker.state['marks'], 'model'
             );
             this.initData(this.choices, data)
         }
@@ -722,7 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedModels = filterTracker.state['models']
 
             let dataModifications = await this.handlerFetch.fetchDataSelect(
-                '/stock/api/modifications/', 'models', selectedModels, 'modification_display'
+                '/ads/api/modifications/', 'models', selectedModels, 'modification_display'
             )
             this.initData(this.choices, dataModifications)
         }
@@ -755,7 +755,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedModels = filterTracker.state['models']
 
             let dataBodies = await this.handlerFetch.fetchDataSelect(
-                '/stock/api/bodies/', 'models', selectedModels, 'body_type'
+                '/ads/api/bodies/', 'models', selectedModels, 'body_type'
             )
             this.initData(this.choices, dataBodies)
         }
@@ -787,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedModels = filterTracker.state['models']
 
             let dataModifications = await this.handlerFetch.fetchDataSelect(
-                '/stock/api/complectations/', 'models', selectedModels, 'complectation'
+                '/ads/api/complectations/', 'models', selectedModels, 'complectation'
             )
             this.initData(this.choices, dataModifications)
         }
@@ -821,7 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedModels = filterTracker.state['models']
 
             let dataColors = await this.handlerFetch.fetchDataSelect(
-                '/stock/api/colors/', 'models', selectedModels, 'color'
+                '/ads/api/colors/', 'models', selectedModels, 'color'
             )
             this.initData(this.choices, dataColors)
         }

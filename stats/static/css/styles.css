@@ -134,13 +134,13 @@ ul {
 }
 
 th {
-   white-space: normal !important;
-   vertical-align: middle;
+    white-space: normal !important;
+    vertical-align: middle;
 }
 
 table.dataTable td,
 table.dataTable tr {
- font-size: 14px;
+    font-size: 14px;
 }
 
 /*---------------------------------------------------*/
@@ -162,10 +162,23 @@ table.dataTable tr {
     color: #CC0000;
 }
 
+
 /*------------------------Карточка объявления---------------------------*/
 
+body {
+    font-family: 'Montserrat', sans-serif;
+}
 .container {
     font-family: 'Montserrat', sans-serif;
+    width: 50%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: 0;
+    margin-left: 0;
+}
+
+#ads-container .container {
+    width: 100%;
 }
 
 .card {
@@ -833,365 +846,4 @@ input[type="number"]::-webkit-outer-spin-button {
     color: #858484; /* меняем цвет кастомной надписи при фокусе */
 }
 
-/* Форма входа */
-
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
-
-* {
-    padding: 0;
-    margin: 0;
-    font-family: 'Montserrat', sans-serif;
-    box-sizing: border-box;
-}
-
-.body-form {
-    background-color: #c9d6ff;
-    background: linear-gradient(to right, #e2e2e2, #c9d6ff);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    height: 100vh;
-}
-
-.inner-container-form {
-    background-color: #fff;
-    border-radius: 30px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
-    position: relative;
-    overflow: hidden;
-    width: 868px;
-    max-width: 100%;
-    min-height: 480px;
-}
-
-.inner-container-form p {
-    font-size: 14px;
-    line-height: 20px;
-    letter-spacing: 0.3px;
-    margin: 20px 0;
-}
-
-
-.inner-container-form a {
-    color: #333;
-    font-size: 13px;
-    text-decoration: none;
-    margin: 15px 0 10px;
-}
-
-
-.inner-container-form button {
-    background-color: #512da8;
-    color: #fff;
-    font-size: 12px;
-    padding: 10px 45px;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin-top: 10px;
-    cursor: pointer;
-}
-
-.change-color {
-    background-color: #5c6bc0;
-}
-
-.inner-container-form button.hidden {
-    background-color: transparent;
-    border-color: #fff;
-}
-
-.inner-container-form form {
-    background-color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    padding: 0 40px;
-    height: 100%;
-}
-
-.inner-container-form input {
-    background-color: #eee;
-    border: none;
-    margin: 8px 0;
-    padding: 10px 15px;
-    font-size: 13px;
-    border-radius: 8px;
-    width: 100%;
-    outline: none;
-}
-
-.form-container_login {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    transition: all 0.6s ease-in-out;
-}
-
-.sign-in {
-    left: 0;
-    width: 50%;
-    z-index: 2;
-}
-
-.inner-container-form.active .sign-in {
-    transform: translateX(100%);
-}
-
-.sign-up {
-    left: 0;
-    width: 50%;
-    opacity: 0;
-    z-index: 1;
-}
-
-.inner-container-form.active .sign-up {
-    transform: translateX(100%);
-    opacity: 1;
-    z-index: 5;
-    animation: move 0.6s;
-}
-
-@keyframes move {
-
-    0%,
-    49.99% {
-        opacity: 0;
-        z-index: 1;
-    }
-
-    50%,
-    100% {
-        opacity: 1;
-        z-index: 5;
-    }
-}
-
-.social-icons {
-    margin: 20px 0;
-}
-
-.social-icons a {
-    border: 1px solid #ccc;
-    border-radius: 20%;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 3px;
-    width: 40px;
-    height: 40px;
-}
-
-.toggle-container {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: 50%;
-    height: 100%;
-    overflow: hidden;
-    transition: all 0.6s ease-in-out;
-    border-radius: 150px 0 0 100px;
-    z-index: 1000;
-}
-
-.inner-container-form.active .toggle-container {
-    transform: translateX(-100%);
-    border-radius: 0 150px 100px 0;
-}
-
-.toggle {
-    background-color: #512da8;
-    height: 100%;
-    background: linear-gradient(to right, #5c6bc0, #512da8);
-    color: #fff;
-    position: relative;
-    left: -100%;
-    height: 100%;
-    width: 200%;
-    transform: translateX(0);
-    transition: all 0.6s ease-in-out;
-}
-
-.inner-container-form.active .toggle {
-    transform: translateX(50%);
-}
-
-.toggle-panel {
-    position: absolute;
-    width: 50%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    padding: 0 30px;
-    text-align: center;
-    top: 0;
-    transform: translateX(0);
-    transition: all 0.6s ease-in-out;
-}
-
-.toggle-left {
-    transform: translateX(-200%);
-}
-
-.inner-container-form.active .toggle-left {
-    transform: translateX(0);
-}
-
-.toggle-right {
-    right: 0;
-    transform: translateX(0);
-}
-
-.inner-container-form.active .toggle-right {
-    transform: translateX(200%);
-}
-
-#register, #login {
-    border: 1px white solid;
-    background-color: transparent;
-    transition: background-color 0.6s, transform 0.5s;
-}
-
-#login-submit, #register-submit {
-    transition: background-color 0.6s, transform 0.5s, box-shadow 0.5s;
-    background-color: #512DA8FF;
-}
-
-#login-submit:hover {
-    background-color: #39168d;
-}
-
-#register-submit:hover {
-    background-color: #39168d;
-}
-
-#register:hover {
-    background-color: #512da8;
-}
-
-#login:hover {
-    background-color: #5c6bc0;
-}
-
-
-.profile-container {
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-}
-
-.profile-info p {
-    font-size: 18px;
-    line-height: 1.6;
-}
-
-.profile-info p strong {
-    color: #333;
-}
-
-
-.welcome {
-    font-size: 40px;
-    padding-bottom: 20px;
-    white-space: nowrap;
-}
-
-.inner-container-form span {
-    font-size: 15px;
-    padding-bottom: 20px;
-}
-
-@media (max-width: 860px) {
-    .welcome {
-        font-size: 35px
-    }
-
-    .inner-container-form span {
-        font-size: 14px;
-        padding-bottom: 9px;
-    }
-
-    .inner-container-form button {
-        font-size: 11px;
-        padding: 8px 35px;
-    }
-}
-
-@media (max-width: 700px) {
-    .welcome {
-        font-size: 33px
-    }
-
-    .inner-container-form span {
-        font-size: 13px;
-        padding-bottom: 8px;
-    }
-    .inner-container-form button {
-        font-size: 10px;
-        padding: 7px 33px;
-    }
-}
-
-
-@media (max-width: 570px) {
-    .welcome {
-        font-size: 28px
-    }
-
-    .inner-container-form span {
-        padding-bottom: 6px;
-    }
-}
-
-/* Ключевые кадры для анимации появления */
-@keyframes fadeIn {
-    from {opacity: 0;}
-    to {opacity: 1;}
-}
-
-.messages {
-    position: fixed;
-    top: 40px; /* Расстояние от верха страницы */
-    right: 70px; /* Центрирование блока */
-    width: 30%;
-    max-width: 500px;
-    height: 30%;
-    z-index: 1000;
-}
-/* Стилизация отдельного сообщения */
-.alert {
-    animation-name: fadeIn;
-    animation-duration: 1.5s;
-    border-radius: 20px;
-    color: #3e7935;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.37);
-    margin: 15px;
-}
-
-/* Стили для кнопки закрытия */
-.closebtn {
-    float: right;
-    font-size: 25px;
-    font-weight: bold;
-    line-height: 20px;
-    cursor: pointer;
-    transition: 0.4s;
-    color: #3e7935;
-    margin-left: 10px;
-    padding-left: 10px;
-    border-left: 1px #3e7935 solid;
-}
-
-.closebtn:hover {
-    color: #25421a;
-}
 

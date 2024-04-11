@@ -1,5 +1,7 @@
+from random import randint
+
 from django.core.management.base import BaseCommand
-from applications.ads.models import Ad
+from applications.ads.models import Ad, Salon
 from libs.services.models import Mark, Model
 from django.db import transaction
 import pandas as pd
@@ -64,6 +66,7 @@ class Command(BaseCommand):
 
         # транзакция для атомарности
         with transaction.atomic():
+            salons = Salon.objects.all()
             # Итерация по строкам DataFrame
             for _, row in df.iterrows():
                 # Получение или создание экземпляров Mark и Model
@@ -72,6 +75,7 @@ class Command(BaseCommand):
 
                 # Создание экземпляра Ad с данными из файла CSV
                 ad = Ad(
+                    salon=salons[randint(0, 1)],
                     mark=mark,
                     model=model,
                     complectation=row['Комплектация'],
@@ -122,6 +126,6 @@ class Command(BaseCommand):
         Очистка всех записей из каждой таблицы в базе данных.
         """
         Ad.objects.all().delete()
-        Model.objects.all().delete()
-        Mark.objects.all().delete()
+        # Model.objects.all().delete()
+        # Mark.objects.all().delete()
         self.stdout.write(self.style.NOTICE("Старые данные удаленны"))

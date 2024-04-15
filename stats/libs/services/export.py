@@ -1,6 +1,6 @@
 import os
 import shutil
-from datetime import timedelta
+from datetime import datetime, timedelta
 from io import BytesIO
 
 import numpy as np
@@ -37,7 +37,7 @@ def export_calls_to_file() -> str:
         'rolf_viteb_exeed_spb': 'Рольф EXEED Витебский',
     }
     # Звонки из базы
-    calls = TelephCall.objects.filter(client__teleph_id__in=rolf_clients.keys())\
+    calls = TelephCall.objects.filter(client__teleph_id__in=rolf_clients.keys()) \
         .order_by('client_id', '-datetime').values()
     df = pd.DataFrame.from_records(calls)
 
@@ -129,8 +129,20 @@ def export_calls_to_file() -> str:
     return file_name
 
 
-def export_calls_for_callback():
-    from_, to = last_30_days()
+def export_calls_for_callback(from_: str = None, to: str = None):
+    """
+    Экспорт звонков на перезвон
+    :param from_:
+    :param to:
+    :return:
+    """
+    if not from_ or not to:
+        from_, to = last_30_days()
+    else:
+        datetime_format = '%Y.%m.%d %H:%M:%S'
+        from_ = datetime.strptime(from_, datetime_format)
+        to = datetime.strptime(to, datetime_format)
+
     minus_3_days = to.date() - timedelta(days=3)
     client_filter = ['avilon_premium_legenda_new', 'avilon_premium_vol_new', 'Gate', 'avilon_bmw_new',
                      'avilon_exeed_new', 'avilon_foton_new', 'Avilon_rising_new', 'FnGroup_new']
@@ -148,7 +160,8 @@ def export_calls_for_callback():
 
     df = pd.DataFrame.from_records(calls)
     df['phone_from_comment'] = df['comment'].str.extract(r'\+(\d{11})')
-    df['num_from'] = df.apply(lambda x: x['phone_from_comment'] if pd.notnull(x['phone_from_comment']) else x['num_from'], axis=1)
+    df['num_from'] = df.apply(
+        lambda x: x['phone_from_comment'] if pd.notnull(x['phone_from_comment']) else x['num_from'], axis=1)
     df['date'] = df['datetime'].dt.date
     # Только мобильные. Мобильными считаю тех кто начинается на 79
     df = df[df['num_from'].astype(str).str.startswith('79')]
@@ -169,7 +182,10 @@ def export_calls_for_callback():
             if phone_df[phone_df['target'].isin(['Да', 'ПМ - Целевой'])].empty:
                 # Если по этому телефону не звонили последние 3 дня
                 if phone_df[(phone_df['date'] >= minus_3_days) & (phone_df['date'] < to.date())].empty:
-                    phone = int(phone)
+                    try:
+                        phone = int(phone)
+                    except ValueError:
+                        phone = str(phone)
                     # Добавляем в прозвон
                     if client in calls_to_callback:
                         calls_to_callback[client] += [phone]
@@ -197,4 +213,3 @@ def export_calls_for_callback():
     # online_idea_bot.send_message('-1001839691903', 'test')
 
     return wb
-

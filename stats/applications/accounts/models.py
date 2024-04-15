@@ -1,3 +1,5 @@
+from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser, PermissionsMixin, BaseUserManager
 from django.db.models import Q
@@ -29,13 +31,15 @@ class ClientManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class Client(AbstractUser, PermissionsMixin):
+class Client(AbstractBaseUser, PermissionsMixin):
+
+    username_validator = UnicodeUsernameValidator()
     class ChargeType(models.TextChoices):
         CALLS = 'звонки', _('Звонки')
         COMMISSION_PERCENT = 'комиссия процент', _('Комиссия Процент')
         COMMISSION_SUM = 'комиссия сумма', _('Комиссия Сумма')
 
-    username = models.CharField(max_length=255, verbose_name='Имя')
+    name = models.CharField(max_length=255, verbose_name='Имя', default='name')
     email = models.EmailField(unique=True)
     slug = models.SlugField(max_length=300, allow_unicode=True, db_index=True, verbose_name='Slug')
     manager = models.CharField(max_length=255, null=True, verbose_name='Менеджер')
@@ -48,18 +52,27 @@ class Client(AbstractUser, PermissionsMixin):
     avito_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авито')
     drom_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id drom')
     is_staff = models.BooleanField(default=False)
+    username = models.CharField(
+        _("username"),
+        max_length=150,
+        unique=True,
+        validators=[username_validator],
+    )
+    is_active = models.BooleanField(
+        _("active"),
+        default=True,
+    )
+    date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
+
 
     objects = ClientManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
-    def __str__(self):
-        return self.username
-
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
-        self.slug = slugify(self.username)
+        self.slug = slugify(self.name)
         if not self.slug:
-            slug_str = f'{self.username}'
+            slug_str = f'{self.name}'
             self.slug = slugify(slug_str)
         slug_exists = Client.objects.filter(~Q(id=self.id), slug=self.slug)
         if slug_exists.count() > 0:
@@ -69,7 +82,7 @@ class Client(AbstractUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Клиент'
         verbose_name_plural = 'Клиенты'
-        ordering = ['username']
+        ordering = ['name']
 
 
 class Application(models.Model):

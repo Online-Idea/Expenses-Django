@@ -1,5 +1,6 @@
 # Celery tasks
 from celery import shared_task
+from datetime import datetime
 
 from applications.autoconverter.converter import get_converter_tasks, get_price
 from libs.autoru.autoru import *
@@ -89,8 +90,8 @@ def export_calls():
 
 
 @shared_task
-def export_callback():
-    export_calls_for_callback()
+def export_callback(from_: str = None, to: str = None):
+    export_calls_for_callback(from_, to)
 
 
 @shared_task

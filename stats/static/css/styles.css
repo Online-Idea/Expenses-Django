@@ -264,7 +264,7 @@ table.dataTable tr {
     width: calc(100% - 592px - 60px);
 }
 
-.left {
+.left-line {
     margin-top: 50px;
     display: flex;
     justify-content: space-between;
@@ -1166,7 +1166,7 @@ input[type="number"]::-webkit-outer-spin-button {
     max-width: 500px;
     height: 30%;
     z-index: 1000;
-
+}
 /* Стилизация отдельного сообщения */
 .alert {
     animation-name: fadeIn;

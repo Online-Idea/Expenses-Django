@@ -4,7 +4,6 @@ from django.contrib.auth.views import LoginView
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from rest_framework import generics
 
 from .forms import LoginUserForm
 from .models import *

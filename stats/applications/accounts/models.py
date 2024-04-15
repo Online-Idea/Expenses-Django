@@ -32,8 +32,8 @@ class ClientManager(BaseUserManager):
 
 
 class Client(AbstractBaseUser, PermissionsMixin):
-
     username_validator = UnicodeUsernameValidator()
+
     class ChargeType(models.TextChoices):
         CALLS = 'звонки', _('Звонки')
         COMMISSION_PERCENT = 'комиссия процент', _('Комиссия Процент')
@@ -64,25 +64,26 @@ class Client(AbstractBaseUser, PermissionsMixin):
     )
     date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
 
-
     objects = ClientManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
-    def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
-        self.slug = slugify(self.name)
-        if not self.slug:
-            slug_str = f'{self.name}'
-            self.slug = slugify(slug_str)
-        slug_exists = Client.objects.filter(~Q(id=self.id), slug=self.slug)
-        if slug_exists.count() > 0:
-            self.slug = f'{self.slug}-2'
-        super(Client, self).save(*args, **kwargs)
 
-    class Meta:
-        verbose_name = 'Клиент'
-        verbose_name_plural = 'Клиенты'
-        ordering = ['name']
+def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
+    self.slug = slugify(self.name)
+    if not self.slug:
+        slug_str = f'{self.name}'
+        self.slug = slugify(slug_str)
+    slug_exists = Client.objects.filter(~Q(id=self.id), slug=self.slug)
+    if slug_exists.count() > 0:
+        self.slug = f'{self.slug}-2'
+    super(Client, self).save(*args, **kwargs)
+
+
+class Meta:
+    verbose_name = 'Клиент'
+    verbose_name_plural = 'Клиенты'
+    ordering = ['name']
 
 
 class Application(models.Model):
@@ -106,7 +107,7 @@ class Application(models.Model):
     user_ip = models.GenericIPAddressField(blank=True, null=True, verbose_name="IP адрес пользователя")
 
     def __str__(self):
-        return f"{self.name} - {self.get_status_display()}"
+        return f"{self.username} - {self.get_status_display()}"
 
     class Meta:
         verbose_name = "Заявка на регистрацию"

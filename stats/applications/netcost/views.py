@@ -72,14 +72,14 @@ def home(request):
                 products_sum = 0
             platform = calls_sum + products_sum
 
-            if client['charge_type'] == Client.CALLS:  # звонки
+            if client['charge_type'] == Client.ChargeType.CALLS:  # звонки
                 try:
                     teleph_calls_sum = telephcalls_dict[client['teleph_id']]['teleph_calls_sum']
                 except KeyError:
                     teleph_calls_sum = 0
-            elif client['charge_type'] == Client.COMMISSION_PERCENT:  # комиссия процент
+            elif client['charge_type'] == Client.ChargeType.COMMISSION_PERCENT:  # комиссия процент
                 teleph_calls_sum = platform + (platform * client['commission_size'] / 100)
-            elif client['charge_type'] == Client.COMMISSION_SUM:  # комиссия сумма
+            elif client['charge_type'] == Client.ChargeType.COMMISSION_SUM:  # комиссия сумма
                 teleph_calls_sum = platform + client['commission_size']
             else:
                 teleph_calls_sum = 0
@@ -102,12 +102,12 @@ def home(request):
             else:
                 client['call_cost'] = client['client_cost'] = 0
 
-            if client['charge_type'] == Client.CALLS:
+            if client['charge_type'] == Client.ChargeType.CALLS:
                 client['margin'] = round(client['client_cost'] - client['call_cost'], 2)  # Маржа
                 client['profit'] = round(client['margin'] * teleph_target, 2)  # Заработок
-            elif client['charge_type'] == Client.COMMISSION_PERCENT:
+            elif client['charge_type'] == Client.ChargeType.COMMISSION_PERCENT:
                 client['margin'] = client['profit'] = platform * client['commission_size'] / 100
-            elif client['charge_type'] == Client.COMMISSION_SUM:
+            elif client['charge_type'] == Client.ChargeType.COMMISSION_SUM:
                 client['margin'] = client['profit'] = client['commission_size']
 
         # Удаляю клиентов с пустыми данными

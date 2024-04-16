@@ -1113,14 +1113,16 @@ def activate_autoru_ads(ads_ids: Union[List[str], List[Dict[str, str]]], client_
     :param client_id: id клиента на авто.ру
     :return:
     """
-    url = f'f{ENDPOINT}/user/offers/cars/offerID/activate'
+    url = f'{ENDPOINT}/user/offers/cars/offerID/activate'
     dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
 
     ads_ids = take_out_ids(ads_ids)
 
     for ad_id in ads_ids:
         url_with_id = url.replace('offerID', ad_id)
-        requests.post(url=url_with_id, headers=dealer_headers)
+        response = requests.post(url=url_with_id, headers=dealer_headers)
+        if autoru_errors(response.json()):
+            response = requests.post(url=url_with_id, headers=dealer_headers)
 
 
 def take_out_ids(ads: Union[List[str], List[Dict[str, str]]]) -> list:
@@ -1146,4 +1148,6 @@ def stop_autoru_ads(ads_ids: Union[List[str], List[Dict[str, str]]], client_id: 
 
     for ad_id in ads_ids:
         url_with_id = url.replace('offerID', ad_id)
-        requests.put(url=url_with_id, headers=dealer_headers)
+        response = requests.put(url=url_with_id, headers=dealer_headers)
+        if autoru_errors(response.json()):
+            response = requests.put(url=url_with_id, headers=dealer_headers)

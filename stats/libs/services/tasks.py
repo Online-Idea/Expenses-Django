@@ -123,3 +123,17 @@ def post_autoru_xml(client_id: int, section: str, price_url: str,
 @shared_task
 def exkavator_feed():
     modify_exkavator_xml()
+
+
+@shared_task
+def get_and_activate_autoru_ads(autoru_id: int):
+    ads = get_autoru_ads(autoru_id)
+    ads = take_out_ids(ads)
+    activate_autoru_ads(ads, autoru_id)
+
+
+@shared_task
+def get_and_stop_autoru_ads(autoru_id: int):
+    ads = get_autoru_ads(autoru_id)
+    ads = take_out_ids(ads)
+    stop_autoru_ads(ads, autoru_id)

@@ -71,16 +71,15 @@ class Client(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.name
 
-
-def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
-    self.slug = slugify(self.name)
-    if not self.slug:
-        slug_str = f'{self.name}'
-        self.slug = slugify(slug_str)
-    slug_exists = Client.objects.filter(~Q(id=self.id), slug=self.slug)
-    if slug_exists.count() > 0:
-        self.slug = f'{self.slug}-2'
-    super(Client, self).save(*args, **kwargs)
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
+        self.slug = slugify(self.name)
+        if not self.slug:
+            slug_str = f'{self.name}'
+            self.slug = slugify(slug_str)
+        slug_exists = Client.objects.filter(~Q(id=self.id), slug=self.slug)
+        if slug_exists.count() > 0:
+            self.slug = f'{self.slug}-2'
+        super(Client, self).save(*args, **kwargs)
 
 
 class Meta:

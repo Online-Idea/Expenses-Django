@@ -68,6 +68,9 @@ class Client(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
+    def __str__(self):
+        return self.name
+
 
 def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
     self.slug = slugify(self.name)

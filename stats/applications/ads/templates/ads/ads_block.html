@@ -1,48 +1,76 @@
+{% load static %}
 <div id="ads-container">
     {% for ad in ads %}
-        <div class="container mt-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <a href="{{ ad.get_absolute_url }}" target="_blank" rel="noopener">
-                                <img class="img-fluid rounded" src="{{ ad.get_first_photo }}" alt="{{ ad }}">
-                            </a>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="card-title">
-                                <a href="{{ ad.get_absolute_url }}" target="_blank"
-                                   rel="noopener">{{ ad.mark }} <br> {{ ad.model }}</a>
+        <div class="col-lg-12" data-id="{{ ad.id }}">
+            <div class="card iq-mb-3">
+                <div class="row no-gutters">
+                    <div class="col-md-4">
+                        <a href="{{ ad.get_absolute_url }}" target="_blank" rel="noopener">
+                            <img class="img-fluid rounded" src="{{ ad.get_first_photo }}" alt="{{ ad }}">
+                        </a>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <div class="card-title"><a href="{{ ad.get_absolute_url }}" target="_blank"
+                                                       rel="noopener">{{ ad.mark }} {{ ad.model }}</a>
                                 <div class="price-container">
                                     <div class="card-price">
                                         <span class="detail-price">{{ ad.get_price_display }}</span>
                                         {% if ad.get_price_nds_display == "Да" %}
-                                            <span class="sticker nds-yes">с НДС</span>
+                                            <span class="badge border border-success text-success">с НДС</span>
                                         {% elif ad.get_price_nds_display == "Нет" %}
-                                            <span class="sticker nds-no">без НДС</span>
+                                            <span class="badge border border-danger text-danger">без НДС</span>
                                         {% endif %}
                                     </div>
                                     <div class="good">
                                         <span class="good-price">{{ ad.get_good_price }}</span>
-                                        <span class="sticker discount">Минимальная</span>
+                                        <span class="badge border border-light text-light">Минимальная</span>
                                     </div>
                                 </div>
-                                <span class="card-year">{{ ad.year }} г</span>
                             </div>
+
                             <div class="card-text">
                                 <p class="card-text__prev text-body-secondary">
                                     {{ ad.complectation }}<br>
-                                    {{ ad.get_modification_display }}  <br>
+                                    {{ ad.get_modification_display }} <br>
                                     {{ ad.body_type }} <br>
                                     {{ ad.color }}<br>
                                     {{ ad.original_vin }}<br>
-                                    
+
                                 </p>
                                 <p class="card-text__prev text-body-secondary">
+                                    <span class="card-year">{{ ad.year }} г <br>
+                                    </span>
                                     {{ ad.get_run_display }} <br>
-                                    {{ ad.get_availability_display }}<br>
+                                    <span class="card-availability">{{ ad.get_availability_display }}</span><br>
                                 </p>
+                                <div class="block-checkboxer">
+                                    <div class="custom-control custom-checkbox checkbox-icon custom-control-inline">
+                                        <input type="checkbox" class="custom-control-input"
+                                               id="customCheck-drom-{{ ad.id }}"
+                                               checked="">
+                                        <label class="custom-control-label" for="customCheck-drom-{{ ad.id }}"><i>
+                                            <img class="checkbox-logo" src="{% static 'img/icon-drom-3.jpg' %}">
+                                        </i>drom.ru</label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox checkbox-icon custom-control-inline">
+                                        <input type="checkbox" class="custom-control-input"
+                                               id="customCheck-autoru-{{ ad.id }}"
+                                               checked="">
+                                        <label class="custom-control-label" for="customCheck-autoru-{{ ad.id }}"><i>
+                                            <img class="checkbox-logo" src="{% static 'img/icon-autoru-3.jpg' %}">
+                                        </i>auto.ru</label>
+                                    </div>
+                                                                        <div class="custom-control custom-checkbox checkbox-icon custom-control-inline">
+                                        <input type="checkbox" class="custom-control-input" id="customCheck-avito-{{ ad.id }}"
+                                               checked="">
+                                        <label class="custom-control-label" for="customCheck-avito-{{ ad.id }}"><i>
+                                            <img class="checkbox-logo" src="{% static 'img/icon-avito-3.jpg' %}">
+                                        </i>avito.ru</label>
+                                    </div>
+                                </div>
                             </div>
+
                         </div>
                     </div>
                 </div>

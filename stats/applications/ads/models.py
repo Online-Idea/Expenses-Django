@@ -16,6 +16,7 @@ class Salon(BaseModel):
     name = models.CharField(max_length=255, verbose_name='Название')
     price_url = models.CharField(max_length=2000, verbose_name='Ссылка на прайс')
     datetime_updated = models.DateTimeField(verbose_name='Время последнего обновления')
+    working_hours = models.CharField(verbose_name='Время работы', max_length=255, null=True, blank=True)
     city = models.CharField(max_length=255, verbose_name='Город салона', default='')
     address = models.CharField(max_length=255, verbose_name='Адрес', default='')
     telephone = models.CharField(max_length=255, verbose_name='Телефон', default='')

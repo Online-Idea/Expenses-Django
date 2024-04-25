@@ -38,7 +38,7 @@ class ModelAdmin(admin.ModelAdmin):
 
 
 class GenerationAdmin(admin.ModelAdmin):
-    list_display = ('id', marks_mark, models_model, 'generation', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
+    list_display = ('id', marks_mark, models_model, 'generation', 'autoru', 'avito', 'drom', 'human_name')
     list_display_links = ('id', 'generation')
     search_fields = ('mark__mark', 'model__model', 'generation', 'human_name')
     fields = ('id', 'mark', 'model', 'generation', 'teleph', 'autoru', 'avito', 'drom', 'human_name')

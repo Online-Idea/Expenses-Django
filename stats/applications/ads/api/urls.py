@@ -9,4 +9,5 @@ urlpatterns = [
     path('bodies/', views.BodiesByModelView.as_view(), name='bodies-options'),
     path('complectations/', views.ConfigurationsByModelView.as_view(), name='configurations-options'),
     path('colors/', views.ColorsByModelView.as_view(), name='colors-options'),
+    path('export-xml/', views.ExportAdsToXMLAPIView.as_view(), name='export-ads-xml')
 ]

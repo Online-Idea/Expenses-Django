@@ -169,8 +169,6 @@ body {
     font-family: 'Montserrat', sans-serif;
 }
 .container {
-    font-family: 'Montserrat', sans-serif;
-    width: 50%;
     padding-right: 15px;
     padding-left: 15px;
     margin-right: 0;
@@ -182,16 +180,20 @@ body {
 }
 
 .card {
-    box-shadow: 10px 12px 12px rgba(42, 53, 64, 0.1);
-    transition: all 250ms ease-in-out;
+    box-shadow: rgba(42, 53, 64, 0.1) 10px 12px 12px;
+    transition: box-shadow 250ms ease-in-out 0s, background-color 250ms ease-in-out 0s, border-color 250ms ease-in-out 0s;
     border-radius: 15px;
-    --bs-border-color-translucent: none;
+    border-width: 1px;
+    border-style: solid;
+    border-color: transparent;
+    border-image: initial;
+    height: 70%;
 }
 
 .card:hover {
     box-shadow: 15px 18px 15px rgba(27, 37, 47, 0.1);
-    background-color: rgba(241, 241, 241, 0.4);
-    border: none;
+    border: 1px solid #d9d8d8;
+
 }
 
 .card-body {
@@ -213,6 +215,7 @@ body {
     display: flex;
     justify-content: space-between;
     font-size: 25px;
+    font-weight: 500;
 }
 
 .card-title a {
@@ -226,18 +229,29 @@ body {
     color: #5259ef;
 }
 
+
 .card-price {
     display: flex;
     font-weight: 600;
-    align-items: flex-end;
+    justify-content: center;
+    align-items: center;
     margin-bottom: 13px;
     position: relative;
+    flex-wrap: wrap;
     white-space: nowrap;
 }
 
+.badge {
+    font-size: 50%;
+    font-weight: 600;
+}
+.text-light {
+    background-color: grey;
+}
+
 .card-year {
-    font-weight: 400;
-    margin-right: 15px;
+    font-weight: 600;
+    margin-right: 16px;
 }
 
 .card-text {
@@ -251,7 +265,29 @@ body {
     font-size: 1em;
 }
 
+.card-availability {
+    color: var(--iq-success);
+}
 
+.checkbox-logo {
+    width: 2.5em;
+    height: 2.5em;
+    position: relative;
+    left: -10px;
+    top: -4px;
+    cursor: pointer;
+}
+.custom-control-label {
+    font-size: 16px;
+    font-weight: 500;
+}
+.block-checkboxer {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    margin-right: 20px;
+    margin-top: 20px;
+}
 /*------------------------Детальная страница объявления---------------------------*/
 
 .detail-page {
@@ -305,15 +341,17 @@ body {
 
 .detail-price {
     font-weight: 600;
-    font-size: 36px;
+    font-size: 28px;
     line-height: 42px;
-    color: #4D4D4D;
+    color: rgb(77, 77, 77);
     margin-right: 40px;
 }
 
 .good {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
     position: relative;
     margin-left: 20px;
 }
@@ -325,6 +363,10 @@ body {
     color: #4D4D4D;
     margin-right: 40px;
     white-space: nowrap;
+}
+
+.card-text .card-text__prev:nth-child(2) {
+    align-self: flex-end;
 }
 
 .sticker {
@@ -605,6 +647,11 @@ body {
     background-color: #1b252f;
 }
 
+.btn {
+    font-size: 16px;
+    font-family: 'Montserrat', sans-serif;
+}
+
 .reset-label {
     cursor: pointer;
     transition: all 280ms ease-in-out;
@@ -732,11 +779,11 @@ body {
 
 
 .filter-container {
-    box-shadow: 10px 12px 12px rgba(42, 53, 64, 0.1);
-    background-color: #f2f2f2;
+    box-shadow: rgba(42, 53, 64, 0.1) 8px 8px 20px 12px;
+    background-color: rgba(204, 204, 204, 0.19);
     border-radius: 15px;
     padding: 20px;
-    margin: 12px;
+    margin: 15px;
 }
 
 .filter-row {
@@ -847,3 +894,13 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 
+.iq-sidebar {
+    border-radius: 15px;]
+
+}
+
+
+.iq-top-navbar {
+    background: none;
+    box-shadow: 0px 0px 25px 0px rgba(45, 69, 95, 0.1);
+}

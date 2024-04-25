@@ -3,32 +3,54 @@
 
 {% block content %}
     <div class="container mt-5">
-        <h1>Список объявлений</h1>
+        <h1>Салон {{ salon.name }}</h1>
+        {#        <a href="{% url 'ads_app:export-ads-xml' %}">#}
+        <button id="export-xml-button"> Экспорт в XML всё</button>
+
         <div class="mb-2 flex-container">
             <!-- Форма сортировки -->
             <div class="sort-container">
-                <button id="toggle-sort" type="button" class="btn btn-secondary btn-sm">Сортировка ▶</button>
-                <span id="sort-label" class="ml-2"></span>
-                <span id="reset-sort-label" class="reset-label">&#10006;</span>
-                <form id="sort-form" method="post" class="d-none form-container">
+                <label for="fields_sort" style="font-size: 20px">Сортировать</label>
+                    <select id="fields_sort" name="fields_sort" data-placeholder="Выберите поле..."
+                            data-select-all="false" data-width="300px"  multiple data-multi-select>
+                        {% for rus_field, en_field in fields %}
+                            <option value="{{ en_field }}"> {{ rus_field }}
+                            </option>
+                        {% endfor %}
+                    </select>
                     {% csrf_token %}
-                    {{ sort_form.as_p }}
-                    <div id="sort-fields-container"></div>
-                    <button id="apply-sort" type="button" class="btn btn-primary">Применить</button>
-                </form>
+{#                <button id="toggle-sort" type="button" class="btn btn-outline-link mb-3">Сортировка ▶</button>#}
+{#                <span id="sort-label" class="ml-2"></span>#}
+{#                <span id="reset-sort-label" class="reset-label">&#10006;</span>#}
+{#                <form id="sort-form" method="post" class="form-container">#}
+{#                    <label for="fields_sort">Сортировать</label>#}
+{#                    <select id="fields_sort" name="fields_sort" data-placeholder="Выберите поле..."#}
+{#                            data-select-all="false" data-width="300px" data-height="50px" multiple data-multi-select>#}
+{#                        {% for rus_field, en_field in fields %}#}
+{#                            <option value="{{ en_field }}"> {{ rus_field }}#}
+{#                            </option>#}
+{#                        {% endfor %}#}
+{#                    </select>#}
+{#                    {% csrf_token %}#}
+{#                    <div id="sort-fields-container"></div>#}
+{#                    <button id="apply-sort" type="button" class="btn btn-primary">Применить</button>#}
+{#                </form>#}
             </div>
             <div class="search-container">
-                <div class="search-input-container" data-tip="Можно ввести несколько фрагментов VIN через запятую">
-                    <input type="text" placeholder="Поиск по VIN" name="vin_search" class="form-control"
-                           id="id_vin_search"/>
-                    <span id="reset-search-label" class="reset-label">&#10006;</span>
+                <div class="search-input-container"
+                     data-tip="Можно ввести несколько фрагментов VIN через запятую">
+                    <div class="iq-search-bar d-none d-md-block searchbox">
+                        <input type="text" class="text search-input" name="vin_search" id="id_vin_search"
+                               placeholder="VIN поиск">
+                        <a id="apply-search" class="search-link" href="#"><i class="ri-search-line"></i></a>
+                        <i id="reset-search-label" class="ri-close-line reset-label d-none show-data"></i>
+                    </div>
                 </div>
-                <button id="apply-search" type="button" class="btn btn-primary">Искать</button>
             </div>
         </div>
         <!-- Панель с фильтрами -->
         <div class="filter-block">
-            <button id="toggle-filter" type="button" class="btn btn-secondary btn-sm">Фильтр ▶</button>
+            <button id="toggle-filter" type="button" class="btn btn-outline-link mb-3">Фильтр ▼</button>
             <div class="filter-container">
                 <div class="filter-row">
                     <select class="mark-select" multiple>
@@ -110,5 +132,6 @@
 {% block js_scripts %}
     <script src="{% static 'js/choices.min.js' %}"></script>
     <script src="{% static 'js/data-handler.js' %}"></script>
+    <script src="{% static 'js/MultiSelect.js' %} "></script>
 {% endblock %}
 

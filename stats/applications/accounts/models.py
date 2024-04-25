@@ -83,7 +83,7 @@ class Client(AbstractBaseUser, PermissionsMixin):
         ordering = ['name']
 
 
-class Application(models.Model):
+class Registration(models.Model):
     class Status(models.TextChoices):
         NEW = 'new', 'Новая'
         ACCEPTED = 'accepted', 'Принята'

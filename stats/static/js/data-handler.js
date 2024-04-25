@@ -3,11 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = {
         tableCreated: false,    // Флаг создания таблицы
         sortApplied: false,     // Флаг применения сортировки
-        container: document.querySelector('#sort-fields-container'),   // Контейнер для сортировочных полей
-        fieldSelect: document.querySelector('#id_fields'),             // Выпадающий список для выбора поля
-        submitButton: document.querySelector('#apply-sort'),           // Кнопка применения сортировки
-        resetSortLabel: document.querySelector('#reset-sort-label'),   // Крестик сброса сортировки
-        toggleButton: document.querySelector('#toggle-sort'),          // Кнопка переключения видимости сортировочной формы
+        // container: document.querySelector('#sort-fields-container'),   // Контейнер для сортировочных полей
+        // fieldSelect: document.querySelector('#id_fields'),             // Выпадающий список для выбора поля
+        // submitButton: document.querySelector('#apply-sort'),           // Кнопка применения сортировки
+        // resetSortLabel: document.querySelector('#reset-sort-label'),   // Крестик сброса сортировки
+        // toggleButton: document.querySelector('#toggle-sort'),          // Кнопка переключения видимости сортировочной формы
         toggleButtonFilter: document.querySelector('#toggle-filter'),
         searchButton: document.querySelector('#apply-search'),         // Кнопка применения поиска по VIn
         resetSearchLabel: document.querySelector('#reset-search-label'),    // Кнопка сброса поиска по Vin
@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
         vinSearchInput: document.querySelector('#id_vin_search'),
         sortFields: [],         // Массив объектов с информацией о сортировочных полях
     };
-    console.log(state)
 
     /**
      * Создает таблицу для отображения сортировочных полей
@@ -238,12 +237,15 @@ document.addEventListener('DOMContentLoaded', () => {
             this.widgets = {}
         }
     };
+
     function resetTemplate(widget) {
         // const data = {};
         // data[widget] = {};
         handleTracker.removeField(widget)
-        const endpointURL = '/ads/';
+        // const endpointURL = '/ads/';
         const dataJSON = JSON.stringify(handleTracker.getState())
+        // Получение текущего пути из адресной строки браузера
+        const endpointURL = window.location.pathname;
         fetch(endpointURL, {
             method: 'POST',
             body: dataJSON,
@@ -276,18 +278,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Инициализация состояния
-    state.sortLabel.classList.add('hide');
-    state.resetSortLabel.classList.add('d-none');
-    state.submitButton.classList.add('d-none');
-    state.filterForm.classList.toggle('d-none');
+    // state.sortForm.classList.toggle('d-none');
+    // state.sortLabel.classList.add('hide');
+    // state.resetSortLabel.classList.add('d-none');
+    // state.submitButton.classList.add('d-none');
+    // state.filterForm.classList.toggle('d-none');
     state.resetSearchLabel.classList.add('d-none');
-    state.sortLabel.textContent = 'Применена';
+    // state.sortLabel.textContent = 'Применена';
 
     // Обработчики событий
 
-    state.toggleButton.addEventListener('click', toggleSortForm);
+    // state.toggleButton.addEventListener('click', toggleSortForm);
     state.toggleButtonFilter.addEventListener('click', toggleFilterForm);
-    state.resetSortLabel.addEventListener('click', () => resetTemplate('sort'));
+    // state.resetSortLabel.addEventListener('click', () => resetTemplate('sort'));
     state.resetSearchLabel.addEventListener('click', () => resetTemplate('search'));
     //
     // state.fieldSelect.addEventListener('change', () => {
@@ -298,41 +301,42 @@ document.addEventListener('DOMContentLoaded', () => {
     //     }
     // });
 
-    state.submitButton.addEventListener('click', () => {
-        state.sortLabel.classList.remove('hide');
-        state.sortApplied = true;
-        handleTracker.addField('sort', state.sortFields);
-        const dataJSON = JSON.stringify(handleTracker.getState());
-        const endpointURL = '/ads/';
-        fetch(endpointURL, {
-            method: 'POST',
-            body: dataJSON,
-            headers: {
-                'X-CSRFToken': state.csrfToken,
-                'Accept': 'application/json, text/plain, */*',
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const adsContainer = document.querySelector('#ads-container');
-                    adsContainer.innerHTML = data.html;
-                    toggleSortForm();
-                    state.resetSortLabel.classList.remove('d-none');
-                } else {
-                    console.error('Ошибка при получении данных с сервера');
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка при отправке данных:', error);
-            });
-    });
+    // state.submitButton.addEventListener('click', () => {
+    //     state.sortLabel.classList.remove('hide');
+    //     state.sortApplied = true;
+    //     handleTracker.addField('sort', state.sortFields);
+    //     const dataJSON = JSON.stringify(handleTracker.getState());
+    //     // const endpointURL = '/ads/';
+    //     // Получение текущего пути из адресной строки браузера
+    //     const endpointURL = window.location.pathname;
+    //     fetch(endpointURL, {
+    //         method: 'POST',
+    //         body: dataJSON,
+    //         headers: {
+    //             'X-CSRFToken': state.csrfToken,
+    //             'Accept': 'application/json, text/plain, */*',
+    //             'Content-Type': 'application/json',
+    //         },
+    //         credentials: 'include',
+    //     })
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.success) {
+    //                 const adsContainer = document.querySelector('#ads-container');
+    //                 adsContainer.innerHTML = data.html;
+    //                 toggleSortForm();
+    //                 state.resetSortLabel.classList.remove('d-none');
+    //             } else {
+    //                 console.error('Ошибка при получении данных с сервера');
+    //             }
+    //         })
+    //         .catch(error => {
+    //             console.error('Ошибка при отправке данных:', error);
+    //         });
+    // });
 
     state.searchButton.addEventListener('click', () => {
         const vinValue = state.vinSearchInput.value.trim();
-        console.log(vinValue)
 
         if (vinValue === '') {
             handleTracker.removeField('search')
@@ -340,8 +344,9 @@ document.addEventListener('DOMContentLoaded', () => {
             handleTracker.addField('search', vinValue)
         }
         const dataJSON = JSON.stringify(handleTracker.getState())
-        const endpointURL = '/ads/';
-
+        // const endpointURL = '/ads/';
+        // Получение текущего пути из адресной строки браузера
+        const endpointURL = window.location.pathname;
         fetch(endpointURL, {
             method: 'POST',
             body: dataJSON,
@@ -517,16 +522,20 @@ document.addEventListener('DOMContentLoaded', () => {
             //     console.error('Произошла ошибка при фильтрации объявлений:', error.message);
             // }
             try {
-                const url = '/ads/';
+                // const url = '/ads/';
+                // Получение текущего пути из адресной строки браузера
+                const url = window.location.pathname;
+                let url_arr = url.split('/')
+                const salon_id = url_arr[url_arr.length - 2]
                 if (Object.keys(filterTracker.state).length) {
                     handleTracker.addField('filters', filterTracker.getFilters())
                 } else {
                     handleTracker.removeField(filters)
                 }
-                console.log(handleTracker.getState())
                 // Преобразование объекта фильтров в строку JSON
-                const filtersJSON = JSON.stringify(handleTracker.getState());
-                console.log(filtersJSON)
+                let filters = handleTracker.getState()
+                filters['salon_id'] = salon_id
+                const filtersJSON = JSON.stringify(filters);
                 // Отправляем запрос на сервер для фильтрации объявлений
                 const filterResponse = await fetch(url, {
                     method: 'POST',
@@ -618,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.initAsync(() => this.fetchFillData());
         }
 
-        // Метод для инициализации данных с последующим добавлением событий
+        // Метод для инициализации данных
         initAsync(initCallback) {
             initCallback().then(() => {
                 this.addEventListeners().then(() => console.log("События отработали")
@@ -957,5 +966,62 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Произошла ошибка при отправке фильтров:', error.message);
         }
     }
+
+    function exportXml() {
+        // Получить все элементы с классом "col-lg-12"
+        const cardElements = document.getElementsByClassName("col-lg-12");
+
+        // Создать массив для хранения идентификаторов
+        const ids = [];
+
+        // Пройти по каждому элементу и получить значение атрибута data-id
+        for (let i = 0; i < cardElements.length; i++) {
+            const cardElement = cardElements[i];
+            const id = cardElement.getAttribute("data-id");
+
+            // Добавить значение id в массив
+            ids.push(id);
+        }
+        console.log(ids)
+
+        // Создаем параметры запроса для передачи выбранных идентификаторов
+        const params = new URLSearchParams();
+
+        // Добавляем идентификаторы в параметры запроса
+        ids.forEach(id => {
+            params.append('id', id);
+        });
+
+        // Получить CSRF-токен
+        const csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        // Отправить запрос на бэкенд с параметрами URL
+        fetch(`/ads/api/export-xml/?${params.toString()}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Accept': 'application/json, text/plain, */*',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+        })
+            .then(response => response.blob())
+            .then(blob => {
+                // Создать ссылку на файл XML
+                console.log(blob.text())
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "exported_ads.xml";
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => console.error('Ошибка при экспорте объявлений:', error));
+    }
+
+    document.getElementById('export-xml-button').addEventListener('click', exportXml);
+
+
 })
 ;

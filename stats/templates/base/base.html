@@ -45,8 +45,8 @@
     <link rel="stylesheet" href="{% static 'vito/css/responsive.css' %}">
 
     <!-- Custom styles -->
+    <link href="{% static 'css/MultiSelect.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/login.css' %}" rel="stylesheet">
-
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
@@ -119,15 +119,20 @@
                     <li><a href="{% url 'auction' %}" class="iq-waves-effect" aria-expanded="false"><i
                             class="ri-funds-line"></i><span>Аукцион</span></a></li>
                     <li>
-                        <a href="#menu-level" class="iq-waves-effect collapsed" data-toggle="collapse"
-                           aria-expanded="false"><i class="fa-regular fa-handshake"></i><span>Объявления</span><i
+                        <a href="#menu-level-salons" class="iq-waves-effect collapsed" data-toggle="collapse"
+                           aria-expanded="false"><span class="ripple rippleEffect"
+                                                      style="width: 205px; height: 205px; top: -84.5px; left: 97.5px;"></span><i
+                                class="ri-roadster-line"></i><span>Объявления</span><i
                                 class="ri-arrow-right-s-line iq-arrow-right"></i></a>
-                        <ul id="menu-level" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
+
+                        <ul id="menu-level-salons" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
+                            <li class="iq-menu-title"><i class="ri-subtract-line"></i><span>Салоны</span></li>
 
                             {% for salon in salons %}
                                 <li><a href="{% url  'ads_app:ads' salon.id %}"><i
                                         class="fa-solid fa-file-import"></i>{{ salon.name }}</a></li>
                             {% endfor %}
+
                         </ul>
                     </li>
 
@@ -164,47 +169,6 @@
             </div>
             <nav class="navbar navbar-expand-lg navbar-light p-0">
                 <div class="navbar-left">
-                    <ul id="topbar-data-icon" class="d-flex p-0 topbar-menu-icon">
-                        <li class="nav-item">
-                            <a href="index.html" class="nav-link font-weight-bold search-box-toggle"><i
-                                    class="ri-home-4-line"></i></a>
-                        </li>
-                        <li><a href="chat.html" class="nav-link"><i class="ri-message-line"></i></a></li>
-                        <li><a href="profile.html" class="nav-link"><i class="ri-question-answer-line"></i></a></li>
-                        <li><a href="todo.html" class="nav-link router-link-exact-active router-link-active"><i
-                                class="ri-chat-check-line"></i></a></li>
-                    </ul>
-                    <div class="iq-search-bar d-none d-md-block">
-                        <form action="#" class="searchbox">
-                            <input type="text" class="text search-input" placeholder="Type here to search...">
-                            <a class="search-link" href="#"><i class="ri-search-line"></i></a>
-                            <div class="searchbox-datalink">
-                                <h6 class="pl-3 pt-3 pb-3">Pages</h6>
-                                <ul class="m-0 pl-3 pr-3 pb-3">
-                                    <li class="iq-bg-primary-hover rounded"><a href="index.html"
-                                                                               class="nav-link router-link-exact-active router-link-active pr-2"><i
-                                            class="ri-home-4-line pr-2"></i>Dashboard</a></li>
-                                    <li class="iq-bg-primary-hover rounded"><a href="dashboard-1.html"
-                                                                               class="nav-link router-link-exact-active router-link-active pr-2"><i
-                                            class="ri-home-3-line pr-2"></i>Dashboard-1</a></li>
-                                    <li class="iq-bg-primary-hover rounded"><a href="chat.html" class="nav-link"><i
-                                            class="ri-message-line pr-2"></i>Chat</a></li>
-                                    <li class="iq-bg-primary-hover rounded"><a href="calendar.html" class="nav-link"><i
-                                            class="ri-calendar-2-line pr-2"></i>Calendar</a></li>
-                                    <li class="iq-bg-primary-hover rounded"><a href="profile.html" class="nav-link"><i
-                                            class="ri-profile-line pr-2"></i>Profile</a></li>
-                                    <li class="iq-bg-primary-hover rounded"><a href="todo.html" class="nav-link"><i
-                                            class="ri-chat-check-line pr-2"></i>Todo</a></li>
-                                    <li class="iq-bg-primary-hover rounded"><a href="app/index.html" class="nav-link"><i
-                                            class="ri-mail-line pr-2"></i>Email</a></li>
-                                    <li class="iq-bg-primary-hover rounded"><a href="pages-faq.html" class="nav-link"><i
-                                            class="ri-compasses-line pr-2"></i>Faq</a></li>
-                                    <li class="iq-bg-primary-hover rounded"><a href="form-wizard.html" class="nav-link"><i
-                                            class="ri-clockwise-line pr-2"></i>Form-wizard</a></li>
-                                </ul>
-                            </div>
-                        </form>
-                    </div>
                 </div>
                 <button class="navbar-toggler" type="button" data-toggle="collapse"
                         data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"

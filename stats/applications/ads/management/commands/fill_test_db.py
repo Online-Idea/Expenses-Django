@@ -100,6 +100,7 @@ class Command(BaseCommand):
                     condition=capital_name(row['Состояние']),
                     run=replace_nan(row['Пробег']),
                     modification_code=row['Код модификации'],
+                    copmlectation_code=row['Код комплектации'],
                     color_code=row['Код цвета'],
                     interior_code=row['Код интерьера'],
                     configuration_codes=row['Коды опций комплектации'],

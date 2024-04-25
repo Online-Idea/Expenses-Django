@@ -107,7 +107,7 @@ class Generation(BaseModel):
     model = models.ForeignKey('Model', on_delete=models.PROTECT, verbose_name='Модель')
     generation = models.CharField(max_length=255, verbose_name='Поколение')
     # TODO года выпуска добавить
-    teleph = models.CharField(max_length=255, null=True, blank=True, verbose_name='Телефония')
+    teldeph = models.CharField(max_length=255, null=True, blank=True, verbose_name='Телефония')
     autoru = models.CharField(max_length=255, null=True, blank=True, verbose_name='Авто.ру')
     avito = models.CharField(max_length=255, null=True, blank=True, verbose_name='Авито')
     drom = models.CharField(max_length=255, null=True, blank=True, verbose_name='Drom')

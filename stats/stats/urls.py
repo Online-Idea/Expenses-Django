@@ -23,6 +23,7 @@ urlpatterns = [
     path('', include('libs.services.urls')),
     path('', include('applications.auction.urls')),
     path('', include('applications.autoconverter.urls')),
+    path('', include('applications.calls.urls')),
     path('', include('applications.srav.urls')),
     path('', include('applications.netcost.urls')),
     path('stock/', include('applications.ads.urls', namespace='ads_app')),

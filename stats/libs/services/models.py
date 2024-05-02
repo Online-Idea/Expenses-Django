@@ -5,6 +5,7 @@ from django.db.models import Q
 from slugify import slugify
 
 from libs.services import choices
+from libs.services.choices import EngineTypes, DriveTypes
 
 
 # Чтобы PyCharm не подчеркивал objects в MyClass.objects.filter
@@ -122,6 +123,7 @@ class Generation(BaseModel):
 
 
 class BodyTypes(models.TextChoices):
+    # TODO заменить JEEP на SUV
     JEEP = 'Внедорожник', 'Внедорожник'
     JEEP_3 = 'Внедорожник 3 дв.' 'Внедорожник 3 дв.'
     JEEP_5 = 'Внедорожник 5 дв.', 'Внедорожник 5 дв.'
@@ -168,8 +170,8 @@ class Modification(BaseModel):
     power = models.IntegerField(verbose_name='Мощность')
     transmission = models.CharField(max_length=100, choices=choices.TRANSMISSION_CHOICES,
                                     verbose_name='Коробка передач')
-    engine_type = models.CharField(max_length=100, choices=choices.ENGINE_TYPE_CHOICES, verbose_name='Тип двигателя')
-    drive = models.CharField(max_length=100, choices=choices.DRIVE_CHOICES, verbose_name='Привод')
+    engine_type = models.CharField(max_length=100, choices=EngineTypes.choices, verbose_name='Тип двигателя')
+    drive = models.CharField(max_length=100, choices=DriveTypes.choices, verbose_name='Привод')
     battery_capacity = models.IntegerField(null=True, blank=True, verbose_name='Ёмкость батареи')
     autoru_modification_id = models.IntegerField(null=True, blank=True, verbose_name='Авто.ру Модификация ID')
     autoru_complectation_id = models.IntegerField(null=True, blank=True, verbose_name='Авто.ру Комплектация ID')

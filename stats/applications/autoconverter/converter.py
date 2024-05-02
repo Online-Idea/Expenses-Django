@@ -888,13 +888,16 @@ def bot_messages(logs, logs_xlsx, price, task):
     return
 
 
-def save_on_ftp(save_path):
+def save_on_ftp(save_path, file):
+    # TODO во всех применениях этой функции переписать чтобы передавался binary файл
     """
     Сохраняет файл на ftp
     :param save_path: полный путь к файлу
+    :param file: binary файл
     """
     file_path = Path(save_path)
-    with FTP('ph.onllline.ru', env('FTP_LOGIN'), env('FTP_PASSWORD')) as ftp, open(save_path, 'rb') as file:
+    # with FTP('ph.onllline.ru', env('FTP_LOGIN'), env('FTP_PASSWORD')) as ftp, open(save_path, 'rb') as file:
+    with FTP('ph.onllline.ru', env('FTP_LOGIN'), env('FTP_PASSWORD')) as ftp:
         cd_tree(ftp, str(file_path.parents[0]))
         ftp.storbinary(f'STOR {file_path.name}', file)
         ftp.cwd('/')

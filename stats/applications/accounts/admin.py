@@ -27,15 +27,15 @@ from .models import Client
 class ClientAdmin(UserAdmin):
     model = Client
     list_display = (
-        'id', 'username', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'autoru_name',
+        'id', 'name', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'autoru_name',
         'avito_id', 'drom_id')
-    list_display_links = ('id', 'username')
+    list_display_links = ('id', 'name')
     search_fields = ('name', 'manager', 'teleph_id', 'autoru_id', 'autoru_name', 'avito_id', 'drom_id')
     list_editable = ('active',)
     list_filter = ('manager', 'active', 'charge_type', 'is_staff', 'is_superuser')
 
     fieldsets = (
-        (None, {'fields': ('email', 'password', 'username', 'slug')}),
+        (None, {'fields': ('name', 'email', 'password', 'username', 'slug')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
         ('Additional Info', {'fields': (

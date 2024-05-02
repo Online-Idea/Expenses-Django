@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     'applications.accounts.apps.AccountsConfig',
     'applications.netcost.apps.NetcostConfig',
     'applications.autoconverter.apps.AutoconverterConfig',
+    'applications.calls.apps.CallsConfig',
     'applications.auction.apps.AuctionConfig',
     'applications.srav.apps.SravConfig',
     'applications.ads.apps.AdsConfig',
@@ -260,6 +261,7 @@ INTERNAL_IPS = (
     "212.57.103.141",
 )
 
+WEBSITE = env('WEBSITE')
 
 # Принудительно показывает Django Debug Toolbar без ограничений по ip
 # def show_toolbar(request):

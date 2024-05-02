@@ -1,3 +1,6 @@
+from django.db import models
+
+
 def dict_to_choices(dct: dict) -> list:
     return [(k, v) for k, v in dct.items()]
 
@@ -42,20 +45,33 @@ TRANSMISSION_DICT = {
 TRANSMISSION_DICT_FLIPPED = {v: k for k, v in TRANSMISSION_DICT.items()}
 TRANSMISSION_CHOICES = [(v, v) for k, v in TRANSMISSION_DICT.items()]
 
-ENGINE_TYPE_DICT = {
-    'бензин': 'бензин',
-    'дизель': 'дизель',
-    'гибрид': 'гибрид',
-    'электро': 'электро',
-}
-ENGINE_TYPE_CHOICES = dict_to_choices(ENGINE_TYPE_DICT)
+# ENGINE_TYPE_DICT = {
+#     'бензин': 'бензин',
+#     'дизель': 'дизель',
+#     'гибрид': 'гибрид',
+#     'электро': 'электро',
+# }
+# ENGINE_TYPE_CHOICES = dict_to_choices(ENGINE_TYPE_DICT)
 
-DRIVE_CHOICES_DICT = {
-    'передний': 'передний',
-    'задний': 'задний',
-    'полный': 'полный',
-}
-DRIVE_CHOICES = dict_to_choices(DRIVE_CHOICES_DICT)
+
+class EngineTypes(models.TextChoices):
+    GASOLINE = 'бензин', 'бензин'
+    DIESEL = 'дизель', 'дизель'
+    HYBRID = 'гибрид', 'гибрид'
+    ELECTRO = 'электро', 'электро'
+
+# DRIVE_CHOICES_DICT = {
+#     'передний': 'передний',
+#     'задний': 'задний',
+#     'полный': 'полный',
+# }
+# DRIVE_CHOICES = dict_to_choices(DRIVE_CHOICES_DICT)
+
+
+class DriveTypes(models.TextChoices):
+    FWD = 'передний', 'передний'
+    RWD = 'задний', 'задний'
+    AWD = 'полный', 'полный'
 
 # COLOR_CHOICES = [
 #     ('бежевый', 'бежевый'),

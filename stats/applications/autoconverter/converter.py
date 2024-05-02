@@ -698,6 +698,17 @@ def converter_process_result(process_id, template, task):
 
     # Обработки прайса
     read_file = pd.read_excel(save_path_date, decimal=',')
+
+    # Добавляю столбцы базы которых нет в прайсе после конвертера
+    read_file.insert(37, 'Дата размещения', '')
+    read_file.insert(38, 'Кол. в ПТС', '')
+    end_columns = ['ComID', 'Онлайн-показ', 'Avito gen', 'Avito mod', 'Avito com', 'Avito mid',
+                   'Гарантия производителя', 'Валюта', 'Авито аукцион', 'Двери', 'Гарантия на ремонт',
+                   'КАСКО в подарок', 'Комплект шин в подарок', 'Скидка на КАСКО', 'ТО в подарок',
+                   'Аксессуары в подарок', 'Быстрое оформление']
+    for col in end_columns:
+        read_file[col] = ''
+
     # Переношу Описание из шаблона если оно есть в шаблоне
     if 'Описание' in template.columns:
         read_file['Описание2'] = template['Описание']

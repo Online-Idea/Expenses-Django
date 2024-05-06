@@ -1,4 +1,5 @@
 import io
+import logging
 import re
 from collections import Counter
 import ftplib
@@ -52,6 +53,9 @@ def get_price(task):
     :param task: строка из таблицы Задачи конвертера
     """
     template = converter_template(task)
+    if template.empty:
+        logging.info(f'По клиенту {task.client.name} пустой шаблон')
+        return
     process_id = converter_post(task)
     price = converter_process_result(process_id, template, task)
     logs = converter_logs(process_id)

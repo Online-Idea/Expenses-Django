@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     'ajax_datatable',
     "debug_toolbar",
       # Мои
+    'applications.mainapp.apps.MainappConfig',
     'applications.accounts.apps.AccountsConfig',
     'applications.netcost.apps.NetcostConfig',
     'applications.autoconverter.apps.AutoconverterConfig',
@@ -89,6 +90,7 @@ INSTALLED_APPS = [
     'applications.srav.apps.SravConfig',
     'applications.ads.apps.AdsConfig',
     'libs.services.apps.ServicesConfig',
+    'libs.avito.apps.AvitoConfig',
     'libs.autoru.apps.AutoruConfig',
     'libs.teleph.apps.TelephConfig',
 

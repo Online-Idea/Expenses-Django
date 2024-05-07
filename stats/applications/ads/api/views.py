@@ -9,7 +9,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from applications.ads.models import Ad
-from libs.services.models import Model, Mark
+from applications.mainapp.models import Model, Mark
 from . import serializers
 
 
@@ -51,7 +51,6 @@ class FilterAdsView(APIView):
                     # Если параметр имеет одно значение
                     filters[field_name] = values[0]
 
-        print(filters)
         # Применяем фильтры к объявлениям
         filtered_ads = Ad.objects.filter(**filters)
         print(filtered_ads)

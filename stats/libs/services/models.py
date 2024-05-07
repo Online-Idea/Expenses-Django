@@ -107,7 +107,7 @@ class Generation(BaseModel):
     model = models.ForeignKey('Model', on_delete=models.PROTECT, verbose_name='Модель')
     generation = models.CharField(max_length=255, verbose_name='Поколение')
     # TODO года выпуска добавить
-    teldeph = models.CharField(max_length=255, null=True, blank=True, verbose_name='Телефония')
+    teleph = models.CharField(max_length=255, null=True, blank=True, verbose_name='Телефония')
     autoru = models.CharField(max_length=255, null=True, blank=True, verbose_name='Авто.ру')
     avito = models.CharField(max_length=255, null=True, blank=True, verbose_name='Авито')
     drom = models.CharField(max_length=255, null=True, blank=True, verbose_name='Drom')
@@ -237,7 +237,6 @@ class ModificationCode(BaseModel):
         verbose_name_plural = 'Коды модификации'
 
 
-
 class Colors(models.TextChoices):
     BEIGE = 'бежевый', 'бежевый'
     WHITE = 'белый', 'белый'
@@ -257,7 +256,8 @@ class Colors(models.TextChoices):
     BLUE = 'синий', 'синий'
     VIOLET = 'фиолетовый', 'фиолетовый'
     BLACK = 'чёрный', 'чёрный'
-    
+
+
 class _TypedMultipleChoiceField(forms.TypedMultipleChoiceField):
     def __init__(self, *args, **kwargs):
         kwargs.pop('base_field', None)
@@ -269,6 +269,7 @@ class ChoiceArrayField(ArrayField):
     """
     Кастомное поле для множественного выбора
     """
+
     def formfield(self, **kwargs):
         defaults = {
             'form_class': _TypedMultipleChoiceField,

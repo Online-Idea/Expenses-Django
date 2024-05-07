@@ -59,13 +59,13 @@ class AdSerializer(serializers.ModelSerializer):
 class MarkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Mark
-        fields = ['id', 'mark']
+        fields = ['id', 'name']
 
 
 class ModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Model
-        fields = ['id', 'model']
+        fields = ['id', 'name']
 
 
 class ModificationSerializer(serializers.ModelSerializer):

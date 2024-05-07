@@ -5,7 +5,7 @@ from applications.autoconverter.converter import get_converter_tasks, get_price
 from libs.autoru.autoru import *
 from .exkavator import modify_exkavator_xml
 from .export import export_calls_to_file, export_calls_for_callback
-from .models import Client
+from applications.accounts.models import Client
 from libs.teleph.teleph import get_teleph_clients, get_teleph_calls
 from .utils import last_30_days
 

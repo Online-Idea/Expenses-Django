@@ -2,11 +2,13 @@ from random import randint
 
 from django.core.management.base import BaseCommand
 from applications.ads.models import Ad, Salon
-from libs.services.models import Mark, Model
+from applications.mainapp.models import Mark, Model
 from django.db import transaction
 import pandas as pd
 import argparse
 from typing import Union
+
+
 
 
 def replace_nan(value: Union[float, None]) -> Union[float, None]:
@@ -70,14 +72,13 @@ class Command(BaseCommand):
             # Итерация по строкам DataFrame
             for _, row in df.iterrows():
                 # Получение или создание экземпляров Mark и Model
-                mark, created = Mark.objects.get_or_create(mark=row['Марка'])
-                model, created = Model.objects.get_or_create(model=row['Модель'], mark=mark)
-
+                mark_instance, created = Mark.objects.get_or_create(name=row['Марка'])
+                model_instance, created = Model.objects.get_or_create(name=row['Модель'], mark=mark_instance)
                 # Создание экземпляра Ad с данными из файла CSV
                 ad = Ad(
                     salon=salons[randint(0, 1)],
-                    mark=mark,
-                    model=model,
+                    mark=mark_instance,
+                    model=model_instance,
                     complectation=row['Комплектация'],
                     price=row['Цена'],
                     body_type=capital_name(row['Кузов']),
@@ -100,7 +101,7 @@ class Command(BaseCommand):
                     condition=capital_name(row['Состояние']),
                     run=replace_nan(row['Пробег']),
                     modification_code=row['Код модификации'],
-                    copmlectation_code=row['Код комплектации'],
+                    complectation_code=row['Код комплектации'],
                     color_code=row['Код цвета'],
                     interior_code=row['Код интерьера'],
                     configuration_codes=row['Коды опций комплектации'],
@@ -129,4 +130,4 @@ class Command(BaseCommand):
         Ad.objects.all().delete()
         # Model.objects.all().delete()
         # Mark.objects.all().delete()
-        self.stdout.write(self.style.NOTICE("Старые данные удаленны"))
+        self.stdout.write(self.style.NOTICE("Старые данные удалены"))

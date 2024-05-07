@@ -6,7 +6,7 @@ from typing import Union, List, Tuple, Any
 from django.db import models
 from django.urls import reverse
 
-from libs.services.models import BaseModel, Model, Mark, BodyTypes, Colors
+from applications.mainapp.models import BaseModel, Model, Mark, BodyTypes,Colors
 from applications.accounts.models import Client
 
 
@@ -78,6 +78,8 @@ class Ad(BaseModel):
                                   verbose_name='Код цвета')
     interior_code = models.CharField(max_length=16, null=True, blank=True,
                                      verbose_name='Код интерьера')
+    complectation_code = models.CharField(max_length=1024, null=True, blank=True,
+                                           verbose_name='Код комплектации')
     configuration_codes = models.CharField(max_length=1024, null=True, blank=True,
                                            verbose_name='Коды опций комплектации')
     stickers_autoru = models.CharField(max_length=128, null=True, blank=True,

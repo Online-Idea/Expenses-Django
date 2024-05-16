@@ -1,0 +1,26 @@
+{% load crispy_forms_filters %}
+
+
+<div class="modal-content">
+  <form method="post" id="editForm" >
+    {% csrf_token %}
+    <input type="hidden" id="recordId" name="recordId" value="{{ pk }}">
+
+    <div class="modal-header">
+      <h5 class="modal-title" id="editModalLabel">Редактирование звонка</h5>
+      <button type="button" class="close" data-bs-dismiss="modal" aria-label="Закрыть">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+        {{ edit_modal_form|crispy }}
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      <button type="button" class="btn btn-primary update-modal" id="save-btn">Обновить</button>
+    </div>
+  </form>
+</div>
+

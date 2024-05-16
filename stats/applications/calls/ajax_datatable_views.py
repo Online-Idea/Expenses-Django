@@ -20,7 +20,7 @@ class CallDatatableView(AjaxDatatableView):
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'id', 'visible': False, },
-        {'name': 'edit', 'title': 'Edit', 'placeholder': True, 'searchable': False, 'orderable': False},
+        {'name': 'edit', 'title': 'Ред.', 'placeholder': True, 'searchable': False, 'orderable': False},
         {'name': 'call_id', 'visible': False, },
         {'name': 'client', 'title': 'Клиент', 'foreign_field': 'client_primatel__client__name', 'orderable': True,
             'searchable': True},
@@ -77,6 +77,6 @@ class CallDatatableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         edit_button = (f'<button class="btn btn-primary edit-btn" '
-                       f'data-id="{row["pk"]}" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>')
+                       f'data-id="{row["pk"]}" data-bs-toggle="modal" data-bs-target="#editModal"><i class="fa-regular fa-pen-to-square"></i></button>')
         row['edit'] = edit_button
         return row

@@ -1,10 +1,14 @@
 import datetime
+import logging
 
 from django.http import HttpResponse
 from django.shortcuts import render
+from rest_framework import viewsets, permissions
 
 from applications.calls.calls import get_calls_data
-from applications.calls.forms import CallChooseForm
+from applications.calls.forms import CallChooseForm, CallForm
+from applications.calls.models import Call
+from applications.calls.serializers import CallSerializer
 
 
 # Create your views here.
@@ -35,3 +39,27 @@ def calls(request):
         'dateto': dateto,
     }
     return render(request, 'calls/calls.html', context)
+
+
+class CallViewSet(viewsets.ModelViewSet):
+    queryset = Call.objects.all()
+    serializer_class = CallSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+def edit_call(request, pk):
+    record = Call.objects.get(pk=pk)
+    if request.method == 'POST':
+        print(request.data)
+        form = CallForm(request.POST, instance=record)
+        if form.is_valid():
+            form.save()
+        else:
+            print(form.errors)
+    else:
+        form = CallForm(instance=record)
+    context = {
+        'edit_modal_form': form,
+        'pk': pk,
+    }
+    return render(request, 'calls/edit_modal.html', context)

@@ -87,6 +87,7 @@ class Mark(BaseModel):
 
 class Model(BaseModel):
     mark = models.ForeignKey('Mark', on_delete=models.PROTECT, verbose_name='Марка')
+    # TODO есть дубли, нужно очистить и исправить то как авто.ру каталог заполняет
     model = models.CharField(max_length=255, verbose_name='Модель')
     teleph = models.CharField(max_length=255, null=True, blank=True, verbose_name='Телефония')
     autoru = models.CharField(max_length=255, null=True, blank=True, verbose_name='Авто.ру')

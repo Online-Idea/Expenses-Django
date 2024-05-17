@@ -98,18 +98,38 @@ class ConverterFilterAdmin(admin.ModelAdmin):
 
 class ConditionalInline(admin.TabularInline):
     model = Conditional
-    extra = 1
+    extra = 0
+
+
+class ConverterExtraProcessingNewChangesInline(admin.TabularInline):
+    model = ConverterExtraProcessingNewChanges
+    extra = 0
 
 
 class ConverterExtraProcessingAdmin(admin.ModelAdmin):
-    inlines = [ConditionalInline, ]
-    list_display = ('id', 'converter_task', 'source', 'price_column_to_change', 'new_value', 'change_type')
+    inlines = [ConditionalInline, ConverterExtraProcessingNewChangesInline]
+    list_display = ('id', 'converter_task', 'conditionals', 'new_changes')
     list_display_links = ('id', 'converter_task')
-    search_fields = ('converter_task__name', 'price_column_to_change', 'new_value')
+    search_fields = ('converter_task__name', )
     list_filter = ('converter_task',)
-    fields = ('id', 'converter_task', 'source', 'price_column_to_change', 'new_value', 'change_type')
+    fields = ('id', 'converter_task')
     readonly_fields = ('id',)
-    ordering = ('converter_task', 'price_column_to_change')
+    ordering = ('converter_task', )
+    list_per_page = 10
+
+    def conditionals(self, obj):
+        conditionals_objs = Conditional.objects.filter(converter_extra_processing=obj)
+        as_str = [str(o) for o in conditionals_objs]
+        replaced_name = [o.replace(str(obj), '') for o in as_str]
+        return '; '.join(replaced_name)
+    conditionals.short_description = 'Условия'
+
+    def new_changes(self, obj):
+        new_changes_objs = ConverterExtraProcessingNewChanges.objects.filter(converter_extra_processing=obj)
+        as_str = [str(o) for o in new_changes_objs]
+        replaced_name = [o.replace(str(obj), '') for o in as_str]
+        return '; '.join(replaced_name)
+    new_changes.short_description = 'Новые значения'
 
     def formfield_for_dbfield(self, db_field, **kwargs):
         if db_field.name == 'new_value':

@@ -100,3 +100,12 @@ def make_xlsx_for_download(qs, headers) -> Workbook:
 
     ws = xlsx_column_width(ws)
     return wb
+
+
+def get_models_verbose_names(model):
+    """
+    Возвращает список verbose_name полей модели
+    :param model: Django модель
+    :return:
+    """
+    return [f.verbose_name for f in model._meta.get_fields() if hasattr(f, 'verbose_name')]

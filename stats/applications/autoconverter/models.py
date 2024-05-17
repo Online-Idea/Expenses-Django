@@ -288,37 +288,10 @@ class ConverterFilter(BaseModel):
 
 class ConverterExtraProcessing(BaseModel):
     # Различные изменения прайса по условию
-    SOURCE_CHOICES = [
-        ('Сток', 'Сток'),
-        ('Прайс', 'Прайс')
-    ]
-    CHANGE_TYPE_CHOICES = [
-        ('Полностью', 'Полностью'),
-        ('Добавить в начало', 'Добавить в начало'),
-        ('Добавить в конец', 'Добавить в конец'),
-    ]
-    new_value_help = 'Если одно значение для всех то пиши его, если из другого столбца то пиши имя столбца' \
-                     'в формате: %col:"имя_столбца"'
-
     converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.PROTECT)
-    source = models.CharField(max_length=500, choices=SOURCE_CHOICES, verbose_name='Источник')
-    price_column_to_change = models.CharField(max_length=500, verbose_name='Столбец прайса в котором менять')
-    new_value = models.CharField(max_length=5000, null=True, blank=True, help_text=new_value_help,
-                                 verbose_name='Новое значение')
-    change_type = models.CharField(max_length=255, choices=CHANGE_TYPE_CHOICES, verbose_name='Как заменять',
-                                   default=CHANGE_TYPE_CHOICES[0])
 
     def __str__(self):
-        return f'{self.converter_task.name} {self.source} -> {self.price_column_to_change} {self.new_value}'
-
-    def save(self, *args, **kwargs):
-        # Добавляю переносы строк
-        if self.new_value:
-            if self.change_type == 'Добавить в начало':
-                self.new_value += '\n\n'
-            elif self.change_type == 'Добавить в конец':
-                self.new_value = '\n\n' + self.new_value
-        super().save(*args, **kwargs)
+        return f'{self.converter_task.name}'
 
     class Meta:
         db_table = 'autoconverter_converter_extra_processing'
@@ -327,7 +300,12 @@ class ConverterExtraProcessing(BaseModel):
 
 
 class Conditional(BaseModel):
-    converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.PROTECT)
+    SOURCE_CHOICES = [
+        ('Сток', 'Сток'),
+        ('Прайс', 'Прайс')
+    ]
+    source = models.CharField(max_length=500, choices=SOURCE_CHOICES, verbose_name='Источник')
+    converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.CASCADE)
     field = models.CharField(max_length=500, help_text=StockFields.multi_tags_help, verbose_name='Поле')
     condition = models.CharField(max_length=500, choices=ConverterFilter.CONDITION_CHOICES,
                                  default=ConverterFilter.CONDITION_CHOICES[2], verbose_name='Условие')
@@ -339,3 +317,40 @@ class Conditional(BaseModel):
     class Meta:
         verbose_name = 'Условие'
         verbose_name_plural = 'Условия'
+
+
+class ConverterExtraProcessingNewChanges(BaseModel):
+    CHANGE_TYPE_CHOICES = [
+        ('Полностью', 'Полностью'),
+        ('Добавить в начало', 'Добавить в начало'),
+        ('Добавить в конец', 'Добавить в конец'),
+    ]
+    new_value_help = 'Если одно значение для всех то пиши его, если из другого столбца то пиши имя столбца' \
+                     'в формате: %col:"имя_столбца"'
+
+    converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.CASCADE,
+                                                   verbose_name='Обработка прайса')
+    price_column_to_change = models.CharField(max_length=500, verbose_name='Столбец прайса в котором менять')
+    new_value = models.CharField(max_length=5000, null=True, blank=True, help_text=new_value_help,
+                                 verbose_name='Новое значение')
+    change_type = models.CharField(max_length=255, choices=CHANGE_TYPE_CHOICES, verbose_name='Как заменять',
+                                   default=CHANGE_TYPE_CHOICES[0])
+
+    def __str__(self):
+        return f'{self.converter_extra_processing} -> {self.price_column_to_change}: {self.new_value}'
+
+    def save(self, *args, **kwargs):
+        # Добавляю переносы строк
+        if self.new_value:
+            if self.change_type == 'Добавить в начало':
+                self.new_value += '\n\n'
+            elif self.change_type == 'Добавить в конец':
+                self.new_value = '\n\n' + self.new_value
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'autoconverter_converter_extra_processing_new_changes'
+        verbose_name = 'Обработка прайса новое значение'
+        verbose_name_plural = 'Обработка прайса новые значения'
+
+

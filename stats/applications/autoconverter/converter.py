@@ -1,4 +1,5 @@
 import io
+import logging
 import re
 from collections import Counter
 import ftplib
@@ -19,8 +20,10 @@ import pandas as pd
 from pandas import DataFrame
 from telebot.types import InputFile
 
+from applications.ads.models import Ad
 from applications.autoconverter.models import *
 from applications.autoconverter.onllline_base import onllline_worker
+from libs.services.utils import get_models_verbose_names
 from stats.settings import env
 from libs.services.email_sender import send_email
 from libs.services.management.commands.bot import bot, break_message_to_parts
@@ -52,6 +55,9 @@ def get_price(task):
     :param task: строка из таблицы Задачи конвертера
     """
     template = converter_template(task)
+    if template.empty:
+        logging.info(f'По клиенту {task.client.name} пустой шаблон')
+        return
     process_id = converter_post(task)
     price = converter_process_result(process_id, template, task)
     logs = converter_logs(process_id)
@@ -215,17 +221,23 @@ def template_xml(stock_path, template_path, task):
                                value=multi_tags(fields.description, car, '\n'))
 
             # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
-            extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
-            if extras:
+            # extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
+            task_has_source_stock = Conditional.objects.filter(converter_extra_processing__converter_task=task, source='Сток')
+            if task_has_source_stock:
+                # Беру Обработки прайса и Новые значения текущего таска
+                extras = ConverterExtraProcessing.objects.filter(converter_task=task)
+                extras_new_changes = ConverterExtraProcessingNewChanges.objects.filter(converter_extra_processing__in=extras)
                 for extra in extras:
-                    conditionals = list(Conditional.objects.filter(converter_extra_processing=extra.id)
+                    conditionals = list(Conditional.objects.filter(converter_extra_processing=extra)
                                         .values('field'))
+                    curr_extra_new_changes = extras_new_changes.filter(converter_extra_processing=extra)
 
-                    # Когда нужно брать значение из другого столбца
-                    if extra.new_value[:4] == '%col':
-                        column_name_extra = re.findall(r'"(.*?)"', extra.new_value)[0]
-                        column_name_extra += '__stock'
-                        conditionals.append({'field': column_name_extra})
+                    for new_change in curr_extra_new_changes:
+                        # Когда нужно брать значение из другого столбца
+                        if new_change.new_value[:4] == '%col':
+                            column_name_extra = re.findall(r'"(.*?)"', new_change.new_value)[0]
+                            column_name_extra += '__stock'
+                            conditionals.append({'field': column_name_extra})
 
                     for cond in conditionals:
                         column_name = cond['field']
@@ -458,10 +470,13 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
             df_stock_copy[col[0]] = ''
 
     # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
-    extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
-    if extras:
+    # extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
+    task_has_source_stock = Conditional.objects.filter(converter_extra_processing__converter_task=task, source='Сток')
+    if task_has_source_stock:
+        # Беру Обработки прайса и Новые значения текущего таска
+        extras = ConverterExtraProcessing.objects.filter(converter_extra_processing__converter_task=task)
         for extra in extras:
-            conditionals = Conditional.objects.filter(converter_extra_processing=extra.id)
+            conditionals = list(Conditional.objects.filter(converter_extra_processing=extra).values('field'))
             for cond in conditionals:
                 column_name = cond.field
                 if column_name not in template_col:
@@ -531,22 +546,26 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
     :param template: шаблон в виде pandas dataframe
     :return: Готовый прайс с изменениями
     """
-    changes = ConverterExtraProcessing.objects.filter(converter_task=task)
+    extra_processings = ConverterExtraProcessing.objects.filter(converter_task=task)
+    conditionals = Conditional.objects.filter(converter_extra_processing__in=extra_processings)
+    new_changes = ConverterExtraProcessingNewChanges.objects.filter(converter_extra_processing__in=extra_processings)
+
+    price_columns = get_models_verbose_names(Ad)
 
     # Если изменение зависит от данных в стоке то сначала эти данные добавляются к шаблону.
     # Потом шаблон передаётся сюда и добавляется к прайсу.
-    if changes.filter(source='Сток'):
+    if conditionals.filter(source='Сток'):
         template = template.add_suffix('_template')
         df = pd.merge(df, template, left_index=True, right_index=True)
 
     # Для каждого изменения по клиенту
-    for change in changes:
-        conditionals = Conditional.objects.filter(converter_extra_processing=change.id)
+    for change in new_changes:
+        curr_conditionals = conditionals.filter(converter_extra_processing=change.converter_extra_processing)
         masks = []
 
         # Для каждого условия в изменении
-        for cond in conditionals:
-            if change.source == 'Сток':
+        for cond in curr_conditionals:
+            if cond.source == 'Сток':
                 cond.field += '_template'
 
             # Если несколько значений
@@ -594,7 +613,9 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
         # Когда нужно брать значение из другого столбца
         if change.new_value and change.new_value[:4] == '%col':
             column = re.findall(r'"(.*?)"', change.new_value)[0]
-            if change.source == 'Сток':
+            # if change.source == 'Сток':
+            #     column += '__stock_template'
+            if column not in price_columns:
                 column += '__stock_template'
             df.loc[combined_mask, change.price_column_to_change] = df[column]
         # Когда нужно добавить в начало
@@ -698,6 +719,17 @@ def converter_process_result(process_id, template, task):
 
     # Обработки прайса
     read_file = pd.read_excel(save_path_date, decimal=',')
+
+    # Добавляю столбцы базы которых нет в прайсе после конвертера
+    read_file.insert(37, 'Дата размещения', '')
+    read_file.insert(38, 'Кол. в ПТС', '')
+    end_columns = ['ComID', 'Онлайн-показ', 'Avito gen', 'Avito mod', 'Avito com', 'Avito mid',
+                   'Гарантия производителя', 'Валюта', 'Авито аукцион', 'Двери', 'Гарантия на ремонт',
+                   'КАСКО в подарок', 'Комплект шин в подарок', 'Скидка на КАСКО', 'ТО в подарок',
+                   'Аксессуары в подарок', 'Быстрое оформление']
+    for col in end_columns:
+        read_file[col] = ''
+
     # Переношу Описание из шаблона если оно есть в шаблоне
     if 'Описание' in template.columns:
         read_file['Описание2'] = template['Описание']

@@ -102,6 +102,9 @@ class Model(BaseModel):
         verbose_name = 'Модель'
         verbose_name_plural = 'Модели'
         ordering = ['model']
+        constraints = [
+            models.UniqueConstraint(fields=['mark', 'model'], name='unique_mark_model'),
+        ]
 
 
 class Generation(BaseModel):

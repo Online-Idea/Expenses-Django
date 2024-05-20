@@ -7,6 +7,7 @@ from typing import Union, List, Dict
 import numpy as np
 import pandas as pd
 import requests
+from django.db import IntegrityError
 from django.db.models import Q, Count, QuerySet
 from pandas import DataFrame
 from rest_framework.utils.serializer_helpers import ReturnList
@@ -371,7 +372,8 @@ def update_autoru_catalog():
     new_marks = []
     for mark in root.iter('mark'):
         mark_name = mark.get('name')
-        if not my_marks.filter(autoru=mark_name).exists():
+        already_in_new_marks = any(obj.autoru == mark_name for obj in new_marks)
+        if not my_marks.filter(autoru=mark_name).exists() and not already_in_new_marks:
             new_marks.append(Mark(mark=mark_name, teleph=mark_name, autoru=mark_name, avito=mark_name,
                                   drom=mark_name, human_name=mark_name))
     Mark.objects.bulk_create(new_marks)
@@ -383,7 +385,9 @@ def update_autoru_catalog():
         for folder in mark.iter('folder'):
             folder_name = folder.get('name')
             model_name = folder_name.split(',')[0]
-            if not my_models.filter(mark__autoru=mark_name, autoru=model_name).exists():
+            already_in_new_models = any(obj.autoru == model_name and obj.mark.autoru == mark_name
+                                        for obj in new_models)
+            if not my_models.filter(mark__autoru=mark_name, autoru=model_name).exists() and not already_in_new_models:
                 new_models.append(Model(mark=my_marks.filter(autoru=mark_name)[0], model=model_name, teleph=model_name,
                                         autoru=model_name, avito=model_name, drom=model_name, human_name=model_name))
     Model.objects.bulk_create(new_models)

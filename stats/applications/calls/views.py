@@ -9,9 +9,11 @@ from applications.calls.calls import get_calls_data
 from applications.calls.forms import CallChooseForm, CallForm
 from applications.calls.models import Call
 from applications.calls.serializers import CallSerializer
+from libs.services.decorators import allowed_users
 
 
 # Create your views here.
+@allowed_users(allowed_groups=['admin'])
 def calls(request):
     if request.method == 'POST':
         form = CallChooseForm(request.POST)
@@ -47,6 +49,7 @@ class CallViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
+@allowed_users(allowed_groups=['admin'])
 def edit_call(request, pk):
     record = Call.objects.get(pk=pk)
     if request.method == 'POST':

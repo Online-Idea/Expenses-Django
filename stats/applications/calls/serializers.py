@@ -8,5 +8,7 @@ from applications.calls.models import Call
 class CallSerializer(serializers.ModelSerializer):
     class Meta:
         model = Call
-        fields = ['num_from', 'duration', 'mark', 'target']
+        fields = ['mark', 'model', 'target', 'other_comments', 'client_primatel', 'client_name', 'manager_name',
+                  'moderation', 'price', 'status', 'call_price', 'manual_call_price', 'color', 'body', 'drive',
+                  'engine', 'complectation', 'attention', 'city']
 

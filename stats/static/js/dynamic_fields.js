@@ -1,7 +1,10 @@
 // Для полей которые зависят от родительских полей
 document.addEventListener('DOMContentLoaded', function() {
-  document.querySelector('#id_mark').addEventListener('change', updateModelOptions);
-  updateModelOptions();
+  let markField = document.querySelector('#id_mark');
+  if (markField) {
+    markField.addEventListener('change', updateModelOptions);
+    updateModelOptions();
+  }
 });
 
 function updateModelOptions() {

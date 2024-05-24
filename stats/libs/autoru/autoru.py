@@ -348,7 +348,8 @@ def delete_autoru_calls(from_, to, client_id):
     AutoruCall.objects.filter(datetime__gte=from_, datetime__lte=to, client_id=client_id).delete()
 
 
-session_id = autoru_authenticate(env('AUTORU_LOGIN'), env('AUTORU_PASSWORD'))
+# TODO вернуть чтобы работало API авто.ру
+# session_id = autoru_authenticate(env('AUTORU_LOGIN'), env('AUTORU_PASSWORD'))
 
 
 def update_autoru_catalog():

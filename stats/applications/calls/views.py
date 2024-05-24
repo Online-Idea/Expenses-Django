@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
 
-from applications.calls.calls import get_calls_data
+from applications.calls.calls import get_calls_data, calculate_call_price
 from applications.calls.forms import CallChooseForm, CallForm
 from applications.calls.models import Call
 from applications.calls.serializers import CallSerializer
@@ -56,6 +56,10 @@ def edit_call(request, pk):
         print(request.data)
         form = CallForm(request.POST, instance=record)
         if form.is_valid():
+            # TODO заполнить стоимость звонка по настройкам CallPriceSetting
+            # action = form.save(commit=False)
+            # calculate_call_price(action)
+            # action.save()
             form.save()
         else:
             print(form.errors)

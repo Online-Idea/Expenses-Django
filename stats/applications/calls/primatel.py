@@ -68,7 +68,10 @@ class PrimatelLogic:
             response = self.request_api(svc, request_data)
             if response:
                 response = response.json()
-                data = response['data']['data']
+                try:
+                    data = response['data']['data']
+                except TypeError:
+                    breakpoint()
                 names = response['data']['names']
                 total = response['data']['total']
                 total_items_count = int(total)
@@ -239,7 +242,8 @@ class PrimatelLogic:
                         num_from=item['numfrom'],
                         num_to=item['numto'],
                         duration=item['duration'],
-                        mark=client.main_mark,
+                        # TODO если у клиента одна марка тогда записывать её сюда
+                        # mark=client.main_mark,
                         client_primatel=sip.client_primatel,
                         sip_primatel=sip,
                     )
@@ -296,7 +300,8 @@ def update_numbers():
     client_primatels = ClientPrimatel.objects.filter(active=True)
     calls = Call.objects.filter(client_primatel__in=client_primatels).values('client_primatel', 'num_to')
     for client in client_primatels:
-        numbers = calls.filter(client_primatel=client).values_list('num_to', flat=True)
+        numbers = (calls.filter(client_primatel=client).values_list('num_to', flat=True)
+                   .distinct().order_by('num_to'))
         client.numbers = ', '.join(numbers)
 
     ClientPrimatel.objects.bulk_update(client_primatels, fields=['numbers'])

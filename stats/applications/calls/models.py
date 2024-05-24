@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from applications.accounts.models import Client
 from libs.services.choices import DriveTypes, EngineTypes
-from libs.services.models import BaseModel, Mark, Model, Colors, BodyTypes
+from libs.services.models import BaseModel, Mark, Model, Colors, BodyTypes, ChoiceArrayField
 
 
 # Create your models here.
@@ -33,8 +33,6 @@ class ClientPrimatel(BaseModel):
     name = models.CharField(max_length=500, blank=True, null=True, verbose_name='Название')
     active = models.BooleanField(default=True, blank=True, null=True, verbose_name='Активный')
     numbers = models.CharField(max_length=1000, blank=True, null=True, verbose_name='Номера')
-    main_mark = models.ForeignKey(Mark, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Марка')
-    price = models.IntegerField(blank=True, null=True, verbose_name='Общая цена')
     cabinet_primatel = models.ForeignKey(CabinetPrimatel, on_delete=models.PROTECT, verbose_name='Кабинет Примател')
     client = models.ForeignKey(Client, blank=True, null=True, on_delete=models.PROTECT, verbose_name='Клиент')
 
@@ -100,26 +98,29 @@ class SipPrimatel(BaseModel):
         verbose_name_plural = 'Sip Примател'
 
 
-class Call(BaseModel):
-    class TargetChoice(models.TextChoices):
-        YES = 'Да', _('Да')
-        NO = 'Нет', _('Нет')
-        TO_MODERATION = 'На модерацию', _('На модерацию')
-        PM_YES = 'ПМ - Целевой', _('ПМ - Целевой')
-        PM_NO = 'ПМ - Нецелевой', _('ПМ - Нецелевой')
+class TargetChoice(models.TextChoices):
+    YES = 'Да', _('Да')
+    NO = 'Нет', _('Нет')
+    TO_MODERATION = 'На модерацию', _('На модерацию')
+    PM_YES = 'ПМ - Целевой', _('ПМ - Целевой')
+    PM_NO = 'ПМ - Нецелевой', _('ПМ - Нецелевой')
 
-    class ModerationChoice(models.TextChoices):
-        M = 'М', _('М')
-        MZ = 'М(З)', _('М(З)')
-        MB = 'М(Б)', _('М(Б)')
-        USED = 'БУ', _('БУ')
-        AUTORU_USED = 'Авто.ру БУ', _('Авто.ру БУ')
-        REQUEST = 'Заявка', _('Заявка')
-        DROM = 'Дром', _('Дром')
-        AVITO = 'Авито', _('Авито')
-        AVITO_USED = 'Авито БУ', _('Авито БУ')
-        EXTRA = 'Запас', _('Запас')
-        RESOURCES = 'Доп. ресурсы', _('Доп. ресурсы')
+
+class ModerationChoice(models.TextChoices):
+    M = 'М', _('М')
+    MZ = 'М(З)', _('М(З)')
+    MB = 'М(Б)', _('М(Б)')
+    USED = 'БУ', _('БУ')
+    AUTORU_USED = 'Авто.ру БУ', _('Авто.ру БУ')
+    REQUEST = 'Заявка', _('Заявка')
+    DROM = 'Дром', _('Дром')
+    AVITO = 'Авито', _('Авито')
+    AVITO_USED = 'Авито БУ', _('Авито БУ')
+    EXTRA = 'Запас', _('Запас')
+    RESOURCES = 'Доп. ресурсы', _('Доп. ресурсы')
+
+
+class Call(BaseModel):
 
     class StatusChoice(models.TextChoices):
         DISCUSSING_PRICE_AND_AUTO = 'Обсуждают цену и авто', _('Обсуждают цену и авто')
@@ -179,4 +180,35 @@ class Call(BaseModel):
         db_table = 'calls_call'
         verbose_name = 'Звонок'
         verbose_name_plural = 'Звонки'
+
+
+class ChargeTypeChoice(models.TextChoices):
+    MAIN = 'Общая', _('Общая')
+    MODERATION = 'Модерация', _('Модерация')
+    MARK = 'Марка', _('Марка')
+    MODEL = 'Модель', _('Модель')
+
+
+class CallPriceSetting(BaseModel):
+    client_primatel = models.ForeignKey(ClientPrimatel, on_delete=models.CASCADE, verbose_name='Клиент Примател',
+                                        related_name='call_price_settings')
+    charge_type = models.CharField(max_length=255, choices=ChargeTypeChoice.choices, verbose_name='Тип')
+    moderation = ChoiceArrayField(models.CharField(
+        max_length=255, choices=ModerationChoice.choices, default=list
+    ), verbose_name='Модерация')
+    mark = models.ForeignKey(Mark, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Марка')
+    model = models.ForeignKey(Model, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Модель')
+    price = models.IntegerField(verbose_name='Стоимость звонка')
+
+    def __str__(self):
+        return f'{self.client_primatel.name} | {self.charge_type} | {self.price}'
+
+    # TODO при сохранении нужно проверять по charge_type чтобы остальные поля были верно заполнены.
+    #  Например если charge_type Модель то должны быть заполнены moderation, mark, model
+    #  А если charge_type Марка то должны быть заполнены moderation, mark и пустая model
+
+    class Meta:
+        db_table = 'calls_call_price_setting'
+        verbose_name = 'Настройка стоимости звонка'
+        verbose_name_plural = 'Настройки стоимости звонка'
 

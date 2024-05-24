@@ -81,11 +81,10 @@ class Client(AbstractBaseUser, PermissionsMixin):
             self.slug = f'{self.slug}-2'
         super(Client, self).save(*args, **kwargs)
 
-
-class Meta:
-    verbose_name = 'Клиент'
-    verbose_name_plural = 'Клиенты'
-    ordering = ['name']
+    class Meta:
+        verbose_name = 'Клиент'
+        verbose_name_plural = 'Клиенты'
+        ordering = ['name']
 
 
 class Application(models.Model):

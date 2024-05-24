@@ -93,8 +93,13 @@
     {% endif %}
   });
 
-  // Modal
   $(document).ready(function() {
+    <!--Чекбокс Выбрать все для клиентов-->
+    $('#id_select_all_clients').click(function() {
+      $('input[type=checkbox][name=client_checkbox]').prop('checked', $(this).prop('checked'));
+    });
+
+    // Modal
     let modal = $('#editModal');
 
     modal.on('show.bs.modal', function(event) {
@@ -107,7 +112,7 @@
         type: 'GET',
         success: function (response) {
           $('.modal-content').replaceWith(response);
-          $('#id_mark').on('change', updateModelOptions);
+          $('#id_mark').on('change', modelFromMark);
         },
         error: function (error) {
           console.error(error);

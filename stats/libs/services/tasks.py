@@ -3,6 +3,7 @@ from celery import shared_task
 from datetime import datetime
 
 from applications.autoconverter.converter import get_converter_tasks, get_price
+from applications.calls.primatel import PrimatelLogic
 from libs.autoru.autoru import *
 from .exkavator import modify_exkavator_xml
 from .export import export_calls_to_file, export_calls_for_callback
@@ -137,3 +138,15 @@ def get_and_stop_autoru_ads(autoru_id: int):
     ads = get_autoru_ads(autoru_id)
     ads = take_out_ids(ads)
     stop_autoru_ads(ads, autoru_id)
+
+
+@shared_task
+def get_primatel_data(from_: str = None, to: str = None):
+    if not from_ or not to:
+        from_ = datetime.today() - timedelta(days=1)
+        to = datetime.today()
+    else:
+        from_ = datetime.strptime(from_, "%d.%m.%Y")
+        to = datetime.strptime(to, "%d.%m.%Y")
+    logic = PrimatelLogic()
+    logic.update_data(from_, to)

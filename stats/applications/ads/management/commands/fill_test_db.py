@@ -1,12 +1,19 @@
+from datetime import datetime, timezone
 from random import randint
 
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+
+from applications.accounts.models import Client
 from applications.ads.models import Ad, Salon
 from applications.mainapp.models import Mark, Model
 from django.db import transaction
 import pandas as pd
 import argparse
 from typing import Union
+from faker import Faker
+
+fake = Faker()
 
 
 
@@ -68,6 +75,7 @@ class Command(BaseCommand):
 
         # транзакция для атомарности
         with transaction.atomic():
+            self.create_fake_salons(3)
             salons = Salon.objects.all()
             # Итерация по строкам DataFrame
             for _, row in df.iterrows():
@@ -76,7 +84,7 @@ class Command(BaseCommand):
                 model_instance, created = Model.objects.get_or_create(name=row['Модель'], mark=mark_instance)
                 # Создание экземпляра Ad с данными из файла CSV
                 ad = Ad(
-                    salon=salons[randint(0, 1)],
+                    salon=salons[randint(0, len(salons) - 1)],
                     mark=mark_instance,
                     model=model_instance,
                     complectation=row['Комплектация'],
@@ -128,6 +136,42 @@ class Command(BaseCommand):
         Очистка всех записей из каждой таблицы в базе данных.
         """
         Ad.objects.all().delete()
+        Salon.objects.all().delete()
         # Model.objects.all().delete()
         # Mark.objects.all().delete()
         self.stdout.write(self.style.NOTICE("Старые данные удалены"))
+
+    @staticmethod
+    def create_fake_salons(amount: int) -> list:
+        email = "work@test.ru"
+        User = get_user_model()
+        client = User.objects.get(email=email)
+        # client = Client.objects.create(
+        #     name=fake.first_name(),
+        #     email=fake.email(),
+        #     slug=fake.slug(),
+        #     manager=fake.first_name(),
+        #     charge_type=fake.random_element(),
+        #     commission_size=fake.random_element(),
+        #     teleph_id=fake.random_digit(),
+        #     autoru_id=fake.random_digit(),
+        #     avito_id=fake.random_digit(),
+        #     drom_id=fake.random_digit(),
+        #     is_staff=fake.boolean(),
+        #     is_active=fake.boolean(),
+        #     autoru_name=fake.random_element(),
+        #     username=fake.first_name(),
+        #     date_joined=fake.date(),
+        # )
+        for _ in range(amount):
+            Salon.objects.create(
+                client=client,
+                name=fake.first_name(),
+                price_url=fake.url(),
+                datetime_updated=datetime.now(),
+                working_hours=fake.date(),
+                city=fake.city(),
+                address=fake.address(),
+                telephone=fake.phone_number(),
+            )
+

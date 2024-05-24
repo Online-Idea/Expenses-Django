@@ -7,6 +7,9 @@ from datetime import datetime
 
 
 class Colors(models.TextChoices):
+    """
+    Класс определяет возможные цвета авто.
+    """
     BEIGE = 'бежевый', _('бежевый')
     WHITE = 'белый', _('белый')
     BRONZE = 'бронзовый', _('бронзовый')
@@ -28,6 +31,9 @@ class Colors(models.TextChoices):
 
 
 class BodyTypes(models.TextChoices):
+    """
+    Класс определяет возможные типы кузова авто.
+    """
     JEEP = 'Внедорожник', _('Внедорожник')
     JEEP_3 = 'Внедорожник 3 дв.', _('Внедорожник 3 дв.')
     JEEP_5 = 'Внедорожник 5 дв.', _('Внедорожник 5 дв.')
@@ -60,6 +66,9 @@ class BodyTypes(models.TextChoices):
 
 # Чтобы PyCharm не подчеркивал objects в MyClass.objects.filter
 class BaseModel(models.Model):
+    """
+    Абстрактная базовая модель для всех моделей.
+    """
     objects = models.Manager()
 
     class Meta:
@@ -67,6 +76,9 @@ class BaseModel(models.Model):
 
 
 class BaseField(BaseModel):
+    """
+    Абстрактная базовая модель для доп. полей.
+    """
     teleph = models.CharField(max_length=64, null=True, blank=True, verbose_name='Телефония')
     autoru = models.CharField(max_length=64, null=True, blank=True, verbose_name='Авто.ру')
     avito = models.CharField(max_length=64, null=True, blank=True, verbose_name='Авито')
@@ -78,6 +90,9 @@ class BaseField(BaseModel):
 
 
 class AbstractMark(BaseModel):
+    """
+    Абстрактная базовая модель для марок авто.
+    """
     name = models.CharField(max_length=64, unique=True, verbose_name='Название марки')
 
     class Meta:
@@ -85,6 +100,9 @@ class AbstractMark(BaseModel):
 
 
 class AbstractModel(BaseModel):
+    """
+    Абстрактная базовая модель для моделей авто.
+    """
     name = models.CharField(max_length=64, verbose_name='Название модели')
 
     class Meta:
@@ -92,6 +110,9 @@ class AbstractModel(BaseModel):
 
 
 class AbstractGeneration(BaseModel):
+    """
+    Абстрактная базовая модель для поколений авто.
+    """
     name = models.CharField(max_length=64, verbose_name='Название поколения')
 
     class Meta:
@@ -99,13 +120,18 @@ class AbstractGeneration(BaseModel):
 
 
 class AbstractModification(BaseModel):
+    """
+    Абстрактная базовая модель для модификаций авто.
+    """
     class Transmission(models.TextChoices):
+        """
+        Варианты коробок передач для модификаций.
+        """
         AT = 'Автомат', _('Автомат')
         AMT = 'Робот', _('Робот')
         CVT = 'Вариатор', _('Вариатор')
         MT = 'Механика', _('Механика')
 
-        # Обратный словарь для получения напзвания атрибута по значению
         @classmethod
         def get_name_attr(cls, value: str) -> str:
             """
@@ -117,12 +143,18 @@ class AbstractModification(BaseModel):
             return next(attr for attr, val in cls.__members__.items() if val == value)
 
     class EngineType(models.TextChoices):
+        """
+        Варианты типов двигателей для модификаций.
+        """
         BENZIN = 'Бензин', _('Бензин')
         DIESEL = 'Дизель', _('Дизель')
         HYBRID = 'Гибрид', _('Гибрид')
         ELECTRO = 'Электро', _('Электро')
 
     class Drive(models.TextChoices):
+        """
+        Варианты типов привода для модификаций.
+        """
         FRONT = 'Передний', _('Передний')
         REAR = 'Задний', _('Задний')
         FULL = 'Полный', _('Полный')
@@ -165,7 +197,10 @@ class AbstractModification(BaseModel):
 
 
 class AbstractComplectation(BaseModel):
-    name = models.CharField(max_length=100,
+    """
+    Абстрактная базовая модель для комплектаций.
+    """
+    name = models.CharField(max_length=100, null=True, blank=True,
                             verbose_name="Название комплектации")
 
     class Meta:
@@ -173,6 +208,9 @@ class AbstractComplectation(BaseModel):
 
 
 class Mark(AbstractMark, BaseField):
+    """
+    Модель главного приложения для марок.
+    """
     class Meta:
         verbose_name = 'Марка'
         verbose_name_plural = 'Марки'
@@ -182,6 +220,9 @@ class Mark(AbstractMark, BaseField):
 
 
 class Model(AbstractModel, BaseField):
+    """
+    Модель главного приложения для моделей.
+    """
     mark = models.ForeignKey('Mark', on_delete=models.CASCADE, related_name='models',
                              verbose_name='Ссылка на марку')
 
@@ -193,6 +234,9 @@ class Model(AbstractModel, BaseField):
 
 
 class Generation(AbstractGeneration, BaseField):
+    """
+    Модель главного приложения для поколений.
+    """
     model = models.ForeignKey(Model, on_delete=models.CASCADE, related_name='generations',
                               verbose_name="Ссылка на модель авто")
 
@@ -204,6 +248,9 @@ class Generation(AbstractGeneration, BaseField):
 
 
 class Modification(AbstractModification):
+    """
+    Модель главного приложения для модификаций.
+    """
     mark = models.ForeignKey(Mark, on_delete=models.CASCADE,
                              verbose_name="Марка к которой относится модификация")
     model = models.ForeignKey(Model, on_delete=models.CASCADE,
@@ -237,6 +284,9 @@ class Modification(AbstractModification):
 
 
 class Complectation(AbstractComplectation):
+    """
+    Модель главного приложения для комплектаций.
+    """
     modification = models.ForeignKey(Modification, on_delete=models.CASCADE, related_name='complectations',
                                      verbose_name="Модификация")
 

@@ -1,6 +1,9 @@
-from applications.mainapp.models import *
+
 from libs.services.models import BaseModel, Mark, Model
 from applications.accounts.models import Client
+from django.db import models
+from applications.mainapp.models import AbstractMark, AbstractModel, AbstractGeneration, AbstractModification, \
+    AbstractComplectation
 
 
 class AutoruCall(BaseModel):
@@ -96,8 +99,13 @@ class AutoruRegion(BaseModel):
 # ==========================================================================================
 
 
+
 class AutoruMark(AbstractMark):
+    """
+    Модель для хранения информации о марках автомобилей с Авто.ру.
+    """
     code_mark_autoru = models.CharField(max_length=64, verbose_name='Тег <code> из xml-файла Авто ру')
+    id_mark_autoru = models.IntegerField(null=True, blank=True, verbose_name='Атрибут id у тега <mark> из xml файла')
 
     class Meta:
         db_table = 'autoru_marks'
@@ -105,46 +113,50 @@ class AutoruMark(AbstractMark):
         verbose_name_plural = 'Марки'
         ordering = ['name']
 
-    def __str__(self): return self.name
+    def __str__(self) -> str: return self.name
 
 
 class AutoruModel(AbstractModel):
-    id_folder_avtoru = models.IntegerField(verbose_name='Поле id у тега <folder> из xml файла')
-    mark = models.ForeignKey('AutoruMark', on_delete=models.CASCADE,
-                             related_name='models',
-                             verbose_name='Ссылка на марку')
+    """
+    Модель для хранения информации о моделях автомобилей с Авто.ру.
+    """
+    id_folder_autoru = models.IntegerField(verbose_name='Атрибут id у тега <folder> из xml файла')
+    mark = models.ForeignKey('AutoruMark', on_delete=models.CASCADE, related_name='models',
+                             verbose_name='Ссылка на соответствующую марку автомобиля.')
 
     class Meta:
         db_table = 'autoru_models'
         verbose_name = 'Модель'
         verbose_name_plural = 'Модели'
 
-    def __str__(self): return self.name
+    def __str__(self) -> str: return self.name
 
 
 class AutoruGeneration(AbstractGeneration):
-    id_generation_avtoru = models.IntegerField(verbose_name='id из xml файла')
-    model = models.ForeignKey(AutoruModel, on_delete=models.CASCADE,
-                              related_name='generations',
-                              verbose_name="Ссылка на модель авто")
+    """
+    Модель для хранения информации о поколениях автомобилей с Авто.ру.
+    """
+    id_generation_autoru = models.IntegerField(verbose_name='атрибут id у тега <generation> из xml файла')
+    model = models.ForeignKey(AutoruModel, on_delete=models.CASCADE, related_name='generations',
+                              verbose_name="Ссылка на соответствующую модель автомобиля.")
 
     class Meta:
         db_table = 'autoru_generations'
         verbose_name = 'Поколение'
         verbose_name_plural = 'Поколения'
 
-    def __str__(self): return self.name
+    def __str__(self) -> str: return self.name
 
 
 class AutoruModification(AbstractModification):
-    id_modification_avtoru = models.IntegerField(verbose_name='id из xml файла')
-    mark = models.ForeignKey(AutoruMark, on_delete=models.CASCADE,
-                             verbose_name="Марка к которой относится модификация")
+    """
+    Модель для хранения информации о модификациях автомобилей с Авто.ру.
+    """
+    id_modification_autoru = models.IntegerField(verbose_name='атрибут id у тега <modification> из xml файла')
+    mark = models.ForeignKey(AutoruMark, on_delete=models.CASCADE, verbose_name="Марка к которой относится модификация")
     model = models.ForeignKey(AutoruModel, on_delete=models.CASCADE,
                               verbose_name="Модель к которой относится модификация")
-
-    generation = models.ForeignKey(AutoruGeneration, on_delete=models.CASCADE,
-                                   related_name='modifications',
+    generation = models.ForeignKey(AutoruGeneration, on_delete=models.CASCADE, related_name='modifications',
                                    verbose_name="Поколение к которой относится модификация")
     tech_param_id = models.IntegerField(verbose_name='тег <tech_param_id> из xml-файла')
 
@@ -153,19 +165,26 @@ class AutoruModification(AbstractModification):
         verbose_name = 'Модификация'
         verbose_name_plural = 'Модификации'
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Возвращает строковое представление модификации.
+
+        :return: Строка, включающая марку, модель, поколение и краткое название модификации.
+        """
         return f'{self.mark} {self.model} {self.generation} {self.short_name}'
 
 
 class AutoruComplectation(AbstractComplectation):
-    id_complectation_autoru = models.IntegerField()
-    modification = models.ForeignKey(AutoruModification, on_delete=models.CASCADE,
-                                     related_name='complectations',
-                                     verbose_name="Модификация", default=1)
+    """
+    Модель для хранения информации о комплектациях автомобилей с Авто.ру.
+    """
+    id_complectation_autoru = models.IntegerField(verbose_name='Идентификатор комплектации из XML-файла Авто.ру')
+    modification = models.ForeignKey(AutoruModification, on_delete=models.CASCADE, related_name='complectations',
+                                     verbose_name="Ссылка на соответствующую модификацию автомобиля.", default=1)
 
     class Meta:
         db_table = 'autoru_complectations'
         verbose_name = 'Комплектация'
         verbose_name_plural = 'Комплектации'
 
-    def __str__(self): return self.name
+    def __str__(self) -> str: return self.name

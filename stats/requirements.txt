@@ -69,3 +69,7 @@ wcwidth==0.2.5
 XlsxWriter==3.0.3
 zope.event==4.6
 zope.interface==5.5.2
+lxml~=5.2.2
+django-filter~=24.2
+selenium~=4.21.0
+Faker~=25.2.0

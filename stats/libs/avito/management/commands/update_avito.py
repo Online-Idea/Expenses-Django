@@ -1,6 +1,5 @@
 import re
 from time import time
-from typing import List, Union
 
 import requests
 from django.core.management.base import BaseCommand
@@ -8,11 +7,9 @@ from lxml import etree
 from django.db import transaction
 from lxml.etree import Element
 from requests import Response
-from django.apps import apps
 from libs.avito.models import *
 
 # ANSI код для цвета текста
-
 CYAN = '\033[96m'
 GREEN = '\033[92m'
 RED = '\033[91m'
@@ -20,10 +17,9 @@ YELLOW = '\033[93m'
 BLUE = '\033[94m'
 MAGENTA = '\033[95m'
 WHITE = '\033[97m'
-
-# ANSI код для сброса цвета текста
 RESET = '\033[0m'
 
+# Разделитель с цветом
 SLASH_CYAN = CYAN + ' | ' + RESET
 
 
@@ -35,11 +31,13 @@ def procces_modification(**kwargs) -> AvitoModification:
     :return: Созданный экземпляр AvitoModification.
     """
     try:
+        # Проверка и преобразование объема двигателя
         if 'engine_volume' in kwargs:
             engine_volume = kwargs['engine_volume']
             if re.match(r'^\d{3,4}$', engine_volume):
                 engine_volume = round(int(engine_volume) / 1000, 1)
 
+        # Преобразование типа привода
         if 'drive' in kwargs:
             drive_mapping = {
                 AvitoModification.Drive.FRONT: 'FWD',
@@ -48,12 +46,14 @@ def procces_modification(**kwargs) -> AvitoModification:
             }
             drive = drive_mapping[kwargs['drive']]
 
+        # Получение названия трансмиссии
         if 'transmission' in kwargs:
             transmission = AvitoModification.Transmission.get_name_attr(kwargs['transmission'])
 
-        kwargs['short_name'] = (f'{engine_volume} {kwargs['power']}л.с. {drive} '
-                                f'{kwargs['engine_type']} {transmission}')
-        # 1.5 181 л.с. 4WD дизель AMT
+        # Формирование краткого названия модификации
+        kwargs['short_name'] = (f'{engine_volume} {kwargs["power"]}л.с. {drive} '
+                                f'{kwargs["engine_type"]} {transmission}')
+        kwargs['clients_name'] = kwargs['name']
 
         return AvitoModification(**kwargs)
     except KeyError as e:
@@ -90,18 +90,21 @@ class Command(BaseCommand):
         :param args: Не используется.
         :param kwargs: Аргументы командной строки.
         """
-        # xml_link: str = kwargs['xml_link']
-        xml_link = 'http://autoload.avito.ru/format/Autocatalog.xml'
+        # Ссылка на XML-файл Avito
+        xml_link: str = 'http://autoload.avito.ru/format/Autocatalog.xml'
         response: Response = requests.get(xml_link)
         xml_file: bytes = response.content
-        # удаление старых данных перед парсингом
+
+        # Удаление старых данных перед парсингом
         self.clear_database()
 
+        # Обработка XML-файла
         self.process_xml_file(xml_file)
 
+        # Вставка новых данных в базу данных
         self.insert_data()
 
-        self.stdout.write(self.style.SUCCESS("Обновление Авито успешно!"))
+        self.stdout.write(self.style.SUCCESS("Обновление каталога Авито успешно!"))
 
     def clear_database(self) -> None:
         """
@@ -111,12 +114,14 @@ class Command(BaseCommand):
         self.stdout.write(RED + f' {"Имя таблицы":<25}' + RESET + SLASH_CYAN +
                           RED + f'{"Кол-во записей":<18}' + RESET + SLASH_CYAN +
                           RED + f'{"Время удаления":<15}' + RESET)
+
         for model in reversed(self.avito_models):
             start = time()  # Время начала удаления записей из текущей модели
             entries = model.objects.all()
             amount_entries = len(entries)
             entries.delete()  # Удаление записей
             duration = f'{round(time() - start, 2)} сек'  # Время удаления записей из текущей модели
+
             # Вывод информации о количестве удаленных записей с окраской
             self.stdout.write(CYAN + f' {"-" * 25} | {"-" * 18} | {"-" * 15}' + RESET)
             self.stdout.write(
@@ -124,39 +129,44 @@ class Command(BaseCommand):
                 WHITE + f'{amount_entries:<18}' + RESET + SLASH_CYAN +
                 WHITE + f'{duration:<15}' + RESET)
 
-            # Вывод общего времени удаления всех записей
+        # Вывод общего времени удаления всех записей
         self.stdout.write(self.style.WARNING(f'\nОбщее время очистки: {round(time() - general_start, 2)} сек \n'))
 
-    def insert_data(self):
+    def insert_data(self) -> None:
+        """
+        Вставка новых данных в базу данных.
+        """
         with transaction.atomic():
             general_start = time()
             self.stdout.write(GREEN + f' {"Таблица:":<25}' + RESET + SLASH_CYAN +
                               GREEN + f'{"Кол-во записей":<18}' + RESET + SLASH_CYAN +
                               GREEN + f'{"Время вставки":<15}' + RESET)
+
             for model, list_objects in zip(self.avito_models, self.create_instance.values()):
-                start = time()  # Время начала удаления записей из текущей модели
+                start = time()  # Время начала вставки записей в текущую модель
                 entries = model.objects.bulk_create(list_objects)
                 amount_entries = len(entries)
-                duration = f'{round(time() - start, 2)} сек'  # Время удаления записей из текущей модели
-                # Вывод информации о количестве удаленных записей с окраской
+                duration = f'{round(time() - start, 2)} сек'  # Время вставки записей в текущую модель
+
+                # Вывод информации о количестве вставленных записей с окраской
                 self.stdout.write(CYAN + f' {"-" * 25} | {"-" * 18} | {"-" * 15}' + RESET)
                 self.stdout.write(
                     WHITE + f' {model.__name__:<25}' + RESET + SLASH_CYAN +
                     WHITE + f'{amount_entries:<18}' + RESET + SLASH_CYAN +
                     WHITE + f'{duration:<15}' + RESET)
 
-                # Вывод общего времени удаления всех записей
+            # Вывод общего времени вставки всех записей
             self.stdout.write(self.style.WARNING(f'\nОбщее время вставки: {round(time() - general_start, 2)} сек \n'))
 
     def process_xml_file(self, xml_file: bytes) -> None:
         """
         Чтение и обработка XML-файла.
-        Создаёт экземпляры даных и сохраняет в списки
 
         :param xml_file: Содержимое XML-файла.
         """
         root: Element = etree.fromstring(xml_file)
 
+        # Обработка каждого элемента марки
         for mark_el in root.iterfind('./Make'):
             mark_instance = AvitoMark(
                 id_mark_avito=mark_el.get('id'),
@@ -164,15 +174,16 @@ class Command(BaseCommand):
             )
             self.create_instance['marks'].append(mark_instance)
 
+            # Обработка каждой модели для данной марки
             for model_el in mark_el.iterfind('./Model'):
                 model_instance = AvitoModel(
                     mark=mark_instance,
                     name=model_el.get('name'),
                     id_model_avito=model_el.get('id'),
                 )
-
                 self.create_instance['models'].append(model_instance)
 
+                # Обработка каждого поколения для данной модели
                 for generation_el in model_el.iterfind('./Generation'):
                     generation_instance = AvitoGeneration(
                         model=model_instance,
@@ -181,6 +192,7 @@ class Command(BaseCommand):
                     )
                     self.create_instance['generations'].append(generation_instance)
 
+                    # Обработка каждой модификации для данного поколения
                     for modification_el in generation_el.iterfind('./Modification'):
                         modification_instance = procces_modification(
                             mark=mark_instance,
@@ -200,6 +212,7 @@ class Command(BaseCommand):
                         )
                         self.create_instance['modifications'].append(modification_instance)
 
+                        # Обработка каждой комплектации для данной модификации
                         for complectation_el in modification_el.iterfind('./Complectations/Complectation'):
                             complectation_instance = AvitoComplectation(
                                 id_complectation_avito=complectation_el.get('id'),

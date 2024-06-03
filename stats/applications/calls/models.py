@@ -119,8 +119,52 @@ class ModerationChoice(models.TextChoices):
     EXTRA = 'Запас', _('Запас')
     RESOURCES = 'Доп. ресурсы', _('Доп. ресурсы')
 
+    @classmethod
+    def get_site_name_by_choice(cls, choice):
+        """
+        Возвращает общее имя площадки
+        :param choice:
+        :return:
+        """
+        if choice in [cls.M, cls.MZ, cls.MB, cls.AUTORU_USED]:
+            return 'Автору'
+        elif choice in [cls.AVITO, cls.AVITO_USED]:
+            return 'Авито'
+        elif choice in [cls.USED, cls.REQUEST, cls.DROM, cls.EXTRA, cls.RESOURCES]:
+            return choice
+        else:
+            raise ValueError(f'Неизвестная модерация {choice}')
+
+
+class CallManager(models.Manager):
+
+    def clean_phone_numbers(self, number: str):
+        """
+        Чистит номера телефонов от лишних символов
+        :param number:
+        :return:
+        """
+        return number.replace('+', '')
+
+    def create(self, *args, **kwargs):
+        kwargs['num_from'] = self.clean_phone_numbers(kwargs['num_from'])
+        kwargs['num_to'] = self.clean_phone_numbers(kwargs['num_to'])
+        kwargs['num_redirect'] = self.clean_phone_numbers(kwargs['num_redirect'])
+        return super().create(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        if args:
+            instance = args[0]
+        else:
+            instance = kwargs['instance']
+        instance.num_from = self.clean_phone_numbers(instance.num_from)
+        instance.num_to = self.clean_phone_numbers(instance.num_to)
+        instance.num_redirect = self.clean_phone_numbers(instance.num_redirect)
+        return super().save(*args, **kwargs)
+
 
 class Call(BaseModel):
+    objects = CallManager()
 
     class StatusChoice(models.TextChoices):
         DISCUSSING_PRICE_AND_AUTO = 'Обсуждают цену и авто', _('Обсуждают цену и авто')
@@ -141,27 +185,34 @@ class Call(BaseModel):
         WRONG_NUMBER = 'Ошибочный звонок', _('Ошибочный звонок')
         OTHER = 'Другое', _('Другое')
 
-    call_id = models.CharField(max_length=500, blank=True, null=True, verbose_name='id звонка')
+    # Когда и от кого
     datetime = models.DateTimeField(verbose_name='Дата и время')
     num_from = models.CharField(max_length=30, verbose_name='Исходящий')
     num_to = models.CharField(max_length=30, verbose_name='Входящий')
+    num_redirect = models.CharField(max_length=30, verbose_name='Номер переадресации')
     duration = models.IntegerField(verbose_name='Длительность')
+
+    # Марка и Модель
     mark = models.ForeignKey(Mark, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Марка')
     model = models.ForeignKey(Model, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Модель')
+
+    # Статус и стоимость
     target = models.CharField(max_length=100, blank=True, null=True, choices=TargetChoice.choices,
                               verbose_name='Целевой')
-    other_comments = models.CharField(max_length=500, blank=True, null=True, verbose_name='Остальные комментарии')
-    client_primatel = models.ForeignKey(ClientPrimatel, on_delete=models.PROTECT, verbose_name='Клиент Примател')
-    sip_primatel = models.ForeignKey(SipPrimatel, on_delete=models.PROTECT, verbose_name='Sip')
-    client_name = models.CharField(max_length=100, blank=True, null=True, verbose_name='Имя клиента')
-    manager_name = models.CharField(max_length=100, blank=True, null=True, verbose_name='Имя менеджера')
     moderation = models.CharField(max_length=100, blank=True, null=True, choices=ModerationChoice.choices,
                                   verbose_name='М')
-    price = models.IntegerField(blank=True, null=True, verbose_name='Стоимость автомобиля')
-    status = models.CharField(max_length=100, blank=True, null=True, choices=StatusChoice.choices,
-                              verbose_name='Статус звонка')
     call_price = models.IntegerField(blank=True, null=True, verbose_name='Стоимость звонка')
     manual_call_price = models.BooleanField(default=False, verbose_name='Ручное редактирование стоимости звонка')
+    status = models.CharField(max_length=100, blank=True, null=True, choices=StatusChoice.choices,
+                              verbose_name='Статус звонка')
+
+    # Остальная информация из разговора
+    other_comments = models.CharField(max_length=500, blank=True, null=True, verbose_name='Остальные комментарии')
+    client_name = models.CharField(max_length=100, blank=True, null=True, verbose_name='Имя клиента')
+    manager_name = models.CharField(max_length=100, blank=True, null=True, verbose_name='Имя менеджера')
+
+    # Характеристики автомобиля
+    car_price = models.IntegerField(blank=True, null=True, verbose_name='Стоимость автомобиля')
     color = models.CharField(max_length=100, blank=True, null=True, choices=Colors.choices, verbose_name='Цвет')
     body = models.CharField(max_length=100, blank=True, null=True, choices=BodyTypes.choices, verbose_name='Кузов')
     drive = models.CharField(max_length=100, blank=True, null=True, choices=DriveTypes.choices, verbose_name='Привод')
@@ -169,9 +220,19 @@ class Call(BaseModel):
                               verbose_name='Двигатель')
     # TODO когда будет готова модель Комплектации, поменять здесь на ForeignKey
     complectation = models.CharField(max_length=500, blank=True, null=True, verbose_name='Комплектация')
+
     attention = models.BooleanField(default=False, verbose_name='Обратить внимание')
     city = models.CharField(max_length=500, blank=True, null=True, verbose_name='Город')
     record = models.URLField(blank=True, null=True, verbose_name='Ссылка на запись звонка')
+
+    # Данные Примател
+    primatel_call_id = models.CharField(max_length=500, blank=True, null=True, verbose_name='id звонка Примател')
+    client_primatel = models.ForeignKey(ClientPrimatel, on_delete=models.PROTECT, verbose_name='Клиент Примател')
+    sip_primatel = models.ForeignKey(SipPrimatel, on_delete=models.PROTECT, verbose_name='Sip')
+
+    # Данные колтач
+    calltouch_data = models.ForeignKey('CalltouchData', blank=True, null=True, on_delete=models.SET_NULL,
+                                       verbose_name='Данные Calltouch')
 
     def __str__(self):
         return f'{self.client_primatel.name} | {self.num_from} | {self.datetime}'
@@ -212,3 +273,44 @@ class CallPriceSetting(BaseModel):
         verbose_name = 'Настройка стоимости звонка'
         verbose_name_plural = 'Настройки стоимости звонка'
 
+
+class CalltouchSetting(BaseModel):
+    client_primatel = models.ForeignKey(ClientPrimatel, on_delete=models.CASCADE, verbose_name='Клиент Примател',
+                                        related_name='calltouch_settings')
+    active = models.BooleanField(default=True, verbose_name='Активно')
+    mark = models.ForeignKey(Mark, on_delete=models.PROTECT, verbose_name='Марка')
+    site_id = models.CharField(max_length=10, verbose_name='siteId')
+    token = models.CharField(max_length=500, verbose_name='token')
+
+    def __str__(self):
+        return f'{self.client_primatel.name} | {self.mark.mark} | {self.site_id}'
+
+    class Meta:
+        db_table = 'calls_calltouch_setting'
+        verbose_name = 'Настройка Calltouch'
+        verbose_name_plural = 'Настройки Calltouch'
+
+
+class CalltouchData(BaseModel):
+    calltouch_call_id = models.CharField(max_length=100, verbose_name='id звонка в Calltouch')
+    timestamp = models.IntegerField(verbose_name='timestamp')
+    datetime = models.DateTimeField(verbose_name='Дата и время')
+    num_from = models.CharField(max_length=30, verbose_name='Исходящий')
+    num_to = models.CharField(max_length=30, verbose_name='Входящий')
+    duration = models.IntegerField(verbose_name='Длительность')
+    site_id = models.CharField(max_length=10, verbose_name='siteId')
+    call_tags = models.JSONField(default=list, blank=True, null=True, verbose_name='Теги')
+    site_name = models.CharField(max_length=100, verbose_name='Аккаунт Calltouch')
+    source = models.CharField(max_length=100, verbose_name='Источник')
+    successful = models.BooleanField(verbose_name='Успешный')
+    target = models.BooleanField(verbose_name='Целевой')
+    unique = models.BooleanField(verbose_name='Уникальный')
+    unique_target = models.BooleanField(verbose_name='Уникальный целевой')
+
+    def __str__(self):
+        return f'{self.site_name} | {self.num_from} | {self.num_to} | {self.datetime}'
+
+    class Meta:
+        db_table = 'calls_calltouch_data'
+        verbose_name = 'Данные Calltouch'
+        verbose_name_plural = 'Данные Calltouch'

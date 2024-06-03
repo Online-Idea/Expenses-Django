@@ -7,14 +7,13 @@ function eventListenersForDynamicFields(event) {
   callPriceSettingAvailability();
 }
 
-function collectRows(childElementSelector) {
+function collectRows() {
   // Собирает родительские элементы
-  const children = document.querySelectorAll(childElementSelector);
-  let rows = Array.from(children)
-    .map(child => child.closest('tr'))
-    .filter(row => row !== null);
+  // Для страницы где есть CallPriceSetting
+  let rows = document.querySelectorAll('tr[id^="call_price_settings"]');
   if (!rows[0]) {
-    rows = [$('.modal-body')];
+    // Для страницы где используется модальное окно
+    rows = [document.querySelector('.modal-body')];
   }
   return rows;
 }
@@ -22,12 +21,11 @@ function collectRows(childElementSelector) {
 
 function modelFromMark() {
   // Наполняет Модель в зависимости от Марки
-  // const rows = collectRows('[id^="id"][id$="mark"]');
-  const rows = document.querySelectorAll('tr[id^="call_price_settings"]');
+  const rows = collectRows();
 
-  // if (!rows) {
-  //   return;
-  // }
+  if (!rows[0]) {
+    return;
+  }
 
   let markField, modelField;
   for (const row of rows) {
@@ -40,10 +38,8 @@ function modelFromMark() {
         markField.addEventListener('change', () => updateModelOptions(markField, modelField));
       })(markField, modelField);
 
-      // Directly call updateModelOptions with the current mark and modelField
-      if (modelField.value === '') {
-        updateModelOptions(markField, modelField);
-      } // TODO если Модель выбрана то всё равно вызови updateModelOptions чтобы подтянуть Модели текущей Марки и потом программно выбрать уже выбранную Модель
+      // Directly call updateModelOptions with the current markField and modelField
+      updateModelOptions(markField, modelField);
     }
   }
 }
@@ -58,6 +54,8 @@ function updateModelOptions(markField, modelField) {
     modelField.innerHTML = '';
     return
   }
+
+  const selectedModel = modelField.value;
 
   // Запрос к базе чтобы получить Модели от Марки
   fetch(`/api/get_models_for_mark/${selectedMark}/`)
@@ -76,6 +74,9 @@ function updateModelOptions(markField, modelField) {
         option.text = model.model;
         modelField.add(option);
       });
+
+      // Выбираю ранее выбранную Модель
+      modelField.value = selectedModel ? selectedModel : '';
     });
 }
 
@@ -89,9 +90,9 @@ function buildSelector(fieldName) {
 function callPriceSettingAvailability() {
   // Переключает возможность менять поля для модели CallPriceSetting в зависимости от Типа (charge_type)
   const chargeTypeSelector = buildSelector('charge_type');
-  const rows = collectRows(chargeTypeSelector);
+  const rows = collectRows();
 
-  if (!rows) {
+  if (!rows[0]) {
     return;
   }
 

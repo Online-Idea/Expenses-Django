@@ -110,7 +110,7 @@ class ConverterExtraProcessingAdmin(admin.ModelAdmin):
     inlines = [ConditionalInline, ConverterExtraProcessingNewChangesInline]
     list_display = ('id', 'converter_task', 'conditionals', 'new_changes')
     list_display_links = ('id', 'converter_task')
-    search_fields = ('converter_task__name', )
+    search_fields = ('converter_task__name', 'conditional__value', 'converterextraprocessingnewchanges__new_value')
     list_filter = ('converter_task',)
     fields = ('id', 'converter_task')
     readonly_fields = ('id',)

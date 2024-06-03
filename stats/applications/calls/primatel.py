@@ -134,7 +134,7 @@ class PrimatelLogic:
                 self.request_login(cabinet.login, cabinet.password)
             params = {
                 'user_login': call.client_primatel.login,
-                'call_id': call.call_id
+                'call_id': call.primatel_call_id
             }
             record = self.request_api('downloadCallRecord', params)
             record = BytesIO(record.content)
@@ -142,7 +142,7 @@ class PrimatelLogic:
             if 'error_message' in str(record.getvalue()):
                 continue
 
-            save_path = f'/calls/{call.client_primatel.client.slug}/records/{call.call_id}.mp3'
+            save_path = f'/calls/{call.client_primatel.client.slug}/records/{call.primatel_call_id}.mp3'
             save_on_ftp(save_path, record)
             call.record = save_path
 
@@ -156,8 +156,10 @@ class PrimatelLogic:
         :param to:
         :return:
         """
-        calls_without_records = Call.objects.filter(client_primatel__cabinet_primatel=cabinet,
-                                                    datetime__gte=from_, datetime__lte=to, record__isnull=True)
+        calls_without_records = Call.objects.filter(
+            client_primatel__cabinet_primatel=cabinet, datetime__gte=from_, datetime__lte=to,
+            record__isnull=True, client_primatel__client__isnull=False
+        )
         self.download_call_records(calls_without_records)
 
     def update_list_users(self, cabinet_primatel):
@@ -208,8 +210,9 @@ class PrimatelLogic:
         """
         clients = ClientPrimatel.objects.filter(cabinet_primatel=cabinet_primatel, active=True)
         sips = SipPrimatel.objects.filter(client_primatel__in=clients)
-        existing_calls = (Call.objects.filter(sip_primatel__in=sips, datetime__gte=from_, datetime__lte=to)
-                          .values_list('call_id', flat=True))
+        existing_calls = Call.objects.filter(sip_primatel__in=sips, datetime__gte=from_, datetime__lte=to)
+        existing_calls_primatel_call_ids = existing_calls.values_list('primatel_call_id', flat=True)
+
         step = 7
         new_calls = []
         updated_calls = []
@@ -223,6 +226,7 @@ class PrimatelLogic:
                 'from': from_.strftime(self.datetime_format),
                 # 'to': (from_ + timedelta(days=step)).strftime(self.datetime_format),
                 'to': to.strftime(self.datetime_format),
+                'show_destination': 1,
             }
             if not self.session_id:
                 self.request_login(self.login, self.password)
@@ -235,13 +239,14 @@ class PrimatelLogic:
                 item['time'] = datetime.strptime(item['time'], '%Y-%m-%d %H:%M:%S')
                 item['time'] = timezone.make_aware(item['time'], timezone.get_current_timezone())
 
-                if item['callid'] not in existing_calls:
+                if item['callid'] not in existing_calls_primatel_call_ids :
                     new_call = Call(
-                        call_id=item['callid'],
                         datetime=item['time'],
                         num_from=item['numfrom'],
                         num_to=item['numto'],
+                        num_redirect=item['destination'],
                         duration=item['duration'],
+                        primatel_call_id=item['callid'],
                         # TODO если у клиента одна марка тогда записывать её сюда
                         # mark=client.main_mark,
                         client_primatel=sip.client_primatel,
@@ -252,17 +257,18 @@ class PrimatelLogic:
                         new_call.target = 'Нет'
                     new_calls.append(new_call)
                 else:
-                    updated_call = Call.objects.get(call_id=item['callid'])
+                    updated_call = existing_calls.get(primatel_call_id=item['callid'])
                     updated_call.datetime = item['time']
                     updated_call.num_from = item['numfrom']
                     updated_call.num_to = item['numto']
+                    updated_call.num_redirect = item['destination']
                     updated_call.duration = item['duration']
                     updated_calls.append(updated_call)
 
             # from_ = from_ + timedelta(days=step)
 
         Call.objects.bulk_create(new_calls)
-        Call.objects.bulk_update(updated_calls, fields=['datetime', 'num_from', 'num_to', 'duration'])
+        Call.objects.bulk_update(updated_calls, fields=['datetime', 'num_from', 'num_to', 'num_redirect', 'duration'])
 
     def update_data(self, datefrom=None, dateto=None):
         """

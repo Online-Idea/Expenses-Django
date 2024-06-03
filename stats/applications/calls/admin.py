@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from applications.calls.models import ClientPrimatelMark, ClientPrimatel, CallPriceSetting, ChargeTypeChoice, \
-    ModerationChoice
+    ModerationChoice, CalltouchSetting
 from libs.services.models import Model, Mark
 
 
@@ -35,13 +35,25 @@ class CallPriceSettingInline(admin.TabularInline):
         return super(CallPriceSettingInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
+class CalltouchSettingInline(admin.TabularInline):
+    model = CalltouchSetting
+    extra = 0
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        client_primatel = request.resolver_match.kwargs.get("object_id")
+        marks = ClientPrimatelMark.objects.filter(client_primatel=client_primatel).values_list('mark_id', flat=True)
+        if db_field.name == "mark":
+            kwargs['queryset'] = Mark.objects.filter(id__in=marks)
+        return super(CalltouchSettingInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+
 class ClientPrimatelAdmin(admin.ModelAdmin):
     list_display = ('id', 'login', 'name', 'active', 'client')
     list_display_links = ('id', 'login')
     search_fields = ('login', 'name', 'numbers')
     fields = ('id', 'client', 'login', 'name', 'active', 'numbers', 'cabinet_primatel')
     readonly_fields = ('id', 'numbers', 'cabinet_primatel')
-    inlines = [ClientPrimatelMarkInline, CallPriceSettingInline]
+    inlines = [ClientPrimatelMarkInline, CallPriceSettingInline, CalltouchSettingInline]
     save_on_top = True
 
     class Media:

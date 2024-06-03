@@ -77,9 +77,20 @@
                 filter_params: "{{ filter_params }}",
               },
             );
+
+            $('#datatable_calls').on('draw.dt', function () {
+              audioButtons();
+            });
+
           });
         </script>
         {% endif %}
+
+      <!--Аудио плеер-->
+      <div id="audio-player">
+        <audio id="audio-element" controls></audio>
+      </div>
+
     </div>
   </div>
 </div>
@@ -92,6 +103,22 @@
       selected_checkboxes({{ clients_checked|safe }}, 'client_checkbox', 'select_all_clients');
     {% endif %}
   });
+
+  function audioButtons() {
+    // Аудио плеер
+    const playButtons = document.querySelectorAll('button[data-audio-url]');
+    const audioElement = document.getElementById('audio-element');
+    const audioPlayer = document.getElementById('audio-player');
+
+    playButtons.forEach(button => {
+      button.addEventListener('click', function () {
+        audioElement.src = this.dataset.audioUrl;
+        audioElement.load();
+        audioElement.play();
+        audioPlayer.style.display = 'block';
+      });
+    });
+  }
 
   $(document).ready(function() {
     <!--Чекбокс Выбрать все для клиентов-->
@@ -113,6 +140,7 @@
         success: function (response) {
           $('.modal-content').replaceWith(response);
           $('#id_mark').on('change', modelFromMark);
+          modelFromMark();
         },
         error: function (error) {
           console.error(error);
@@ -151,6 +179,8 @@
         });
       })
     })
+
+
   });
 </script>
 

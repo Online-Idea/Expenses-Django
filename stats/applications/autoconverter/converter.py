@@ -930,6 +930,7 @@ def save_on_ftp(save_path, file):
     file_path = Path(save_path)
     # with FTP('ph.onllline.ru', env('FTP_LOGIN'), env('FTP_PASSWORD')) as ftp, open(save_path, 'rb') as file:
     with FTP('ph.onllline.ru', env('FTP_LOGIN'), env('FTP_PASSWORD')) as ftp:
+        # TODO передавать несколько файлов, не только один
         cd_tree(ftp, str(file_path.parents[0]))
         ftp.storbinary(f'STOR {file_path.name}', file)
         ftp.cwd('/')

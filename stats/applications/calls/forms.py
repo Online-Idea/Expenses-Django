@@ -24,9 +24,10 @@ class CallChooseForm(forms.Form):
 class CallForm(forms.ModelForm):
     class Meta:
         model = Call
-        fields = ['mark', 'model', 'target', 'other_comments', 'client_primatel', 'client_name', 'manager_name', 'moderation', 'price',
-                  'status', 'call_price', 'manual_call_price', 'color', 'body', 'drive', 'engine', 'complectation',
-                  'attention', 'city']
+        # TODO поменять порядок на более удобный
+        fields = ['mark', 'model', 'target', 'other_comments', 'client_primatel', 'client_name', 'manager_name',
+                  'moderation', 'car_price', 'status', 'call_price', 'manual_call_price', 'color', 'body', 'drive',
+                  'engine', 'complectation', 'attention', 'city']
         widgets = {
             'client_primatel': forms.HiddenInput(),
         }

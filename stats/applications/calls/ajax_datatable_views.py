@@ -5,6 +5,7 @@ from ajax_datatable.views import AjaxDatatableView
 
 from applications.calls.models import Call
 from libs.services.utils import split_daterange
+from stats.settings import env
 
 
 class CallDatatableView(AjaxDatatableView):
@@ -21,7 +22,8 @@ class CallDatatableView(AjaxDatatableView):
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'id', 'visible': False, },
         {'name': 'edit', 'title': 'Ред.', 'placeholder': True, 'searchable': False, 'orderable': False},
-        {'name': 'call_id', 'visible': False, },
+        {'name': 'record', 'title': 'Ссылка на запись звонка', 'orderable': False, },
+        {'name': 'primatel_call_id', 'visible': False, },
         {'name': 'client', 'title': 'Клиент', 'foreign_field': 'client_primatel__client__name', 'orderable': True,
             'searchable': True},
         {'name': 'datetime', 'title': 'Дата и время', 'orderable': True, 'searchable': True},
@@ -36,7 +38,7 @@ class CallDatatableView(AjaxDatatableView):
         {'name': 'client_name', 'title': 'Имя клиента', 'searchable': True},
         {'name': 'manager_name', 'title': 'Имя менеджера', 'orderable': True, 'searchable': True},
         {'name': 'moderation', 'title': 'М', 'orderable': True, },
-        {'name': 'price', 'title': 'Стоимость автомобиля', 'orderable': True, },
+        {'name': 'car_price', 'title': 'Стоимость автомобиля', 'orderable': True, },
         {'name': 'status', 'title': 'Статус звонка', 'orderable': True, },
         {'name': 'call_price', 'title': 'Стоимость звонка', 'orderable': True, },
         {'name': 'manual_call_price', 'title': 'Ручное редактирование стоимости звонка', 'orderable': True, },
@@ -47,7 +49,6 @@ class CallDatatableView(AjaxDatatableView):
         {'name': 'complectation', 'title': 'Комплектация', 'orderable': True, },
         {'name': 'attention', 'title': 'Обратить внимание', 'orderable': True, },
         {'name': 'city', 'title': 'Город', 'orderable': True, },
-        {'name': 'record', 'title': 'Ссылка на запись звонка', 'orderable': True, },
     ]
 
     def get_initial_queryset(self, request=None):
@@ -76,7 +77,24 @@ class CallDatatableView(AjaxDatatableView):
         return queryset
 
     def customize_row(self, row, obj):
-        edit_button = (f'<button class="btn btn-primary edit-btn" '
-                       f'data-id="{row["pk"]}" data-bs-toggle="modal" data-bs-target="#editModal"><i class="fa-regular fa-pen-to-square"></i></button>')
+        # edit_button = (f'<button class="btn btn-primary edit-btn" '
+        #                f'data-id="{row["pk"]}" data-bs-toggle="modal" data-bs-target="#editModal"><i class="fa-regular fa-pen-to-square"></i></button>')
+        edit_button = f'''
+            <button class="btn btn-primary edit-btn" data-id="{row["pk"]}" data-bs-toggle="modal" data-bs-target="#editModal">
+                <i class="fa-regular fa-pen-to-square"></i>
+            </button> 
+        '''
         row['edit'] = edit_button
+
+        # play_record_button = f'''
+        #     <audio controls preload="none">
+        #         <source src="{env('FTP')}{row['record']}" type="audio/mpeg">
+        #     </audio>
+        # '''
+        play_record_button = f'''
+            <button data-audio-url="{env('FTP')}{row['record']}" class="btn btn-primary edit-btn">
+                <i class="fa-regular fa-circle-play"></i>
+            </button>
+        '''
+        row['record'] = play_record_button
         return row

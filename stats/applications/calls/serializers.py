@@ -8,10 +8,14 @@ class CallSerializer(serializers.ModelSerializer):
     class Meta:
         model = Call
         fields = ['mark', 'model', 'target', 'other_comments', 'client_primatel', 'client_name', 'manager_name',
-                  'moderation', 'price', 'status', 'call_price', 'manual_call_price', 'color', 'body', 'drive',
+                  'moderation', 'car_price', 'status', 'call_price', 'manual_call_price', 'color', 'body', 'drive',
                   'engine', 'complectation', 'attention', 'city']
 
     def update(self, instance, validated_data):
         # Заполняю стоимость звонка в зависимости от настроек из CallPriceSetting
         validated_data['call_price'] = calculate_call_price(instance, validated_data)
+
+        if not validated_data['mark']:
+            validated_data['model'] = None
+
         return super().update(instance, validated_data)

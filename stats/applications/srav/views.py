@@ -3,6 +3,7 @@ import pickle
 import urllib.parse
 
 import pandas as pd
+from django.db.models import Max
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
@@ -101,7 +102,8 @@ def download_parsed_ads(request):
 
         # Заголовки
         verbose_names = get_all_fields_verbose_names(AutoruParsedAd)
-        headers = ['datetime', 'region', 'mark__mark', 'model__model', 'complectation', 'modification', 'year', 'dealer',
+        headers = ['datetime', 'region', 'mark__mark', 'model__model', 'complectation', 'modification', 'year',
+                   'dealer',
                    'price_with_discount', 'price_no_discount', 'with_nds', 'position_actual',
                    'position_total', 'link', 'condition', 'in_stock', 'services', 'tags', 'photos']
         headers = [verbose_names[header] for header in headers]
@@ -173,6 +175,11 @@ def download_comparison(request):
                    'autoru_parsed_ad__with_nds', 'position_price',
                    'autoru_parsed_ad__position_actual', 'autoru_parsed_ad__link',
                    'in_stock_count', 'for_order_count']
+
+        # Беру последнюю datetime чтобы не было дублей если за день несколько раз собирали
+        latest_datetime = SravPivot.objects.filter(**filter_params).aggregate(Max('autoru_parsed_ad__datetime'))['autoru_parsed_ad__datetime__max']
+        filter_params.pop('autoru_parsed_ad__datetime__lte', None)
+        filter_params['autoru_parsed_ad__datetime__gte'] = latest_datetime
 
         queryset = (
             SravPivot.objects.prefetch_related('autoru_parsed_ad')
@@ -263,9 +270,9 @@ class DealersForSravView(APIView):
         regions = request.query_params.getlist('regions[]')
 
         dealers = AutoruParsedAd.objects.filter(
-                datetime__gte=datefrom, datetime__lte=dateto,
-                mark__in=marks, region__in=regions
-            ) \
+            datetime__gte=datefrom, datetime__lte=dateto,
+            mark__in=marks, region__in=regions
+        ) \
             .order_by('dealer') \
             .values_list('dealer', flat=True).distinct()
 

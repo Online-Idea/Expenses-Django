@@ -65,7 +65,9 @@ def get_price(task):
     import_result = onllline_worker(task)
     message = f'Логи конвертера:\n{logs}\n\nОтчет импорта базы:\n{import_result}'
     bot_messages(message, logs_xlsx, price, task)
-    save_on_ftp(logs_xlsx)
+    with open(logs_xlsx, 'rb') as file:
+        file_content = file.read()
+        save_on_ftp(logs_xlsx, file_content)
     os.remove(logs_xlsx)
     print(f'Клиент {task.slug} - прайс готов')
     return
@@ -113,7 +115,7 @@ def converter_template(task):
         file.write(response.content)
     # with open(stock_path, mode='w', encoding=task.stock_fields.encoding) as file:
     #     file.write(response.text)
-    save_on_ftp(stock_path)
+    save_on_ftp(stock_path, response.content)
 
     # Путь шаблона
     template_path = f'converter/{slug}/templates/template_{slug}_{file_date}.xlsx'
@@ -135,7 +137,9 @@ def converter_template(task):
     template = template.applymap(lambda x: x.strip() if isinstance(x, str) else x)
     # template = template.applymap(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
 
-    save_on_ftp(template_path)
+    with open(template_path, mode='rb') as file:
+        file_content = file.read()
+        save_on_ftp(template_path, file_content)
     os.remove(stock_path)
 
     return template
@@ -715,7 +719,7 @@ def converter_process_result(process_id, template, task):
     os.makedirs(os.path.dirname(save_path_date), exist_ok=True)
     with open(save_path_date, 'wb') as file:
         file.write(response.content)
-    save_on_ftp(save_path_date)
+    save_on_ftp(save_path_date, response.content)
 
     # Обработки прайса
     read_file = pd.read_excel(save_path_date, decimal=',')
@@ -784,7 +788,9 @@ def converter_process_result(process_id, template, task):
     #     f.write(csv_string)
     read_file.to_csv(save_path, sep=';', header=True, index=False, decimal=',', encoding='cp1251', errors='ignore',
                      lineterminator='\n')
-    save_on_ftp(save_path)
+    with open(save_path, 'rb') as file:
+        file_content = file.read()
+        save_on_ftp(save_path, file_content)
 
     task.price = save_path
     task.save()
@@ -932,6 +938,7 @@ def save_on_ftp(save_path, file):
     with FTP('ph.onllline.ru', env('FTP_LOGIN'), env('FTP_PASSWORD')) as ftp:
         # TODO передавать несколько файлов, не только один
         cd_tree(ftp, str(file_path.parents[0]))
+        file = io.BytesIO(file)
         ftp.storbinary(f'STOR {file_path.name}', file)
         ftp.cwd('/')
     return

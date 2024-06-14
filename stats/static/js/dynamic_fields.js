@@ -2,22 +2,12 @@
 document.addEventListener('DOMContentLoaded', eventListenersForDynamicFields);
 document.addEventListener('formset:added', eventListenersForDynamicFields);
 
+const callPriceSettingsPrefix = 'call_price_settings';
+
 function eventListenersForDynamicFields(event) {
   modelFromMark();
   callPriceSettingAvailability();
 }
-
-function collectRows() {
-  // Собирает родительские элементы
-  // Для страницы где есть CallPriceSetting
-  let rows = document.querySelectorAll('tr[id^="call_price_settings"]');
-  if (!rows[0]) {
-    // Для страницы где используется модальное окно
-    rows = [document.querySelector('.modal-body')];
-  }
-  return rows;
-}
-
 
 function modelFromMark() {
   // Наполняет Модель в зависимости от Марки
@@ -27,24 +17,106 @@ function modelFromMark() {
     return;
   }
 
-  let markField, modelField;
-  for (const row of rows) {
-    markField = row.querySelector('[id^="id"][id$="mark"]');
-    modelField = row.querySelector('[id^="id"][id$="model"]');
+  // Уникальные Марки
+  let uniqueMarksWithModels = {};
+  rows.forEach(row => {
+    const markElement = row.querySelector('[id^="id"][id$="mark"]');
+    if (markElement && markElement.value) {
+      const markValue = String(markElement.value);
+      if (!(markValue in uniqueMarksWithModels)) {
+        uniqueMarksWithModels[markValue] = null;
+      }
+    }
+  });
+  // Модели для Марок
+  Promise.all(
+    Object.keys(uniqueMarksWithModels).map(key =>
+      fetch(`/api/get_models_for_mark/${key}/`)
+        .then(response => response.json())
+        .then(models => {
+          uniqueMarksWithModels[key] = models;
+          return models;
+        })
+    )
+  ).then(() => {
+    // Наполняю Модели
+    for (const row of rows) {
+      const markField = row.querySelector('[id^="id"][id$="mark"]');
+      let modelField = row.querySelector('[id^="id"][id$="model"]');
 
-    if (markField && modelField) {
+      if (!markField && !modelField) {
+        continue;
+      }
+
       // Wrap the event listener attachment in a closure to capture the current state of mark and modelField
-      (function (markField, modelField) {
-        markField.addEventListener('change', () => updateModelOptions(markField, modelField));
-      })(markField, modelField);
+      (function (markField, modelField, uniqueMarksWithModels) {
+        markField.addEventListener('change', () => updateModelOptions(markField, modelField, uniqueMarksWithModels));
+      })(markField, modelField, uniqueMarksWithModels);
 
       // Directly call updateModelOptions with the current markField and modelField
-      updateModelOptions(markField, modelField);
+      updateModelOptions(markField, modelField, uniqueMarksWithModels);
     }
+  }).catch(error => {
+    console.log(error);
+  });
+}
+
+function collectRows() {
+  // Собирает родительские элементы
+  // Для страницы где есть CallPriceSetting
+  // let rows = document.querySelectorAll('tr[id^="call_price_settings"]');
+  let rows = document.querySelectorAll(`#${callPriceSettingsPrefix}-group tbody tr`);
+  if (!rows[0]) {
+    // Для страницы где используется модальное окно
+    rows = [document.querySelector('.modal-body')];
   }
+  return rows;
+}
+
+function populateOptions(uniqueMarksWithModels, selectedMark, modelField) {
+  uniqueMarksWithModels[selectedMark].forEach(model => {
+    const option = document.createElement('option');
+    option.value = model.id;
+    option.text = model.model;
+    modelField.add(option);
+  });
+}
+
+function updateModelOptions(markField, modelField, uniqueMarksWithModels) {
+  const selectedMark = markField.value;
+
+  // Если Марка не выбрана то в Моделях пусто
+  if (!selectedMark) {
+    modelField.innerHTML = '';
+    return
+  }
+
+  const selectedModel = modelField.value;
+
+  modelField.innerHTML = '';
+  // Опция "не выбрано"
+  const emptyOption = document.createElement('option');
+  emptyOption.value = '';
+  emptyOption.text = '---------';
+  modelField.add(emptyOption);
+
+  if (uniqueMarksWithModels[selectedMark]) {
+    populateOptions(uniqueMarksWithModels, selectedMark, modelField);
+  } else {
+    fetch(`/api/get_models_for_mark/${selectedMark}`, )
+      .then(response => response.json())
+      .then(models => {
+        uniqueMarksWithModels[selectedMark] = models;
+        populateOptions(uniqueMarksWithModels, selectedMark, modelField);
+      });
+  }
+
+  // Выбираю ранее выбранную Модель
+  modelField.value = selectedModel ? selectedModel : '';
 }
 
 
+/*
 function updateModelOptions(markField, modelField) {
   // Готовит опции для Моделей
   const selectedMark = markField.value;
@@ -79,12 +151,11 @@ function updateModelOptions(markField, modelField) {
       modelField.value = selectedModel ? selectedModel : '';
     });
 }
+*/
 
-
-const callPriceSettingsPrefix = 'id_call_price_settings';
 
 function buildSelector(fieldName) {
-  return `[id^="${callPriceSettingsPrefix}"][id$="${fieldName}"]`;
+  return `[id^="id_${callPriceSettingsPrefix}"][id$="${fieldName}"]`;
 }
 
 function callPriceSettingAvailability() {

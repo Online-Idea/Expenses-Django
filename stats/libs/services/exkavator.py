@@ -46,4 +46,6 @@ def modify_exkavator_xml():
     # with open(file_path, 'wb') as f:
     #     ET.ElementTree(root).write(f, encoding='UTF-8')
 
-    save_on_ftp(file_path)
+    with open(file_path, 'rb') as file:
+        file_content = file.read()
+        save_on_ftp(file_path, file_content)

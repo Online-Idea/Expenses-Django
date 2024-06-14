@@ -6,7 +6,7 @@ import requests
 from django.utils import timezone
 
 from applications.autoconverter.converter import save_on_ftp
-from applications.calls.models import CabinetPrimatel, ClientPrimatel, SipPrimatel, Call
+from applications.calls.models import CabinetPrimatel, ClientPrimatel, SipPrimatel, Call, ClientPrimatelMark
 from libs.services.email_sender import send_email
 from stats.settings import WEBSITE
 
@@ -137,13 +137,13 @@ class PrimatelLogic:
                 'call_id': call.primatel_call_id
             }
             record = self.request_api('downloadCallRecord', params)
-            record = BytesIO(record.content)
+            # record = BytesIO(record.content)
 
-            if 'error_message' in str(record.getvalue()):
+            if 'error_message' in str(record.content):
                 continue
 
             save_path = f'/calls/{call.client_primatel.client.slug}/records/{call.primatel_call_id}.mp3'
-            save_on_ftp(save_path, record)
+            save_on_ftp(save_path, record.content)
             call.record = save_path
 
         Call.objects.bulk_update(calls, ['record'])
@@ -234,6 +234,8 @@ class PrimatelLogic:
             if not calls_details_list:
                 continue
 
+            main_mark = check_main_mark(client)
+
             for item in calls_details_list:
                 # Часовой пояс, чтобы Django не выдавал ошибку
                 item['time'] = datetime.strptime(item['time'], '%Y-%m-%d %H:%M:%S')
@@ -247,8 +249,7 @@ class PrimatelLogic:
                         num_redirect=item['destination'],
                         duration=item['duration'],
                         primatel_call_id=item['callid'],
-                        # TODO если у клиента одна марка тогда записывать её сюда
-                        # mark=client.main_mark,
+                        mark=main_mark,
                         client_primatel=sip.client_primatel,
                         sip_primatel=sip,
                     )
@@ -296,6 +297,20 @@ class PrimatelLogic:
             self.download_missing_call_records(cabinet, datefrom, dateto)
 
         update_numbers()
+
+
+def check_main_mark(client: ClientPrimatel):
+    """
+    Возвращает Mark если у клиента только одна Mark, иначе None.
+    Используется для автоматического заполнения звонков.
+    :param client:
+    :return:
+    """
+    client_primatel_marks = ClientPrimatelMark.objects.filter(client_primatel=client)
+    if len(client_primatel_marks) == 1:
+        return client_primatel_marks[0].mark
+    else:
+        return None
 
 
 def update_numbers():

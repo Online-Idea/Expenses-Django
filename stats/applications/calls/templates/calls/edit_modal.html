@@ -14,8 +14,20 @@
     </div>
 
     <div class="modal-body">
-        {{ edit_modal_form|crispy }}
+      {{ edit_modal_form|crispy }}
     </div>
+
+{% comment %}
+    <div class="modal-body">
+      <div class="row">
+        {% for field in edit_modal_form %}
+        	<div class="col-md-4">
+            {{ field|crispy }}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+{% endcomment %}
 
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
@@ -23,4 +35,3 @@
     </div>
   </form>
 </div>
-

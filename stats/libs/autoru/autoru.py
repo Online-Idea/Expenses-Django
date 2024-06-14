@@ -349,7 +349,7 @@ def delete_autoru_calls(from_, to, client_id):
 
 
 # TODO вернуть чтобы работало API авто.ру
-# session_id = autoru_authenticate(env('AUTORU_LOGIN'), env('AUTORU_PASSWORD'))
+session_id = autoru_authenticate(env('AUTORU_LOGIN'), env('AUTORU_PASSWORD'))
 
 
 def update_autoru_catalog():

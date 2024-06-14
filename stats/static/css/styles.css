@@ -1204,9 +1204,19 @@ input[type="number"]::-webkit-outer-spin-button {
     left: 0;
     width: 100%;
     text-align: center;
+    z-index: 2000;
 }
 
 #audio-element {
     width: 100%;
     display: inline-block;
+}
+
+/* Чтобы модальное окно было ниже аудио плеера */
+.modal {
+    z-index: 1500;
+}
+
+.modal-backdrop {
+    z-index: 1400;
 }

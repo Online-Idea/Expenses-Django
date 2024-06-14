@@ -66,9 +66,10 @@ def export_calls_to_file() -> str:
     })
 
     # Открываю xlsx
-    file_name = f'ROLF_stats_full.xlsx'
     file_path = f'temp/ROLF_stats/'
-    book = load_workbook(f'{file_path}{file_name}')
+    file_name = f'ROLF_stats_full.xlsx'
+    full_path = os.path.join(file_path, file_name)
+    book = load_workbook(full_path)
     calls_sheet = book['Звонки']
 
     # Удаляю прошлые и вставляю новые
@@ -103,14 +104,17 @@ def export_calls_to_file() -> str:
     #         calls_sheet.column_dimensions[column_letter].width = adjusted_width
 
     # Сохраняю
-    book.save(f'{file_path}{file_name}')
-    save_on_ftp(f'{file_path}{file_name}')
+    book.save(full_path)
+    with open(full_path, 'rb') as file:
+        file_content = file.read()
+        save_on_ftp(full_path, file_content)
 
     # Копия файла со скрытыми звонками и инструкцией
     file_nocalls = 'ROLF_stats.xlsx'
-    os.remove(f'{file_path}{file_nocalls}')
-    shutil.copy(f'{file_path}{file_name}', f'{file_path}{file_nocalls}')
-    book_nocalls = load_workbook(f'{file_path}{file_nocalls}')
+    full_path_nocalls = os.path.join(file_path, file_nocalls)
+    os.remove(full_path_nocalls)
+    shutil.copy(full_path, full_path_nocalls)
+    book_nocalls = load_workbook(full_path_nocalls)
 
     book_nocalls['Звонки'].sheet_state = 'hidden'
     book_nocalls['Инструкция'].sheet_state = 'hidden'
@@ -119,8 +123,10 @@ def export_calls_to_file() -> str:
     book_nocalls.security.workbookPassword = '8kjDF4ts#f9&'
     book_nocalls.security.lockStructure = True
 
-    book_nocalls.save(f'{file_path}{file_nocalls}')
-    save_on_ftp(f'{file_path}{file_nocalls}')
+    book_nocalls.save(full_path_nocalls)
+    with open(full_path_nocalls, 'rb') as file:
+        file_content = file.read()
+        save_on_ftp(full_path_nocalls, file_content)
 
     # Сохраняю в xlsx
     # with pd.ExcelWriter(file_name, engine='xlsxwriter') as writer:

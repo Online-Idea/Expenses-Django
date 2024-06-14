@@ -79,7 +79,7 @@
             );
 
             $('#datatable_calls').on('draw.dt', function () {
-              audioButtons();
+              audioButtons('button[data-audio-url]');
             });
 
           });
@@ -104,18 +104,86 @@
     {% endif %}
   });
 
-  function audioButtons() {
-    // Аудио плеер
-    const playButtons = document.querySelectorAll('button[data-audio-url]');
-    const audioElement = document.getElementById('audio-element');
-    const audioPlayer = document.getElementById('audio-player');
 
-    playButtons.forEach(button => {
-      button.addEventListener('click', function () {
-        audioElement.src = this.dataset.audioUrl;
+  // Иконки
+  const playClasses = 'fa-regular fa-circle-play';
+  const pauseClasses = 'fa-solid fa-pause';
+  const replayClasses = 'fa-solid fa-rotate-left';
+  // Кнопки звонков и элементы плеера
+  const audioElement = document.getElementById('audio-element');
+  const audioPlayer = document.getElementById('audio-player');
+  // Чтобы менять иконку на последней включенной записи звонка
+  let lastPlayedButton, lastPlayedIcon, clonedPlayButton, clonedPlayIcon;
+
+  function audioEvents(element) {
+    // Вид и функционал кнопок плеера у звонков внутри таблицы
+
+    let icon = element.querySelector('i');
+
+    // Если иконка play
+    if (icon.className === playClasses) {
+      // Меняю на иконку pause
+      icon.className = pauseClasses;
+
+      // Если src пустой то меняю на ссылку с текущего звонка
+      if (audioElement.src === '' ) {
+        audioElement.src = element.dataset.audioUrl;
+      }
+
+      // Если src не равен текущему звонку значит начали слушать другой звонок, меняю src на ссылку текущего звонка
+      // и иконку прошлого звонка на play
+      if (audioElement.src !== element.dataset.audioUrl) {
+        audioElement.src = element.dataset.audioUrl;
+        lastPlayedIcon.className = playClasses;
+      }
+
+      // Если не на паузе значит подгружаю запись звонка
+      if (!audioElement.paused) {
         audioElement.load();
-        audioElement.play();
-        audioPlayer.style.display = 'block';
+      }
+
+      // Включаю плеер, показываю его, запоминаю кнопку и иконку звонка который начали слушать
+      audioElement.play();
+      audioPlayer.style.display = 'block';
+      {#lastPlayedButton = element;#}
+      if (element !== clonedPlayButton) {
+        lastPlayedButton = element;
+        lastPlayedIcon = icon;
+      } else {
+        clonedPlayIcon = icon;
+      }
+
+    } else if (icon.className === pauseClasses) {
+      // Если иконка pause то ставлю на паузу и меняю иконку на play
+      audioElement.pause();
+      icon.className = playClasses;
+
+    } else if (icon.className === replayClasses) {
+      // Если иконка replay то начинаю с начала и меняю иконку на pause
+      audioElement.play();
+      icon.className = pauseClasses;
+    }
+  }
+
+  function audioButtons(selector) {
+    // Аудио плеер
+    // Меняю иконку последнего звонка в зависимости от состояния плеера
+    audioElement.addEventListener('play', () => {
+      lastPlayedIcon.className = pauseClasses;
+    });
+    audioElement.addEventListener('pause', () => {
+      lastPlayedIcon.className = playClasses;
+    });
+    audioElement.addEventListener('ended', () => {
+      lastPlayedIcon.className = replayClasses;
+      clonedPlayIcon.className = clonedPlayButton ? replayClasses : null;
+    });
+
+    // event listener на каждую кнопку звонка
+    const playButtons = document.querySelectorAll(selector);
+    playButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        audioEvents(button);
       });
     });
   }
@@ -139,7 +207,7 @@
         type: 'GET',
         success: function (response) {
           $('.modal-content').replaceWith(response);
-          $('#id_mark').on('change', modelFromMark);
+          {#$('#id_mark').on('change', modelFromMark);#}
           modelFromMark();
         },
         error: function (error) {
@@ -177,7 +245,20 @@
           let row = table.DataTable().row(tr);
           row.invalidate().draw();
         });
-      })
+      });
+
+      // Кнопка плеера, клонирую с текущего звонка
+      const row = event.relatedTarget.closest('tr');
+      lastPlayedButton = row.querySelector('.play-record-btn');
+      lastPlayedIcon = lastPlayedButton.querySelector('i');
+      clonedPlayButton = lastPlayedButton.cloneNode(true);
+      clonedPlayIcon = clonedPlayButton.querySelector('i');
+      const modalBody = document.querySelector('.modal-body');
+      modalBody.insertBefore(clonedPlayButton, modalBody.firstChild);
+      clonedPlayButton.addEventListener('click', event => {
+        event.preventDefault();
+        audioEvents(clonedPlayButton);
+      });
     })
 
 

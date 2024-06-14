@@ -77,8 +77,6 @@ class CallDatatableView(AjaxDatatableView):
         return queryset
 
     def customize_row(self, row, obj):
-        # edit_button = (f'<button class="btn btn-primary edit-btn" '
-        #                f'data-id="{row["pk"]}" data-bs-toggle="modal" data-bs-target="#editModal"><i class="fa-regular fa-pen-to-square"></i></button>')
         edit_button = f'''
             <button class="btn btn-primary edit-btn" data-id="{row["pk"]}" data-bs-toggle="modal" data-bs-target="#editModal">
                 <i class="fa-regular fa-pen-to-square"></i>
@@ -86,13 +84,8 @@ class CallDatatableView(AjaxDatatableView):
         '''
         row['edit'] = edit_button
 
-        # play_record_button = f'''
-        #     <audio controls preload="none">
-        #         <source src="{env('FTP')}{row['record']}" type="audio/mpeg">
-        #     </audio>
-        # '''
         play_record_button = f'''
-            <button data-audio-url="{env('FTP')}{row['record']}" class="btn btn-primary edit-btn">
+            <button data-audio-url="{env('FTP')}{row['record']}" class="btn btn-primary play-record-btn">
                 <i class="fa-regular fa-circle-play"></i>
             </button>
         '''

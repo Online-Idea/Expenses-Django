@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django import forms
-from django.utils.html import linebreaks
+from django.utils.html import linebreaks, format_html
 
 from applications.autoconverter.models import *
 
@@ -91,7 +91,7 @@ class ConverterFilterAdmin(admin.ModelAdmin):
     list_editable = ('condition',)
     search_fields = ('converter_task', 'field')
     list_filter = ('converter_task',)
-    fields = ('id', 'converter_task', 'field', 'condition', 'value')
+    fields = ('id', 'converter_task', 'field', 'condition', 'value', 'note')
     readonly_fields = ('id',)
     ordering = ('converter_task', 'field')
 
@@ -99,23 +99,37 @@ class ConverterFilterAdmin(admin.ModelAdmin):
 class ConditionalInline(admin.TabularInline):
     model = Conditional
     extra = 0
+    readonly_fields = ('duplicate_button', )
+
+    def duplicate_button(self, obj):
+        return format_html('<button type="button" onclick="duplicateInline(this);"><i class="fa-solid fa-copy"></i></button>')
+    duplicate_button.short_description = 'Дублировать'
 
 
 class ConverterExtraProcessingNewChangesInline(admin.TabularInline):
     model = ConverterExtraProcessingNewChanges
     extra = 0
+    readonly_fields = ('duplicate_button', )
+
+    def duplicate_button(self, obj):
+        return format_html('<button type="button" onclick="duplicateInline(this);"><i class="fa-solid fa-copy"></i></button>')
+    duplicate_button.short_description = 'Дублировать'
 
 
 class ConverterExtraProcessingAdmin(admin.ModelAdmin):
-    inlines = [ConditionalInline, ConverterExtraProcessingNewChangesInline]
     list_display = ('id', 'converter_task', 'conditionals', 'new_changes')
     list_display_links = ('id', 'converter_task')
     search_fields = ('converter_task__name', 'conditional__value', 'converterextraprocessingnewchanges__new_value')
     list_filter = ('converter_task',)
-    fields = ('id', 'converter_task')
+    fields = ('id', 'converter_task', 'note')
     readonly_fields = ('id',)
     ordering = ('converter_task', )
     list_per_page = 10
+    inlines = [ConditionalInline, ConverterExtraProcessingNewChangesInline]
+    save_on_top = True
+
+    class Media:
+        js = ('js/dynamic_fields.js', 'js/duplicate_inline.js', )
 
     def conditionals(self, obj):
         conditionals_objs = Conditional.objects.filter(converter_extra_processing=obj)
@@ -131,10 +145,10 @@ class ConverterExtraProcessingAdmin(admin.ModelAdmin):
         return '; '.join(replaced_name)
     new_changes.short_description = 'Новые значения'
 
-    def formfield_for_dbfield(self, db_field, **kwargs):
-        if db_field.name == 'new_value':
-            kwargs['widget'] = forms.Textarea(attrs={'rows': 5, 'cols': 40})
-        return super().formfield_for_dbfield(db_field, **kwargs)
+    # def formfield_for_dbfield(self, db_field, **kwargs):
+    #     if db_field.name == 'new_value':
+    #         kwargs['widget'] = forms.Textarea(attrs={'rows': 5, 'cols': 40})
+    #     return super().formfield_for_dbfield(db_field, **kwargs)
 
 
 admin.site.register(ConverterTask, ConverterTaskAdmin)

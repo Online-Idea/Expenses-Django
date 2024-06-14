@@ -81,7 +81,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'ajax_datatable',
     "debug_toolbar",
-      # Мои
+
+    # Мои
     'applications.accounts.apps.AccountsConfig',
     'applications.netcost.apps.NetcostConfig',
     'applications.autoconverter.apps.AutoconverterConfig',

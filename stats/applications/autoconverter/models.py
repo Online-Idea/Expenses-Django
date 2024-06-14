@@ -2,6 +2,7 @@ import json
 
 from django.db import models
 from django.db.models import Q
+from django import forms
 from django.utils.html import strip_tags
 from slugify import slugify
 
@@ -275,6 +276,7 @@ class ConverterFilter(BaseModel):
     condition = models.CharField(max_length=500, choices=CONDITION_CHOICES,
                                  default=CONDITION_CHOICES[2], verbose_name='Условие')
     value = models.CharField(max_length=500, help_text=value_help_text, verbose_name='Значение')
+    note = models.TextField(blank=True, null=True, verbose_name='Заметка')
 
     def __str__(self):
         return f'{self.field} {self.condition} {self.value}'
@@ -289,6 +291,7 @@ class ConverterFilter(BaseModel):
 class ConverterExtraProcessing(BaseModel):
     # Различные изменения прайса по условию
     converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.PROTECT)
+    note = models.TextField(blank=True, null=True, verbose_name='Заметка')
 
     def __str__(self):
         return f'{self.converter_task.name}'

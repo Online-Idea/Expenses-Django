@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from applications.calls.models import ClientPrimatelMark, ClientPrimatel, CallPriceSetting, ChargeTypeChoice, \
     ModerationChoice, CalltouchSetting
@@ -15,15 +16,11 @@ class ClientPrimatelMarkInline(admin.TabularInline):
 class CallPriceSettingInline(admin.TabularInline):
     model = CallPriceSetting
     extra = 0
+    readonly_fields = ('duplicate_button', )
 
-    # def get_form(self, request, obj=None, **kwargs):
-    #     form_class = super().get_form(request, obj, **kwargs)
-    #     if obj and hasattr(obj, 'client_primatel'):
-    #         # Dynamically set the queryset for the mark field based on the current client primatel
-    #         current_marks = ClientPrimatelMark.objects.filter(client_primatel=obj.client_primatel)
-    #         form_class.base_fields['mark'].queryset = current_marks.values_list('mark__mark', flat=True)
-    #         form_class.base_fields['model'].queryset = Model.objects.filter(mark__in=current_marks)
-    #     return form_class
+    def duplicate_button(self, obj):
+        return format_html('<button type="button" onclick="duplicateInline(this);"><i class="fa-solid fa-copy"></i></button>')
+    duplicate_button.short_description = 'Дублировать'
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         client_primatel = request.resolver_match.kwargs.get("object_id")
@@ -57,7 +54,7 @@ class ClientPrimatelAdmin(admin.ModelAdmin):
     save_on_top = True
 
     class Media:
-        js = ('js/dynamic_fields.js',)
+        js = ('js/dynamic_fields.js', 'js/duplicate_inline.js', )
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
@@ -72,4 +69,3 @@ class ClientPrimatelAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ClientPrimatel, ClientPrimatelAdmin)
-# admin.site.register(ClientPrimatelMark)

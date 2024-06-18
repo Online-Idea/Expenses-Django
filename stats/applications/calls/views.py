@@ -1,28 +1,23 @@
 import datetime
-import logging
+import urllib.parse
 
 from django.http import HttpResponse
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
 
-from applications.calls.calls import get_calls_data, calculate_call_price
+from applications.calls.calls import get_calls_data
 from applications.calls.forms import CallChooseForm, CallForm
 from applications.calls.models import Call
 from applications.calls.serializers import CallSerializer
 from libs.services.decorators import allowed_users
+from libs.services.utils import get_all_fields_verbose_names, make_xlsx_for_download
 
 
 # Create your views here.
 @allowed_users(allowed_groups=['admin'])
 def calls(request):
     if request.method == 'POST':
-        form = CallChooseForm(request.POST)
-
-        if not form.is_valid():
-            return HttpResponse(form.errors)
-
-        context = get_calls_data(request, form)
-
+        context = get_calls_data(request)
         return render(request, 'calls/calls.html', context)
 
     else:
@@ -41,6 +36,31 @@ def calls(request):
         'dateto': dateto,
     }
     return render(request, 'calls/calls.html', context)
+
+
+@allowed_users(allowed_groups=['admin'])
+def download_calls(request):
+    context = get_calls_data(request)
+    columns = ['client_primatel__client__name', 'datetime', 'num_from', 'num_to', 'duration', 'mark__mark',
+               'model__model', 'target', 'moderation', 'call_price', 'status', 'other_comments', 'client_name',
+               'manager_name', 'car_price', 'color', 'body', 'drive', 'engine', 'complectation', 'attention', 'city',
+               'num_redirect']
+    qs = context['call_data'].values_list(*columns)
+    headers = get_all_fields_verbose_names(Call)
+    headers = [headers[column] for column in columns]
+    wb = make_xlsx_for_download(qs, headers)
+
+    datefrom = datetime.date(*context['datefrom'][::-1]).strftime("%d.%m.%Y")
+    dateto = datetime.date(*context['dateto'][::-1]).strftime("%d.%m.%Y")
+    filename = f'Звонки {datefrom}-{dateto}.xlsx'
+    filename = urllib.parse.quote(filename)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename*=UTF-8\'\'{filename}'
+
+    wb.save(response)
+
+    return response
 
 
 class CallViewSet(viewsets.ModelViewSet):

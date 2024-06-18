@@ -10,6 +10,7 @@ router.register(r'api/v1/calls', CallViewSet)
 
 urlpatterns = [
     path('calls', calls, name='calls'),
+    path('download_calls', download_calls, name='download_calls'),
     path('ajax_datatable/calls/', ajax_datatable_views.CallDatatableView.as_view(), name='ajax_datatable_calls'),
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),

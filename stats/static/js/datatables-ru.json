@@ -1,4 +1,5 @@
 {
+    "_commentHowToUse": "Чтобы использовать этот файл так чтобы не ломались фильтры нужно грузить этот файл до инициализации datatable, используя $.getJSON",
     "processing": "Подождите...",
     "search": "Поиск:",
     "lengthMenu": "Показать _MENU_ записей",
@@ -140,6 +141,7 @@
     },
     "decimal": ".",
     "infoThousands": ",",
+    "infoPostFix": "",
     "autoFill": {
         "cancel": "Отменить",
         "fill": "Заполнить все ячейки <i>%d<i><\/i><\/i>",

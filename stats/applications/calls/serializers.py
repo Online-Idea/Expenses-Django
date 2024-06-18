@@ -12,8 +12,10 @@ class CallSerializer(serializers.ModelSerializer):
                   'engine', 'complectation', 'attention', 'city']
 
     def update(self, instance, validated_data):
-        # Заполняю стоимость звонка в зависимости от настроек из CallPriceSetting
-        validated_data['call_price'] = calculate_call_price(instance, validated_data)
+        # Если Ручное редактирование стоимости звонка не отмечено
+        if not validated_data['manual_call_price']:
+            # Заполняю стоимость звонка в зависимости от настроек из CallPriceSetting
+            validated_data['call_price'] = calculate_call_price(instance, validated_data)
 
         if not validated_data['mark']:
             validated_data['model'] = None

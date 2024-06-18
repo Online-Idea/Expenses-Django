@@ -128,16 +128,16 @@ document.querySelectorAll('details').forEach((el) => {
 
 // Отмечает те чекбоксы которые были ранее выбраны
 function selected_checkboxes(elements, checkboxName, selectAllName) {
-    var checkboxes = document.getElementsByName(checkboxName);
-    if (elements.length != checkboxes.length) {
-        for (var i = 0, n = checkboxes.length; i < n; i++) {
+    let checkboxes = document.getElementsByName(checkboxName);
+    if (elements.length !== checkboxes.length) {
+        for (let i = 0, n = checkboxes.length; i < n; i++) {
             if (elements.includes(checkboxes[i].value)) {
                 checkboxes[i].checked = true;
             } else {
                 checkboxes[i].checked = false;
             }
         }
-        var selectAll = $('input[type=checkbox][name=' + selectAllName + ']').prop('checked', false);
+        let selectAll = $('input[type=checkbox][name=' + selectAllName + ']').prop('checked', false);
     }
     //    var selectAll = checkboxes[0].parentElement.parentElement.parentElement.parentElement.querySelector('.selectAll');
     //    selectAll.checked = false;

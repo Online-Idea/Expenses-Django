@@ -22,7 +22,7 @@ class CallDatatableView(AjaxDatatableView):
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'id', 'visible': False, },
         {'name': 'edit', 'title': 'Ред.', 'placeholder': True, 'searchable': False, 'orderable': False},
-        {'name': 'record', 'title': 'Ссылка на запись звонка', 'orderable': False, },
+        {'name': 'record', 'title': 'Запись звонка', 'orderable': False, 'autofilter': False},
         {'name': 'primatel_call_id', 'visible': False, },
         {'name': 'client', 'title': 'Клиент', 'foreign_field': 'client_primatel__client__name', 'orderable': True,
             'searchable': True},
@@ -77,6 +77,8 @@ class CallDatatableView(AjaxDatatableView):
         return queryset
 
     def customize_row(self, row, obj):
+        # TODO Добавить прямую (или с фильтрами) ссылку на agency.auto.ru
+        #  когда будет настроена интеграция наших звонков со звонками авто.ру
         edit_button = f'''
             <button class="btn btn-primary edit-btn" data-id="{row["pk"]}" data-bs-toggle="modal" data-bs-target="#editModal">
                 <i class="fa-regular fa-pen-to-square"></i>

@@ -1,15 +1,40 @@
 import json
 
+from django.http import HttpResponse
+
+from applications.accounts.models import Client
 from applications.calls.forms import CallChooseForm
-from applications.calls.models import CallPriceSetting, TargetChoice, ChargeTypeChoice
+from applications.calls.models import CallPriceSetting, TargetChoice, ChargeTypeChoice, Call
 from libs.services.utils import split_daterange
 
 
-def get_calls_data(request, form):
+def get_calls_data(request):
+    form = CallChooseForm(request.POST)
+
+    if not form.is_valid():
+        return HttpResponse(form.errors)
+
     daterange_str = form.cleaned_data.get('daterange')
     daterange = split_daterange(daterange_str)
 
     clients_checked = [c for c in request.POST.getlist('client_checkbox')]
+    clients_qs = Client.objects.filter(pk__in=clients_checked)
+    agency_autoru_links = [(c.name, f'https://agency.auto.ru/calls/?client_id={c.autoru_id}'
+                                    f'&from={daterange["from"].strftime("%Y-%m-%d")}'
+                                    f'&to={daterange["to"].strftime("%Y-%m-%d")}')
+                           for c in clients_qs if c.autoru_id]
+
+    filter_params = {
+        'datetime__gte': daterange['from'],
+        'datetime__lte': daterange['to'],
+        'client_primatel__client_id__in': clients_checked,
+    }
+
+    call_data = (
+        Call.objects.select_related('mark', 'model', 'client')
+        .filter(**filter_params)
+        .order_by('client_primatel__client__name', 'datetime')
+    )
 
     filter_params = {
         'daterange': daterange_str,
@@ -19,10 +44,12 @@ def get_calls_data(request, form):
     context = {
         'form': form,
         'clients_checked': json.dumps(clients_checked),
+        'agency_autoru_links': agency_autoru_links,
         'datefrom': daterange['start'],
         'dateto': daterange['end'],
         'datefrom_dt': daterange['from'],
         'dateto_dt': daterange['to'],
+        'call_data': call_data,
         'filter_params': filter_params,
     }
     return context

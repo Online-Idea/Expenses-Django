@@ -1,5 +1,5 @@
-{% load crispy_forms_filters %}
-
+{#{% load crispy_forms_filters %}#}
+{% load crispy_forms_tags %}
 
 <div class="modal-content">
   <form method="post" id="editForm" >
@@ -14,17 +14,20 @@
     </div>
 
     <div class="modal-body">
-      {{ edit_modal_form|crispy }}
+{#      {{ edit_modal_form|crispy }}#}
+      {% crispy edit_modal_form %}
     </div>
 
 {% comment %}
-    <div class="modal-body">
-      <div class="row">
-        {% for field in edit_modal_form %}
-        	<div class="col-md-4">
-            {{ field|crispy }}
-          </div>
-        {% endfor %}
+    <div class="modal-body row">
+      <div class="col-md-4">
+        {{ edit_modal_form|crispy }}
+      </div>
+      <div class="col-md-4">
+        {{ edit_modal_form|crispy }}
+      </div>
+      <div class="col-md-4">
+        {{ edit_modal_form|crispy }}
       </div>
     </div>
 {% endcomment %}
@@ -35,3 +38,4 @@
     </div>
   </form>
 </div>
+

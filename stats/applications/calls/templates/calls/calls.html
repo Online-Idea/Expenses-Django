@@ -12,12 +12,13 @@
 {% block content %}
 <!--Modal-->
 <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-xl" role="document">
     <div class="modal-content">
       <!-- сюда подставится из edit_modal.html при вызове модального окна -->
     </div>
   </div>
 </div>
+
 
 
 <div class="container">
@@ -30,7 +31,7 @@
         {% csrf_token %}
         {{ form.daterange }}
         <button type="submit" class="btn btn-primary">Показать</button>
-        <button type="submit" class="btn btn-outline-primary" formaction="{% url 'download_comparison' %}">Скачать
+        <button type="submit" class="btn btn-outline-primary" formaction="{% url 'download_calls' %}">Скачать
         </button>
         <!--Список клиентов-->
         <details>
@@ -44,6 +45,16 @@
           </div>
         </details>
       </form>
+
+        <!--Ссылки на клиентов в agency.auto.ru-->
+        {% if request.method == 'POST' %}
+          <div class="agency-autoru-links">
+            Кабинеты авто.ру:
+            {% for client_name, link in agency_autoru_links %}
+              <a href="{{ link }}" target="_blank">{{ client_name }}</a> |
+            {% endfor %}
+          </div>
+        {% endif %}
 
         <!--Таблица звонков-->
         <div class="table-responsive">
@@ -59,24 +70,30 @@
         {% if request.method == 'POST' %}
         <script language="javascript">
           $(document).ready(function () {
-            AjaxDatatableViewUtils.initialize_table(
-              $("#datatable_calls"),
-              "{% url 'ajax_datatable_calls' %}",
-              {
-                fixedHeader: true,
-                responsive: false,
-                // full_row_select: true,
-                processing: true,
-                autoWidth: true,
-                scrollX: true,
-                language: { url: '{% static "js/datatables-ru.json" %}', },
-                pageLength: 50,
-              },
-              {
-                // extra_data
-                filter_params: "{{ filter_params }}",
-              },
-            );
+
+            $.getJSON('{% static "js/datatables-ru.json" %}', function(data) {
+              let language_json = data;
+
+              AjaxDatatableViewUtils.initialize_table(
+                $("#datatable_calls"),
+                "{% url 'ajax_datatable_calls' %}",
+                {
+                  fixedHeader: true,
+                  responsive: false,
+                  {#full_row_select: true,#}
+                  processing: true,
+                  autoWidth: true,
+                  scrollX: true,
+                  language: language_json,
+                  pageLength: 50,
+                  createdRow: styleRowOnCondition,
+                },
+                {
+                  // extra_data
+                  filter_params: "{{ filter_params }}",
+                },
+              );
+            });
 
             $('#datatable_calls').on('draw.dt', function () {
               audioButtons('button[data-audio-url]');
@@ -105,6 +122,7 @@
   });
 
 
+  //-------------------------- Аудио плеер -------------------------
   // Иконки
   const playClasses = 'fa-regular fa-circle-play';
   const pauseClasses = 'fa-solid fa-pause';
@@ -112,7 +130,7 @@
   // Кнопки звонков и элементы плеера
   const audioElement = document.getElementById('audio-element');
   const audioPlayer = document.getElementById('audio-player');
-  // Чтобы менять иконку на последней включенной записи звонка
+  // Чтобы менять иконку на последней включенной записи звонка. cloned* используются в модальном окне
   let lastPlayedButton, lastPlayedIcon, clonedPlayButton, clonedPlayIcon;
 
   function audioEvents(element) {
@@ -179,7 +197,7 @@
       clonedPlayIcon.className = clonedPlayButton ? replayClasses : null;
     });
 
-    // event listener на каждую кнопку звонка
+    // Event listener на каждую кнопку звонка
     const playButtons = document.querySelectorAll(selector);
     playButtons.forEach(button => {
       button.addEventListener('click', () => {
@@ -188,19 +206,89 @@
     });
   }
 
+  function audioButtonForModal(event) {
+    // Кнопка плеера в модальном окне
+    // Клонирую кнопку с текущего звонка
+    const row = event.relatedTarget.closest('tr');
+    lastPlayedButton = row.querySelector('.play-record-btn');
+    lastPlayedIcon = lastPlayedButton.querySelector('i');
+    clonedPlayButton = lastPlayedButton.cloneNode(true);
+    clonedPlayIcon = clonedPlayButton.querySelector('i');
+
+    // Добавляю label и div чтобы было: Прослушать {кнопка}
+    let label = document.createElement('label');
+    label.htmlFor = 'play-in-modal';
+    label.className = 'form-label';
+    label.innerText = 'Прослушать';
+
+    let div = document.createElement('div');
+    div.appendChild(label);
+    div.appendChild(clonedPlayButton);
+
+    // Вставляю в модальное окно
+    const modalBody = document.querySelector('.modal-body');
+    {#modalBody.insertBefore(clonedPlayButton, modalBody.firstChild);#}
+    modalBody.insertBefore(div, modalBody.firstChild);
+    clonedPlayButton.addEventListener('click', event => {
+      event.preventDefault();
+      audioEvents(clonedPlayButton);
+    });
+  }
+  //-------------------------- Конец Аудио плеера -------------------------
+
+  function styleRowOnCondition(row, data, dataIndex) {
+    // Меняет стиль ряда по условию
+    // Если Обратить внимание то крашу в красный
+    if (data['attention'] === 'Да') {
+      row.querySelectorAll('td').forEach(td => td.classList.add('negative'));
+    }
+  }
+
+  function manualCallPrice() {
+    // В модальном окне меняю возможность редактирования Стоимости звонка
+    // в зависимости от чекбокса Ручное редактирование стоимости звонка
+    let manualCallPriceCheckbox = document.querySelector('#id_manual_call_price');
+    let callPriceInput = document.querySelector('#id_call_price');
+
+    // Event listener на изменения чекбокса
+    manualCallPriceCheckbox.addEventListener('change', function () {
+      callPriceInput.disabled = !this.checked;
+    });
+
+    // Первичное состояние Стоимости звонка
+    if (!manualCallPriceCheckbox.checked) {
+      callPriceInput.disabled = true;
+    }
+  }
+
+  let lastEditedButton;
+
+  function changeLastEditedButton(button) {
+    // Меняет внешний вид кнопки редактирования у звонка чтобы было видно какой последний звонок редактировали.
+    if (lastEditedButton) {
+      lastEditedButton.classList.remove('btn-info');
+      lastEditedButton.classList.add('btn-primary');
+    }
+    lastEditedButton = button;
+    button.classList.remove('btn-primary');
+    button.classList.add('btn-info');
+  }
+
   $(document).ready(function() {
-    <!--Чекбокс Выбрать все для клиентов-->
+    // Чекбокс Выбрать все для клиентов
     $('#id_select_all_clients').click(function() {
       $('input[type=checkbox][name=client_checkbox]').prop('checked', $(this).prop('checked'));
     });
 
-    // Modal
+    // Модальное окно
     let modal = $('#editModal');
 
     modal.on('show.bs.modal', function(event) {
       // Наполняю модальное окно данными
       let button = $(event.relatedTarget);
       let id = button.data('id');
+
+      changeLastEditedButton(button[0]);
 
       $.ajax({
         url: `/calls/edit/${id}`,
@@ -247,20 +335,9 @@
         });
       });
 
-      // Кнопка плеера, клонирую с текущего звонка
-      const row = event.relatedTarget.closest('tr');
-      lastPlayedButton = row.querySelector('.play-record-btn');
-      lastPlayedIcon = lastPlayedButton.querySelector('i');
-      clonedPlayButton = lastPlayedButton.cloneNode(true);
-      clonedPlayIcon = clonedPlayButton.querySelector('i');
-      const modalBody = document.querySelector('.modal-body');
-      modalBody.insertBefore(clonedPlayButton, modalBody.firstChild);
-      clonedPlayButton.addEventListener('click', event => {
-        event.preventDefault();
-        audioEvents(clonedPlayButton);
-      });
+      audioButtonForModal(event);
+      manualCallPrice();
     })
-
 
   });
 </script>

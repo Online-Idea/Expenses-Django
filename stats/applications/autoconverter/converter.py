@@ -771,6 +771,8 @@ def converter_process_result(process_id, template, task):
     if task.add_to_price:
         if task.add_to_price.endswith('.csv'):
             add_manually_df = pd.read_csv(task.add_to_price, decimal=',', sep=';', header=0, encoding='cp1251')
+            float_columns = ['Цена', 'Трейд-ин', 'Кредит', 'Страховка', 'Максималка']
+            add_manually_df[float_columns] = add_manually_df[float_columns].fillna(0).astype(int)
         elif task.add_to_price.endswith('.xlsx'):
             add_manually_df = pd.read_excel(task.add_to_price, decimal=',')
         else:

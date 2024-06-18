@@ -101,54 +101,58 @@
       {% if request.method == 'POST' %}
       <script language="javascript">
       $(document).ready(function () {
-        AjaxDatatableViewUtils.initialize_table(
-          $("#datatable_auction"),
-          "{% url 'ajax_datatable_auction' %}",
-          {
-            // extra_options
-            rowGroup: {
-              dataSrc: [
-                "datetime",
-                "autoru_region",
-              ],
+        $.getJSON('{% static "js/datatables-ru.json" %}', function(data) {
+          let language_json = data;
+
+          AjaxDatatableViewUtils.initialize_table(
+            $("#datatable_auction"),
+            "{% url 'ajax_datatable_auction' %}",
+            {
+              // extra_options
+              rowGroup: {
+                dataSrc: [
+                  "datetime",
+                  "autoru_region",
+                ],
+              },
+
+              fixedHeader: {
+                header: true,
+                footer: true
+              },
+              responsive: false,
+              processing: true,
+              autoWidth: true,
+              scrollX: true,
+              language: language_json,
+              pageLength: 100,
+
+              drawCallback: function(settings) {
+                // Добавляю границы над уникальными автомобилями
+                let prev_car = '';
+                let curr_car, mark, model;
+
+                $("#datatable_auction tr").each(function () {
+                  const $tr = $(this);
+                  mark = $tr.find('td:eq(1)').text();
+                  model = $tr.find('td:eq(2)').text();
+
+                  curr_car = [mark, model].join();
+
+                  if (prev_car !== curr_car) {
+                      $tr.addClass('thick-border');
+                  }
+
+                  prev_car = curr_car;
+                });
+              }
             },
-
-            fixedHeader: {
-              header: true,
-              footer: true
+            {
+              // extra_data
+              filter_params: '{{ filter_params }}',
             },
-            responsive: false,
-            processing: true,
-            autoWidth: true,
-            scrollX: true,
-            language: { url: '{% static "js/datatables-ru.json" %}', },
-            pageLength: 100,
-
-            drawCallback: function(settings) {
-              // Добавляю границы над уникальными автомобилями
-              let prev_car = '';
-              let curr_car, mark, model;
-
-              $("#datatable_auction tr").each(function () {
-                const $tr = $(this);
-                mark = $tr.find('td:eq(1)').text();
-                model = $tr.find('td:eq(2)').text();
-
-                curr_car = [mark, model].join();
-
-                if (prev_car !== curr_car) {
-                    $tr.addClass('thick-border');
-                }
-
-                prev_car = curr_car;
-              });
-            }
-          },
-          {
-            // extra_data
-            filter_params: '{{ filter_params }}',
-          },
-        );
+          );
+        });
 
       });
       </script>

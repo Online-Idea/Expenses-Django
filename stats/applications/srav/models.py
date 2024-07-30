@@ -47,3 +47,82 @@ class SravPivot(BaseModel):
         db_table = 'srav_srav_pivot'
         verbose_name = 'Сравнительная'
         verbose_name_plural = 'Сравнительная'
+
+
+def fill_mark_from_autoru_parsed_ad():
+    """
+    Наполняет уникальными Марками из AutoruParsedAd. Только для первичного заполнения UniqueAutoruParsedAdMark
+    :return:
+    """
+    mark_values = AutoruParsedAd.objects.values_list('mark', flat=True).distinct()
+    marks_objs = Mark.objects.filter(id__in=mark_values)
+    new_objs = [UniqueAutoruParsedAdMark(mark=mark) for mark in marks_objs]
+    UniqueAutoruParsedAdMark.objects.bulk_create(new_objs)
+
+
+class UniqueAutoruParsedAdMark(BaseModel):
+    """
+    Эта модель для уникальных Марок которые есть в AutoruParsedAd. Т.к. записей в AutoruParsedAd становится много,
+    то уходит много времени на то чтобы собрать уникальные значения для формы на сайте.
+    """
+    mark = models.OneToOneField(Mark, on_delete=models.CASCADE, verbose_name='Марка')
+
+    def __str__(self):
+        return f'{self.mark}'
+
+    class Meta:
+        db_table = 'srav_unique_autoru_parsed_ad_mark'
+        verbose_name = 'Уникальная Марка из спарсенных объявлений авто.ру'
+        verbose_name_plural = 'Уникальные Марки из спарсенных объявлений авто.ру'
+
+
+def fill_region_from_autoru_parsed_ad():
+    """
+    Наполняет уникальными Регионами из AutoruParsedAd. Только для первичного заполнения UniqueAutoruParsedAdRegion
+    :return:
+    """
+    regions_values = AutoruParsedAd.objects.values_list('region', flat=True).distinct()
+    new_objs = [UniqueAutoruParsedAdRegion(region=region) for region in regions_values]
+    UniqueAutoruParsedAdRegion.objects.bulk_create(new_objs)
+
+
+class UniqueAutoruParsedAdRegion(BaseModel):
+    """
+    Эта модель для уникальных Регионов которые есть в AutoruParsedAd. Т.к. записей в AutoruParsedAd становится много,
+    то уходит много времени на то чтобы собрать уникальные значения для формы на сайте.
+    """
+    region = models.CharField(max_length=500, unique=True, verbose_name='Регион')
+
+    def __str__(self):
+        return f'{self.region}'
+
+    class Meta:
+        db_table = 'srav_unique_autoru_parsed_ad_region'
+        verbose_name = 'Уникальный Регион из спарсенных объявлений авто.ру'
+        verbose_name_plural = 'Уникальные Регионы из спарсенных объявлений авто.ру'
+
+
+def fill_dealer_from_autoru_parsed_ad():
+    """
+    Наполняет уникальными Дилерами из AutoruParsedAd. Только для первичного заполнения UniqueAutoruParsedAdDealer
+    :return:
+    """
+    dealer_values = AutoruParsedAd.objects.values_list('dealer', flat=True).distinct()
+    new_objs = [UniqueAutoruParsedAdDealer(dealer=dealer) for dealer in dealer_values]
+    UniqueAutoruParsedAdDealer.objects.bulk_create(new_objs)
+
+
+class UniqueAutoruParsedAdDealer(BaseModel):
+    """
+    Эта модель для уникальных Дилеров которые есть в AutoruParsedAd. Т.к. записей в AutoruParsedAd становится много,
+    то уходит много времени на то чтобы собрать уникальные значения для формы на сайте.
+    """
+    dealer = models.CharField(max_length=500, unique=True, verbose_name='Имя дилера')
+
+    def __str__(self):
+        return f'{self.dealer}'
+
+    class Meta:
+        db_table = 'srav_unique_autoru_parsed_ad_dealer'
+        verbose_name = 'Уникальный Дилер из спарсенных объявлений авто.ру'
+        verbose_name_plural = 'Уникальные Дилеры из спарсенных объявлений авто.ру'

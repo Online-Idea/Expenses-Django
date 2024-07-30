@@ -39,7 +39,8 @@ class ClientAdmin(UserAdmin):
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
         ('Additional Info', {'fields': (
-            'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'autoru_name', 'avito_id', 'drom_id')}),
+            'manager', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'autoru_name', 'avito_id', 'drom_id'
+        )}),
     )
     add_fieldsets = (
         (None, {

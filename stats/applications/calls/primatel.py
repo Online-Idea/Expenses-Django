@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from io import BytesIO
 from typing import List
@@ -8,7 +9,7 @@ from django.utils import timezone
 from applications.autoconverter.converter import save_on_ftp
 from applications.calls.models import CabinetPrimatel, ClientPrimatel, SipPrimatel, Call, ClientPrimatelMark
 from libs.services.email_sender import send_email
-from stats.settings import WEBSITE
+from stats.settings import WEBSITE, env
 
 
 # TODO добавить async
@@ -71,7 +72,8 @@ class PrimatelLogic:
                 try:
                     data = response['data']['data']
                 except TypeError:
-                    breakpoint()
+                    logging.info(response)
+                    return result
                 names = response['data']['names']
                 total = response['data']['total']
                 total_items_count = int(total)
@@ -142,7 +144,7 @@ class PrimatelLogic:
             if 'error_message' in str(record.content):
                 continue
 
-            save_path = f'/calls/{call.client_primatel.client.slug}/records/{call.primatel_call_id}.mp3'
+            save_path = f'{env("FTP")}/calls/{call.client_primatel.client.slug}/records/{call.primatel_call_id}.mp3'
             save_on_ftp(save_path, record.content)
             call.record = save_path
 
@@ -158,7 +160,7 @@ class PrimatelLogic:
         """
         calls_without_records = Call.objects.filter(
             client_primatel__cabinet_primatel=cabinet, datetime__gte=from_, datetime__lte=to,
-            record__isnull=True, client_primatel__client__isnull=False
+            record__isnull=True, client_primatel__client__isnull=False, deleted=False
         )
         self.download_call_records(calls_without_records)
 
@@ -210,7 +212,7 @@ class PrimatelLogic:
         """
         clients = ClientPrimatel.objects.filter(cabinet_primatel=cabinet_primatel, active=True)
         sips = SipPrimatel.objects.filter(client_primatel__in=clients)
-        existing_calls = Call.objects.filter(sip_primatel__in=sips, datetime__gte=from_, datetime__lte=to)
+        existing_calls = Call.objects.filter(sip_primatel__in=sips, datetime__gte=from_, datetime__lte=to, deleted=False)
         existing_calls_primatel_call_ids = existing_calls.values_list('primatel_call_id', flat=True)
 
         step = 7
@@ -241,7 +243,7 @@ class PrimatelLogic:
                 item['time'] = datetime.strptime(item['time'], '%Y-%m-%d %H:%M:%S')
                 item['time'] = timezone.make_aware(item['time'], timezone.get_current_timezone())
 
-                if item['callid'] not in existing_calls_primatel_call_ids :
+                if item['callid'] not in existing_calls_primatel_call_ids:
                     new_call = Call(
                         datetime=item['time'],
                         num_from=item['numfrom'],
@@ -252,10 +254,12 @@ class PrimatelLogic:
                         mark=main_mark,
                         client_primatel=sip.client_primatel,
                         sip_primatel=sip,
+                        repeat_call=False,
                     )
                     if int(item['duration']) <= 25:
                         new_call.status = 'Сорвался'
                         new_call.target = 'Нет'
+
                     new_calls.append(new_call)
                 else:
                     updated_call = existing_calls.get(primatel_call_id=item['callid'])
@@ -270,6 +274,10 @@ class PrimatelLogic:
 
         Call.objects.bulk_create(new_calls)
         Call.objects.bulk_update(updated_calls, fields=['datetime', 'num_from', 'num_to', 'num_redirect', 'duration'])
+        # Повторно вызываю save() чтобы выполнить функции в нём, возможно что это нужно переделать
+        save_again = Call.objects.filter(datetime__gte=from_, datetime__lte=to, deleted=False)
+        for obj in save_again:
+            obj.save()
 
     def update_data(self, datefrom=None, dateto=None):
         """

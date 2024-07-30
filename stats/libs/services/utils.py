@@ -1,3 +1,4 @@
+import csv
 from datetime import datetime, timedelta
 from django.db import models
 from openpyxl.workbook import Workbook
@@ -47,10 +48,11 @@ def split_daterange(daterange: str) -> dict:
     """
     dates = daterange.split(' ')
     # Разбиваю дату на день, месяц, год
-    date_start = [int(i) for i in dates[0].split('.')]
-    date_end = [int(i) for i in dates[2].split('.')]
-    datefrom = datetime(date_start[2], date_start[1], date_start[0], 00, 00, 00, 629013)
-    dateto = datetime(date_end[2], date_end[1], date_end[0], 23, 59, 59, 629013)
+    separator = '.' if '.' in dates[0] else '-'
+    date_start = [int(i) for i in dates[0].split(separator)]
+    date_end = [int(i) for i in dates[2].split(separator)]
+    datefrom = datetime(date_start[2], date_start[1], date_start[0], 00, 00, 00, 0)
+    dateto = datetime(date_end[2], date_end[1], date_end[0], 23, 59, 59, 999999)
     return {
         'start': date_start,
         'end': date_end,
@@ -109,3 +111,23 @@ def get_models_verbose_names(model):
     :return:
     """
     return [f.verbose_name for f in model._meta.get_fields() if hasattr(f, 'verbose_name')]
+
+
+def export_queryset_to_csv(queryset, file_path=None):
+    """
+    Экспортирует Queryset в csv
+    :param queryset:
+    :param file_path:
+    :return:
+    """
+    if not file_path:
+        file_path = 'exported.csv'
+
+    with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
+        fields_list = queryset[0]._meta.get_fields()
+        field_names = [field.name for field in fields_list]
+        writer.writerow(field_names)
+        for row in queryset.values_list():
+            writer.writerow([cell for cell in row])
+

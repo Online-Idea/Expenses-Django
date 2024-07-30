@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -58,7 +60,13 @@ class ClientPrimatel(BaseModel):
     # autoru_password = models.CharField(max_length=100, blank=True, null=True, verbose_name='Авто.ру Пароль')
 
     def __str__(self):
-        return self.login
+        if self.name:
+            name = self.name
+        elif self.client:
+            name = self.client.name
+        else:
+            name = self.login
+        return name
 
     class Meta:
         db_table = 'calls_client_primatel'
@@ -108,15 +116,18 @@ class TargetChoice(models.TextChoices):
 
 class ModerationChoice(models.TextChoices):
     M = 'М', _('М')
-    MZ = 'М(З)', _('М(З)')
+    # MZ = 'М(З)', _('М(З)')
     MB = 'М(Б)', _('М(Б)')
-    USED = 'БУ', _('БУ')
+    # USED = 'БУ', _('БУ')
     AUTORU_USED = 'Авто.ру БУ', _('Авто.ру БУ')
     REQUEST = 'Заявка', _('Заявка')
+    REQUEST_AVITO = 'Заявка А', _('Заявка А')
+    REQUEST_VK = 'Заявка В', _('Заявка В')
+    REQUEST_CALL_CENTER = 'Заявка С', _('Заявка С')
     DROM = 'Дром', _('Дром')
     AVITO = 'Авито', _('Авито')
     AVITO_USED = 'Авито БУ', _('Авито БУ')
-    EXTRA = 'Запас', _('Запас')
+    # EXTRA = 'Запас', _('Запас')
     RESOURCES = 'Доп. ресурсы', _('Доп. ресурсы')
 
     @classmethod
@@ -126,46 +137,21 @@ class ModerationChoice(models.TextChoices):
         :param choice:
         :return:
         """
-        if choice in [cls.M, cls.MZ, cls.MB, cls.AUTORU_USED]:
+        if choice in [cls.M, cls.MB, cls.AUTORU_USED]:
             return 'Автору'
-        elif choice in [cls.AVITO, cls.AVITO_USED]:
+        elif choice in [cls.AVITO, cls.AVITO_USED, cls.REQUEST_AVITO]:
             return 'Авито'
-        elif choice in [cls.USED, cls.REQUEST, cls.DROM, cls.EXTRA, cls.RESOURCES]:
+        elif choice in [cls.REQUEST, cls.DROM, cls.RESOURCES]:
             return choice
+        elif choice == cls.REQUEST_VK:
+            return 'ВК'
+        elif choice == cls.REQUEST_CALL_CENTER:
+            return 'Колл-центр'
         else:
             raise ValueError(f'Неизвестная модерация {choice}')
 
 
-class CallManager(models.Manager):
-
-    def clean_phone_numbers(self, number: str):
-        """
-        Чистит номера телефонов от лишних символов
-        :param number:
-        :return:
-        """
-        return number.replace('+', '')
-
-    def create(self, *args, **kwargs):
-        kwargs['num_from'] = self.clean_phone_numbers(kwargs['num_from'])
-        kwargs['num_to'] = self.clean_phone_numbers(kwargs['num_to'])
-        kwargs['num_redirect'] = self.clean_phone_numbers(kwargs['num_redirect'])
-        return super().create(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        if args:
-            instance = args[0]
-        else:
-            instance = kwargs['instance']
-        instance.num_from = self.clean_phone_numbers(instance.num_from)
-        instance.num_to = self.clean_phone_numbers(instance.num_to)
-        instance.num_redirect = self.clean_phone_numbers(instance.num_redirect)
-        return super().save(*args, **kwargs)
-
-
 class Call(BaseModel):
-    objects = CallManager()
-
     class StatusChoice(models.TextChoices):
         DISCUSSING_PRICE_AND_AUTO = 'Обсуждают цену и авто', _('Обсуждают цену и авто')
         LEAVES_PHONE_FOR_CALLBACK = 'Оставляет номер для перезвона', _('Оставляет номер для перезвона')
@@ -189,7 +175,7 @@ class Call(BaseModel):
     datetime = models.DateTimeField(verbose_name='Дата и время')
     num_from = models.CharField(max_length=30, verbose_name='Исходящий')
     num_to = models.CharField(max_length=30, verbose_name='Входящий')
-    num_redirect = models.CharField(max_length=30, verbose_name='Номер переадресации')
+    num_redirect = models.CharField(max_length=30, blank=True, null=True, verbose_name='Номер переадресации')
     duration = models.IntegerField(verbose_name='Длительность')
 
     # Марка и Модель
@@ -202,9 +188,10 @@ class Call(BaseModel):
     moderation = models.CharField(max_length=100, blank=True, null=True, choices=ModerationChoice.choices,
                                   verbose_name='М')
     call_price = models.IntegerField(blank=True, null=True, verbose_name='Стоимость звонка')
-    manual_call_price = models.BooleanField(default=False, verbose_name='Ручное редактирование стоимости звонка')
+    manual_edit = models.BooleanField(default=False, verbose_name='Ручное редактирование звонка')
     status = models.CharField(max_length=100, blank=True, null=True, choices=StatusChoice.choices,
                               verbose_name='Статус звонка')
+    repeat_call = models.BooleanField(verbose_name='Повторный звонок')
 
     # Остальная информация из разговора
     other_comments = models.CharField(max_length=500, blank=True, null=True, verbose_name='Остальные комментарии')
@@ -228,14 +215,47 @@ class Call(BaseModel):
     # Данные Примател
     primatel_call_id = models.CharField(max_length=500, blank=True, null=True, verbose_name='id звонка Примател')
     client_primatel = models.ForeignKey(ClientPrimatel, on_delete=models.PROTECT, verbose_name='Клиент Примател')
-    sip_primatel = models.ForeignKey(SipPrimatel, on_delete=models.PROTECT, verbose_name='Sip')
+    sip_primatel = models.ForeignKey(SipPrimatel, blank=True, null=True, on_delete=models.PROTECT, verbose_name='Sip')
 
     # Данные колтач
     calltouch_data = models.ForeignKey('CalltouchData', blank=True, null=True, on_delete=models.SET_NULL,
                                        verbose_name='Данные Calltouch')
+    deleted = models.BooleanField(default=False, verbose_name='Удалён')
 
     def __str__(self):
         return f'{self.client_primatel.name} | {self.num_from} | {self.datetime}'
+
+    def clean_phone_number(self, number: str):
+        return number.replace('+', '')
+
+    def clean_phone_numbers(self):
+        """
+        Чистит номера телефонов от лишних символов
+        """
+        self.num_from = self.clean_phone_number(self.num_from)
+        self.num_to = self.clean_phone_number(self.num_to)
+        self.num_redirect = self.clean_phone_number(self.num_redirect)
+
+    def check_repeat_call(self):
+        """
+        Проверяет если звонок повторный.
+        Повторным считается если нашему клиенту уже звонили с этого номера за последние 30 дней от даты этого звонка
+        :return:
+        """
+        last_30_days = (self.datetime - datetime.timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+        qs = (Call.objects
+              .filter(num_from=self.num_from, client_primatel=self.client_primatel,
+                      datetime__range=[last_30_days, self.datetime], deleted=False)
+              ).exclude(pk=self.pk if self.pk else None)
+        # if self.id:
+        #     qs.exclude(pk=self.pk)
+        # breakpoint()
+        self.repeat_call = qs.exists()
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        self.clean_phone_numbers()
+        self.check_repeat_call()
+        return super().save()
 
     class Meta:
         db_table = 'calls_call'
@@ -314,3 +334,24 @@ class CalltouchData(BaseModel):
         db_table = 'calls_calltouch_data'
         verbose_name = 'Данные Calltouch'
         verbose_name_plural = 'Данные Calltouch'
+
+
+class Plan(BaseModel):
+    client_primatel = models.ForeignKey(ClientPrimatel, on_delete=models.CASCADE, verbose_name='Клиент Примател')
+    datefrom = models.DateField(verbose_name='Дата от')
+    dateto = models.DateField(verbose_name='Дата до')
+    plan = models.IntegerField(verbose_name='План')
+    plan_for_day = models.FloatField(verbose_name='План на день')
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
+        days_count = (self.dateto - self.datefrom).days + 1
+        self.plan_for_day = round(self.plan / days_count, 2)
+        super(Plan, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.client_primatel} | {self.datefrom}-{self.dateto} | {self.plan}'
+
+    class Meta:
+        db_table = 'calls_plan'
+        verbose_name = 'План'
+        verbose_name_plural = 'Планы'

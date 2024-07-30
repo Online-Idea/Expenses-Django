@@ -3,7 +3,7 @@
 
 {% block headcontent %}
 
-<title>Звонки</title>
+<title>Звонки. Детально</title>
 
 {% include 'base/daterange_picker.html' %}
 
@@ -11,10 +11,10 @@
 
 {% block content %}
 <!--Modal-->
-<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+<div class="modal fade" id="callModal" tabindex="-1" role="dialog" aria-labelledby="callModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl" role="document">
     <div class="modal-content">
-      <!-- сюда подставится из edit_modal.html при вызове модального окна -->
+      <!-- сюда подставится из call_modal.html при вызове модального окна -->
     </div>
   </div>
 </div>
@@ -23,9 +23,16 @@
 
 <div class="container">
   <div class="row">
-    <div class="col-xl-12 center">
-      <h3 class="logo"><a href="{% url 'calls' %}">Звонки</a></h3>
+    <div class="col-xl-6 center">
+      <h3 class="logo"><a href="{% url 'calls' %}">Звонки. Детально</a></h3>
+    </div>
+    <div class="col-xl-6 text-end">
+      <p class="small-note text-end">Обновлено: {{ last_updated }}</p>
+    </div>
+  </div>
 
+  <div class="row">
+    <div class="col-xl-6 center">
       <!--Выбор периода-->
       <form method="POST" class="period" action="{% url 'calls' %}">
         {% csrf_token %}
@@ -45,9 +52,21 @@
           </div>
         </details>
       </form>
+    </div>
+
+    <!-- Добавить звонок -->
+    <div class="col-xl-6 text-end mt-3">
+      <button id="new-call" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#callModal" data-new="true">
+        Добавить звонок
+      </button>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-xl-12 center">
 
         <!--Ссылки на клиентов в agency.auto.ru-->
-        {% if request.method == 'POST' %}
+        {% if agency_autoru_links %}
           <div class="agency-autoru-links">
             Кабинеты авто.ру:
             {% for client_name, link in agency_autoru_links %}
@@ -60,14 +79,13 @@
         <div class="table-responsive">
           <table
             id="datatable_calls"
-            width="100%"
             class="table table-striped table-bordered dt-responsive hover"
           >
             <thead class="table-dark"></thead>
           </table>
         </div>
 
-        {% if request.method == 'POST' %}
+        {% if call_data %}
         <script language="javascript">
           $(document).ready(function () {
 
@@ -78,7 +96,10 @@
                 $("#datatable_calls"),
                 "{% url 'ajax_datatable_calls' %}",
                 {
-                  fixedHeader: true,
+                  fixedHeader: {
+                      header: true,
+                      footer: true
+                  },
                   responsive: false,
                   {#full_row_select: true,#}
                   processing: true,
@@ -99,6 +120,12 @@
               audioButtons('button[data-audio-url]');
             });
 
+            $('#datatable_calls').on('rowCallback', function(event, table, row, data) {
+              if (data.repeat_call === 'Да') {
+                $(row).addClass('positive-text');
+              }
+            });
+
           });
         </script>
         {% endif %}
@@ -109,6 +136,7 @@
       </div>
 
     </div>
+
   </div>
 </div>
 
@@ -238,27 +266,63 @@
 
   function styleRowOnCondition(row, data, dataIndex) {
     // Меняет стиль ряда по условию
-    // Если Обратить внимание то крашу в красный
+    // Если у звонка стоит Обратить внимание то крашу в красный
     if (data['attention'] === 'Да') {
       row.querySelectorAll('td').forEach(td => td.classList.add('negative'));
     }
   }
 
-  function manualCallPrice() {
-    // В модальном окне меняю возможность редактирования Стоимости звонка
-    // в зависимости от чекбокса Ручное редактирование стоимости звонка
-    let manualCallPriceCheckbox = document.querySelector('#id_manual_call_price');
-    let callPriceInput = document.querySelector('#id_call_price');
+  function manualEdit() {
+    // В модальном окне меняю возможность редактирования полей которые изначально закрыты
+    // в зависимости от чекбокса Ручное редактирование звонка
+    const fieldIds = ['#id_client_primatel', '#id_datetime', '#id_num_from', '#id_num_to', '#id_duration',
+                      '#id_call_price', '#id_num_redirect', '#id_record'];
+    let manualCallPriceCheckbox = document.querySelector('#id_manual_edit');
 
     // Event listener на изменения чекбокса
     manualCallPriceCheckbox.addEventListener('change', function () {
-      callPriceInput.disabled = !this.checked;
+      fieldIds.forEach(fieldId => {
+        let fieldElement = document.querySelector(fieldId);
+        fieldElement.disabled = !this.checked;
+      });
     });
 
-    // Первичное состояние Стоимости звонка
+    // Первичное состояние полей
     if (!manualCallPriceCheckbox.checked) {
-      callPriceInput.disabled = true;
+      fieldIds.forEach(fieldId => {
+        let fieldElement = document.querySelector(fieldId);
+        fieldElement.disabled = true;
+      });
     }
+  }
+
+  function createCall(formData) {
+    // Добавляет звонок
+    $.ajax({
+      url: '/api/v1/calls/',
+      type: 'POST',
+      data: formData,
+      beforeSend: function (xhr) {
+        xhr.setRequestHeader('X-CSRFToken', $('input[name=csrfmiddlewaretoken]').val());
+      },
+      success: function (response) {
+        $('#callModal').modal('hide');
+      },
+      error: function (error) {
+        console.log(error);
+      }
+    }).done(function (data, textStatus, jqXHR) {
+      // Открываю страницу с отфильтрованными звонками среди которых есть этот созданный
+      const dateMoment = moment(data['datetime']);
+      const dateFormatted = dateMoment.format('DD-MM-YYYY');
+      let urlParams = new URLSearchParams(window.location.search);
+      urlParams.set('datefrom', dateFormatted);
+      urlParams.set('dateto', dateFormatted);
+      urlParams.set('client_primatels', data['client_primatel']);
+      urlParams.set('num_from', data['num_from']);
+      urlParams.set('num_to', data['num_to']);
+      window.location.href = `{% url 'calls' %}?${urlParams.toString()}`;
+    });
   }
 
   let lastEditedButton;
@@ -274,6 +338,12 @@
     button.classList.add('btn-info');
   }
 
+  function changeDateTimeFormat(dateTimeStr) {
+    // Меняет формат даты и времени на нужный для обновления звонка в модальном окне
+    const dateTimeMoment = moment(dateTimeStr, 'DD.MM.YYYY HH:mm:ss', true);
+    return dateTimeMoment.format('YYYY-MM-DDTHH:mm:ss');
+  }
+
   $(document).ready(function() {
     // Чекбокс Выбрать все для клиентов
     $('#id_select_all_clients').click(function() {
@@ -281,65 +351,149 @@
     });
 
     // Модальное окно
-    let modal = $('#editModal');
+    let modal = $('#callModal');
 
     modal.on('show.bs.modal', function(event) {
       // Наполняю модальное окно данными
       let button = $(event.relatedTarget);
-      let id = button.data('id');
+      if (button.data('new') === true) {  // Добавление звонка
+        $.ajax({
+          url: 'calls/new',
+          type: 'GET',
+          success: function (response) {
+            $('.modal-content').replaceWith(response);
+            document.querySelector('#id_manual_edit').checked = true;
+            manualEdit();
+            modelFromMark();
+          },
+          error: function (error) {
+            console.error(error);
+          }
+        });
 
-      changeLastEditedButton(button[0]);
+      } else {  // Редактирование звонка
+        let id = button.data('id');
 
-      $.ajax({
-        url: `/calls/edit/${id}`,
-        type: 'GET',
-        success: function (response) {
-          $('.modal-content').replaceWith(response);
-          {#$('#id_mark').on('change', modelFromMark);#}
-          modelFromMark();
-        },
-        error: function (error) {
-          console.error(error);
-        }
-      });
+        changeLastEditedButton(button[0]);
+
+        $.ajax({
+          url: `/calls/edit/${id}`,
+          type: 'GET',
+          success: function (response) {
+            $('.modal-content').replaceWith(response);
+            {#$('#id_mark').on('change', modelFromMark);#}
+            modelFromMark();
+          },
+          error: function (error) {
+            console.error(error);
+          }
+        });
+      }
     })
 
     modal.on('shown.bs.modal', function (event) {
+      let button = $(event.relatedTarget);
+      const newCall = button.data('new') === true;
+
+      if (!newCall) {
+        audioButtonForModal(event);
+        manualEdit();
+      }
       // Кнопка Обновить модального окна
       $('#save-btn').on('click', function (e) {
         e.preventDefault();
-        const id = $('#recordId').val();
-        const data = $('#editForm').serialize();
 
-        $.ajax({
-          url: `/api/v1/calls/${id}/`,
-          type: 'PUT',
-          data: data,
-          beforeSend: function (xhr) {
-            xhr.setRequestHeader('X-CSRFToken', $('input[name=csrfmiddlewaretoken]').val());
-          },
-          success: function (response) {
-            $('#editModal').modal('hide');
-          },
-          error: function (error) {
-            console.log(error);
-          }
-        }).done(function (data, textStatus, jqXHR) {
-          let table = $('#datatable_calls');
-          // Вроде не нужно всю таблицу перерисовывать, но пока оставлю
-          {#table.DataTable().ajax.reload(null, false); // Reload the table data#}
-          // Invalidate and draw the row
-          let tr = $(`#row-${id}`);
-          let row = table.DataTable().row(tr);
-          row.invalidate().draw();
+        const form = document.querySelector('#callForm');
+        // Собираю данные формы. Приходится таким способом т.к. выключенное Ручное редактирование звонка ставит
+        // disabled на часть полей, а от этого они не отправляются при сохранении и выдают ошибки.
+        const textInputs = form.querySelectorAll('input:not([type="checkbox"])');
+        const selects = form.querySelectorAll('select');
+        const checkboxInputs = form.querySelectorAll('input[type="checkbox"]')
+        let formData = {};
+        textInputs.forEach(element => {
+          formData[element.name] = element.value;
         });
+        selects.forEach(element => {
+          formData[element.name] = element.value;
+        });
+        checkboxInputs.forEach(element => {
+          formData[element.name] = element.checked;
+        });
+        {#formData.datetime = changeDateTimeFormat(formData.datetime);#}
+
+        if (newCall) {
+          createCall(formData);
+
+        } else {
+          const id = $('#recordId').val();
+          $.ajax({
+            url: `/api/v1/calls/${id}/`,
+            type: 'PUT',
+            data: formData,
+            beforeSend: function (xhr) {
+              xhr.setRequestHeader('X-CSRFToken', $('input[name=csrfmiddlewaretoken]').val());
+            },
+            success: function (response) {
+              $('#callModal').modal('hide');
+            },
+            error: function (error) {
+              console.log(error);
+            }
+          }).done(function (data, textStatus, jqXHR) {
+            let table = $('#datatable_calls');
+            // Вроде не нужно всю таблицу перерисовывать, но пока оставлю
+            {#table.DataTable().ajax.reload(null, false); // Reload the table data#}
+            // Invalidate and draw the row
+            let tr = $(`#row-${id}`);
+            let row = table.DataTable().row(tr);
+            row.invalidate().draw();
+          });
+        }
+
       });
 
-      audioButtonForModal(event);
-      manualCallPrice();
     })
-
   });
+
+  function copyText(event) {
+    // Копирует текст в буфер, меняет иконку копирования на галочку, через 2 секунды обратно на иконку копирования
+    event.preventDefault();
+    let text = event.target.closest('td').innerText.trim();
+    navigator.clipboard.writeText(text);
+
+    const copyIcon = ['fa-regular', 'fa-copy'];
+    const checkIcon = ['fa-solid', 'fa-check'];
+    event.target.classList.remove(...copyIcon);
+    event.target.classList.add(...checkIcon);
+    setTimeout(() => {
+      event.target.classList.remove(...checkIcon);
+      event.target.classList.add(...copyIcon);
+    }, 2000);
+  }
+
+  function deleteCall(event) {
+    // Удаляет звонок, меняя в базе deleted на True
+    if (confirm('Хотите удалить звонок?')) {
+      const id = event.target.dataset['id'];
+      $.ajax({
+        url: `/calls/delete/${id}/`,
+        type: 'GET',
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader('X-CSRFToken', $('input[name=csrfmiddlewaretoken]').val());
+        },
+        success: function (response) {
+          console.log('Успешно удалён');
+        },
+        error: function (error) {
+          console.log(error);
+        }
+      }).done(function (data, textStatus, jqXHR) {
+        let table = $('#datatable_calls');
+        table.DataTable().ajax.reload(null, false); // Reload the table data
+      });
+    }
+  }
+
 </script>
 
 {% endblock %}

@@ -131,10 +131,10 @@ def home(request):
             subtotal['calls_sum'] += client['calls_sum']
             subtotal['products_sum'] += client['products_sum']
             subtotal['teleph_target'] += client['teleph_target']
-        subtotal['calls_cost'] = round(subtotal['platform'] / subtotal['teleph_target'], 2)
-        subtotal['client_cost'] = round(subtotal['teleph_calls_sum'] / subtotal['teleph_target'], 2)
-        subtotal['margin'] = round(subtotal['client_cost'] - subtotal['calls_cost'], 2)
-        subtotal['profit'] = round(subtotal['margin'] * subtotal['teleph_target'], 2)
+        subtotal['calls_cost'] = round(subtotal['platform'] / subtotal['teleph_target'], 2) if subtotal['teleph_target'] > 0 else 0
+        subtotal['client_cost'] = round(subtotal['teleph_calls_sum'] / subtotal['teleph_target'], 2) if subtotal['client_cost'] > 0 else 0
+        subtotal['margin'] = round(subtotal['client_cost'] - subtotal['calls_cost'], 2) if subtotal['margin'] > 0 else 0
+        subtotal['profit'] = round(subtotal['margin'] * subtotal['teleph_target'], 2) if subtotal['profit'] > 0 else 0
         # Конец таблицы себестоимости
 
         context = {

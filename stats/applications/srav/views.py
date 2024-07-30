@@ -15,7 +15,7 @@ from applications.srav.filters import AutoruParsedAdFilter
 from applications.srav.forms import AutoruParsedAdChooseForm, ComparisonChooseForm
 from applications.srav.models import AutoruParsedAd, SravPivot
 from applications.srav.serializers import AutoruParsedAdSerializer
-from applications.srav.srav import get_srav_data, format_comparison
+from applications.srav.srav import get_srav_data, format_comparison, check_and_create_unique_autoru_parsed_ad_objs
 from libs.autoru.autoru import process_parsed_ads, fill_in_auction_with_parsed_ads, \
     fill_in_unique_cheapest_for_srav_pivot
 from libs.services.decorators import allowed_users
@@ -42,6 +42,9 @@ class AutoruParsedAdViewSet(viewsets.ModelViewSet):
 
         # Заполняю сравнительную в этой базе
         fill_in_unique_cheapest_for_srav_pivot(serializer.data)
+
+        # Добавляю новые уникальные Марки, Регионы и Дилеров
+        check_and_create_unique_autoru_parsed_ad_objs(serializer.instance)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 

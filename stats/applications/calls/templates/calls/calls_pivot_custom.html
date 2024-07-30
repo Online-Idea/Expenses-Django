@@ -1,0 +1,441 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block headcontent %}
+
+  <title>Звонки. Сводная</title>
+
+  {% include 'base/daterange_picker.html' %}
+
+  <link rel="stylesheet" href="https://cdn.webdatarocks.com/latest/webdatarocks.min.css">
+  {% include 'base/daterange_picker.html' %}
+
+{% endblock %}
+
+{% block content %}
+
+  <script src="https://cdn.webdatarocks.com/latest/webdatarocks.toolbar.min.js"></script>
+  <script src="https://cdn.webdatarocks.com/latest/webdatarocks.js"></script>
+
+  <script>
+    let pivot, jsonData, lastPressedReport;
+
+    function showPivot(data) {
+      // WebDataRocks
+      jsonData = data;
+      pivot = new WebDataRocks({
+        container: "#wdr-component",
+        beforetoolbarcreated: customizeToolbar,
+        toolbar: true,
+        report: {
+          dataSource: {
+            data: data
+          },
+        },
+        global: {
+          localization: '{% static "js/webdatarocks-ru.json" %}'
+        },
+        height: calculateHeight()
+      });
+
+      document.querySelector('#report-client-by-moderation').click();
+      overrideSummaryStrings();
+      pivot.on('reportcomplete', function() {
+        resizePivot();
+      });
+
+    }
+
+    function customizeToolbar(toolbar) {
+      let tabs = toolbar.getTabs(); // Get all tabs from the toolbar
+
+      // Create a new tab for expanding all data
+      let expandAllButton = {
+        id: "wdr-tab-expand-all",
+        title: "Раскрыть все",
+        handler: function () {
+          pivot.expandAllData();
+        },
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 320 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>'
+      };
+
+      // Create a new tab for collapsing all data
+      let collapseAllButton = {
+        id: "wdr-tab-collapse-all",
+        title: "Скрыть все",
+        handler: function () {
+          pivot.collapseAllData();
+        },
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 512 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/></svg>'
+      };
+
+      let transposeButton = {
+        id: "wdr-tab-transpose",
+        title: "Транспонировать",
+        handler: function () {
+          let currentReport = pivot.getReport();
+          if (currentReport && currentReport.slice) {
+            let slice = currentReport.slice;
+            let newSlice = {
+              rows: slice.columns,
+              columns: slice.rows,
+              measures: slice.measures,
+              reportFilters: slice.reportFilters
+            };
+            pivot.setReport({
+              dataSource: currentReport.dataSource,
+              slice: newSlice,
+              formats: currentReport.formats
+            });
+          }
+          resizePivot();
+        },
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" class="rotate-135" width="36" height="36" viewBox="0 0 512 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M32 96l320 0 0-64c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l96 96c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-96 96c-9.2 9.2-22.9 11.9-34.9 6.9s-19.8-16.6-19.8-29.6l0-64L32 160c-17.7 0-32-14.3-32-32s14.3-32 32-32zM480 352c17.7 0 32 14.3 32 32s-14.3 32-32 32l-320 0 0 64c0 12.9-7.8 24.6-19.8 29.6s-25.7 2.2-34.9-6.9l-96-96c-6-6-9.4-14.1-9.4-22.6s3.4-16.6 9.4-22.6l96-96c9.2-9.2 22.9-11.9 34.9-6.9s19.8 16.6 19.8 29.6l0 64 320 0z"/></svg>'
+      };
+
+      // Add the new tabs to the existing tabs
+      tabs.unshift(expandAllButton);
+      tabs.unshift(collapseAllButton);
+      tabs.unshift(transposeButton);
+
+      // Меняю порядок кнопок
+      let tabsOrder = [
+        "wdr-tab-connect",
+        "wdr-tab-open",
+        "wdr-tab-save",
+        "wdr-tab-export",
+        "wdr-tab-expand-all",
+        "wdr-tab-collapse-all",
+        "wdr-tab-transpose",
+        "wdr-tab-format",
+        "wdr-tab-options",
+        "wdr-tab-fields",
+        "wdr-tab-fullscreen"
+      ]
+      tabs.sort(function (a, b) {
+        return tabsOrder.indexOf(a.id) - tabsOrder.indexOf(b.id);
+      });
+
+      toolbar.getTabs = function () {
+        return tabs;
+      };
+    }
+
+    function setOption(option, value) {
+      webdatarocks.setOptions({
+        grid: {
+          [option]: value
+        }
+      });
+      webdatarocks.refresh();
+    }
+
+    function setReport(slice, formats) {
+      // Основная функция для смены таблицы
+      let report = {
+        dataSource: {data: jsonData},
+        "slice": slice,
+        "formats": formats
+      }
+      if (formats) {
+        report['formats'] = formats;
+      }
+      pivot.setReport(report);
+    }
+
+    function setReportClientByModeration(button) {
+      // целевые, по клиентам, по площадкам
+      let slice = {
+        "reportFilters": [
+          {
+            "uniqueName": "Целевой",
+            "filter": {
+              "members": [
+                "Целевой.Да",
+                "Целевой.ПМ - Целевой"
+              ]
+            }
+          }
+        ],
+        "rows": [
+          {
+            "uniqueName": "Клиент"
+          }
+        ],
+        "columns": [
+          {
+            "uniqueName": "Measures"
+          },
+          {
+            "uniqueName": "Площадка"
+          }
+        ],
+        "measures": [
+          {
+            "uniqueName": "Целевой",
+            "aggregation": "Количество",
+            "availableAggregations": [
+              "Количество",
+              "Количество уникальных"
+            ]
+          }
+        ]
+      };
+      setReport(slice);
+      changePressedReport(button);
+    }
+
+    function setReportMarkModelByClient(button) {
+      // целевые, по марке и модели, по клиентам
+      let slice = {
+        "reportFilters": [
+          {
+            "uniqueName": "Целевой",
+            "filter": {
+              "members": [
+                "Целевой.Да",
+                "Целевой.ПМ - Целевой"
+              ]
+            }
+          }
+        ],
+        "rows": [
+          {
+            "uniqueName": "Марка"
+          },
+          {
+            "uniqueName": "Модель"
+          }
+        ],
+        "columns": [
+          {
+            "uniqueName": "Клиент"
+          },
+          {
+            "uniqueName": "Measures"
+          }
+        ],
+        "measures": [
+          {
+            "uniqueName": "Целевой",
+            "aggregation": "Количество",
+            "availableAggregations": [
+              "Количество",
+              "Количество уникальных"
+            ]
+          }
+        ]
+      };
+      setReport(slice);
+      changePressedReport(button);
+    }
+
+    function setReportClientMarkModelByModeration(button) {
+      let slice = {
+        "reportFilters": [
+          {
+            "uniqueName": "Целевой",
+            "filter": {
+              "members": [
+                "Целевой.Да",
+                "Целевой.ПМ - Целевой"
+              ]
+            }
+          }
+        ],
+        "rows": [
+          {
+            "uniqueName": "Клиент"
+          },
+          {
+            "uniqueName": "Марка"
+          },
+          {
+            "uniqueName": "Модель"
+          }
+        ],
+        "columns": [
+          {
+            "uniqueName": "Measures"
+          },
+          {
+            "uniqueName": "Площадка"
+          }
+        ],
+        "measures": [
+          {
+            "uniqueName": "Целевой",
+            "aggregation": "count",
+            "availableAggregations": [
+              "count",
+              "distinctcount"
+            ]
+          },
+          {
+            "uniqueName": "Стоимость звонка",
+            "aggregation": "average",
+            "format": "62qm0wuk"
+          }
+        ]
+      };
+      let formats = [
+        {
+          "name": "62qm0wuk",
+          "thousandsSeparator": " ",
+          "decimalSeparator": ".",
+          "decimalPlaces": 0,
+          "currencySymbol": "",
+          "currencySymbolAlign": "left",
+          "nullValue": "",
+          "textAlign": "right",
+          "isPercent": false
+        }
+      ];
+
+      setReport(slice, formats);
+      changePressedReport(button);
+    }
+
+    function changePressedReport(button) {
+      if (lastPressedReport) {
+        lastPressedReport.classList.remove('btn-success');
+        lastPressedReport.classList.add('btn-outline-success');
+      }
+
+      button.classList.remove('btn-outline-success');
+      button.classList.add('btn-success');
+      lastPressedReport = button;
+    }
+
+    function overrideSummaryStrings() {
+      // Переводит вычисляемые поля которые появляются под выделенными ячейками
+      setTimeout(function () {
+        const elements = document.querySelectorAll('.wdr-auto-calculation-bar-content-text');
+        elements.forEach(element => {
+          const text = element.textContent;
+          switch (text) {
+            case 'Average:':
+              element.textContent = 'Среднее:';
+              break;
+            case 'Count:':
+              element.textContent = 'Количество:';
+              break;
+            case 'Sum:':
+              element.textContent = 'Сумма:';
+              break;
+          }
+        });
+      }, 1000);
+    }
+
+    function calculateHeight() {
+      // Рассчитывает высоту таблицы
+      const baseHeight = 185;
+      const rowHeight = 30;
+      const rowCount = document.querySelectorAll('#wdr-rows-resize div.wdr-wrapper div[data-idx]').length;
+      return baseHeight + (rowHeight * rowCount);
+    }
+
+    function resizePivot() {
+      // Меняет высоту таблицы
+      const component = document.querySelector('#wdr-component');
+      component.style.height = calculateHeight() + 'px';
+      pivot.refresh();
+    }
+
+  </script>
+
+
+  <div class="container">
+    <div class="row">
+      <div class="col-xl-12 center">
+        <h3 class="logo"><a href="{% url 'calls_pivot_custom' %}">Звонки. Сводная настраиваемая</a></h3>
+
+        <!--Выбор периода-->
+        <form method="POST" class="period" action="{% url 'calls_pivot_custom' %}">
+          {% csrf_token %}
+          {{ form.daterange }}
+          <button type="submit" class="btn btn-primary">Показать</button>
+          <!--Список клиентов-->
+          <details>
+            <summary>Клиенты</summary>
+            <div class="content">
+              <label for="id_select_all_clients">
+                {{ form.select_all_clients }}
+                Выбрать все
+              </label>
+              {{ form.client_checkbox }}
+            </div>
+          </details>
+        </form>
+      </div>
+    </div>
+
+    <!--Сводная таблица-->
+    {% if request.method == 'POST' %}
+      <div class="row">
+        <div class="col-xl-12 center">
+
+          <!--Кнопки-заготовки-->
+          {% comment %}
+        <button type="button" class="btn btn-outline-primary" id="wdr-type-flat"
+                onclick="setOption('type', 'flat')">Flat</button>
+        <button type="button" class="btn btn-outline-primary" id="wdr-type-classic"
+                onclick="setOption('type', 'classic')">Classic</button>
+          {% endcomment %}
+          <div class="button-container">
+            <button type="button" class="btn btn-success wdr-report-btn hover-button"
+                    id="report-client-by-moderation" onclick="setReportClientByModeration(this)">Отчет #1</button>
+            <div class="hover-text hidden">Целевые, по клиентам, по площадкам</div>
+          </div>
+          <div class="button-container">
+            <button type="button" class="btn btn-outline-success wdr-report-btn hover-button"
+                    id="report-mark-model-by-client" onclick="setReportMarkModelByClient(this)">Отчет #2</button>
+            <div class="hover-text hidden">Целевые, по марке и модели, по клиентам</div>
+          </div>
+          <div class="button-container">
+            <button type="button" class="btn btn-outline-success wdr-report-btn hover-button"
+                    id="report-client-mark-model-by-moderation" onclick="setReportClientMarkModelByModeration(this)">Отчет #3</button>
+            <div class="hover-text hidden">Целевые и средняя стоимость звонка, по клиентам, марке и модели, по площадкам</div>
+          </div>
+
+          <div id="wdr-component"></div>
+        </div>
+      </div>
+
+      <script>showPivot({{ call_data|safe }});</script>
+    {% endif %}
+
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Чекбокс Выбрать все для клиентов
+      $('#id_select_all_clients').click(function () {
+        $('input[type=checkbox][name=client_checkbox]').prop('checked', $(this).prop('checked'));
+      });
+
+      // Подсказки для кнопок
+      const buttons = document.querySelectorAll('.hover-button');
+      let hoverTimers = {};
+
+      buttons.forEach(button => {
+        const hoverText = button.nextElementSibling;
+
+        button.addEventListener('mouseenter', () => {
+          hoverTimers[button.id] = setTimeout(() => {
+            hoverText.classList.remove('hidden');
+          }, 250);
+        });
+
+        button.addEventListener('mouseleave', () => {
+          clearTimeout(hoverTimers[button.id]);
+          hoverText.classList.add('hidden');
+        });
+      });
+
+
+    });
+  </script>
+
+{% endblock %}

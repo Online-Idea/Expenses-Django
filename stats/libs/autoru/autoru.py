@@ -16,6 +16,7 @@ from applications.auction.models import AutoruAuctionHistory
 from applications.srav.models import AutoruParsedAd, SravPivot
 from stats.settings import env
 from .models import *
+from ..services.email_sender import send_email
 
 ENDPOINT = 'https://apiauto.ru/1.0'
 
@@ -826,20 +827,23 @@ def fill_nan_for_model(row):
     """
     models = Model.objects.filter(mark=row['my_mark_id'])
     if pd.isna(row['my_model_id']):
-        possible_name = ' '.join(row['mark_model'].split()[:-1])
-        found_obj = recursive_search(models, 'model', possible_name).id
+        possible_name = ' '.join(row['mark_model'].split())
+        found_obj = recursive_search(models, 'model', possible_name)
         if found_obj:
-            return found_obj
+            return found_obj.id
         else:
+            send_email('Не найдена модель',
+                       f'Проблема при обработке {possible_name}\nДобавь её вручную либо поправь код',
+                       env['EMAIL_FOR_ERRORS'])
             raise ValueError(f'Модель {row["mark_model"]} не найдена в базе')
     else:
         return row['my_model_id']
 
 
-def recursive_search(db_model: object, db_field: str, possible_name: str) -> object:
+def recursive_search(db_model: QuerySet, db_field: str, possible_name: str) -> Union[models.Model, None]:
     """
     Фильтрует Django модель по строке, отнимая по одному слову с конца
-    :param db_model: модель Django
+    :param db_model: QuerySet Django
     :param db_field: поле модели
     :param possible_name: строка по которой фильтрует
     :return: объект модели Django
@@ -981,24 +985,24 @@ def fill_in_unique_cheapest_for_srav_pivot(qs: Union[QuerySet[AutoruParsedAd], R
     common_cols.extend(['complectation', 'modification', 'year'])
 
     # Сортирую
-    df = df.sort_values(by=common_cols+['price_with_discount'])
+    df = df.sort_values(by=common_cols + ['price_with_discount'])
 
     # Количество автомобилей
     df_in_stock = df[df['in_stock'] == 'В наличии']
-    count_df = df_in_stock.groupby(common_cols+['dealer']) \
+    count_df = df_in_stock.groupby(common_cols + ['dealer']) \
         .size().reset_index(name='stock')
-    df = pd.merge(df, count_df, on=common_cols+['dealer'], how='left')
+    df = pd.merge(df, count_df, on=common_cols + ['dealer'], how='left')
 
     df_for_order = df[df['in_stock'].isin(['В пути', 'На заказ'])]
-    count_df = df_for_order.groupby(common_cols+['dealer']) \
+    count_df = df_for_order.groupby(common_cols + ['dealer']) \
         .size().reset_index(name='for_order')
-    df = pd.merge(df, count_df, on=common_cols+['dealer'], how='left')
+    df = pd.merge(df, count_df, on=common_cols + ['dealer'], how='left')
 
     # Пустые на 0
     df[['stock', 'for_order']] = df[['stock', 'for_order']].fillna(0)
 
     # Удаляю дубликаты
-    df = df.drop_duplicates(subset=common_cols+['dealer'])
+    df = df.drop_duplicates(subset=common_cols + ['dealer'])
 
     # Позиция по цене
     df['position_price'] = df.groupby(common_cols).cumcount() + 1
@@ -1088,8 +1092,8 @@ def get_autoru_ads(client_id: int) -> list[dict]:
     url = f'{ENDPOINT}/user/offers/cars'
     dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
     req_body = {
-       'page': 1,
-       'page_size': 100,
+        'page': 1,
+        'page_size': 100,
     }
     ads_response = requests.get(url=url, headers=dealer_headers, params=req_body).json()
 
@@ -1156,3 +1160,40 @@ def stop_autoru_ads(ads_ids: Union[List[str], List[Dict[str, str]]], client_id: 
         response = requests.put(url=url_with_id, headers=dealer_headers)
         if autoru_errors(response.json()):
             response = requests.put(url=url_with_id, headers=dealer_headers)
+
+
+def delete_autoru_ads(ads_ids: Union[List[str], List[Dict[str, str]]], client_id: int) -> None:
+    """
+    Удаляет объявления
+    https://yandex.ru/dev/autoru/doc/reference/user-offers-category-offer-id.html
+    DELETE /user/offers/{category}/{offerID}
+    :param ads_ids:
+    :param client_id:
+    :return:
+    """
+    url = f'{ENDPOINT}/user/offers/cars/offerID'
+    dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
+
+    ads_ids = take_out_ids(ads_ids)
+
+    for ad_id in ads_ids:
+        url_with_id = url.replace('offerID', ad_id)
+        response = requests.delete(url=url_with_id, headers=dealer_headers)
+        if autoru_errors(response.json()):
+            response = requests.delete(url=url_with_id, headers=dealer_headers)
+
+
+def get_autoru_catalog_structure():
+    url = 'https://apiauto.ru/1.0/search/cars/breadcrumbs'
+    dealer_headers = {**API_KEY, **session_id}
+    catalog = AutoruCatalog.objects.all()[:500]
+    bc_lookups = [f'{row.mark_code}#{row.model_code}' for row in catalog]
+    params = {
+        # 'bc_lookup': 'HIPHI#Y#23668078#23668106',
+        # 'bc_lookup': 'HIPHI#Y',
+        'bc_lookup': bc_lookups,
+        'rid': 213,
+        'state': 'NEW'
+    }
+    response = requests.get(url=url, headers=dealer_headers, params=params)
+    return response.json()

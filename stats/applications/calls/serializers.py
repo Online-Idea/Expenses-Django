@@ -7,13 +7,14 @@ from applications.calls.models import Call, TargetChoice
 class CallSerializer(serializers.ModelSerializer):
     class Meta:
         model = Call
-        fields = ['mark', 'model', 'target', 'other_comments', 'client_primatel', 'client_name', 'manager_name',
-                  'moderation', 'car_price', 'status', 'call_price', 'manual_call_price', 'color', 'body', 'drive',
-                  'engine', 'complectation', 'attention', 'city']
+        fields = ['client_primatel', 'datetime', 'num_from', 'num_to', 'duration', 'mark', 'model', 'target',
+                  'moderation', 'status', 'other_comments', 'call_price',  'client_name',
+                  'manager_name', 'car_price', 'color', 'body', 'drive', 'engine', 'complectation',
+                  'city', 'num_redirect', 'record', 'manual_edit', 'attention', ]
 
     def update(self, instance, validated_data):
-        # Если Ручное редактирование стоимости звонка не отмечено
-        if not validated_data['manual_call_price']:
+        # Если Ручное редактирование звонка не отмечено
+        if not validated_data['manual_edit']:
             # Заполняю стоимость звонка в зависимости от настроек из CallPriceSetting
             validated_data['call_price'] = calculate_call_price(instance, validated_data)
 

@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700&display=swap');
 
+/* Для ультрашироких мониторов */
+@media (min-width: 1500px) {
+    .container {
+        max-width: 2400px;
+    }
+}
+
 /*----------------------Лого--------------*/
 .logo {
     margin-top: 20px;
@@ -19,7 +26,25 @@
     margin: 20px 0;
 }
 
-/*---------------------------------------------------*/
+.small-note {
+    font-size: 12px;
+    color: #656262;
+}
+
+/*----------------------Чёрные ссылки--------------*/
+.black-url {
+    text-decoration: none;
+    color: black;
+}
+.white-url {
+    text-decoration: none;
+    color: white;
+}
+.black-url:hover,
+.white-url:hover {
+    text-decoration: underline;
+}
+
 
 
 /*----------------------Список клиентов--------------*/
@@ -125,6 +150,15 @@ ul {
     background-color: #DDE8CB !important;
 }
 
+.negative-text {
+    color: #F44336 !important;
+}
+
+.positive-text,
+.positive-text td {
+    color: #88bf2d !important;
+}
+
 .chosen-dealer td {
     background-color: #DEE6EF !important;
 }
@@ -140,7 +174,12 @@ th {
 
 table.dataTable td,
 table.dataTable tr {
- font-size: 14px;
+    font-size: 14px;
+}
+
+.one-line {
+    display: flex;
+    gap: 5px;
 }
 
 /*---------------------------------------------------*/
@@ -1226,3 +1265,117 @@ input[type="number"]::-webkit-outer-spin-button {
 .agency-autoru-links {
     margin-bottom: 20px;
 }
+
+
+/*----------------------Звонки настраиваемая--------------*/
+.rotate-135 {
+    transform: rotate(135deg) !important;
+}
+
+/* Подсказки для кнопок */
+.button-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.hover-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.hover-text {
+    position: absolute;
+    top: 100%;
+    left: 0; /* Align left side of hover text with the button */
+    padding: 10px;
+    background-color: #333;
+    color: #fff;
+    border-radius: 5px;
+    white-space: nowrap;
+    z-index: 1000; /* Ensure the text is on top */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Optional: add shadow for better visibility */
+}
+
+.hidden {
+    display: none;
+}
+/*
+Попытки показывать русские надписи полностью, не получилось, но пока оставлю
+#wdr-toolbar-wrapper #wdr-toolbar a>span {
+    text-overflow: clip !important;
+}
+*/
+
+/*
+!* Ensure parent containers use flexbox *!
+.wdr-toolbar li, .wdr-dropdown li {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important; !* Allow wrapping *!
+}
+
+!* Allow the text to wrap and avoid truncation *!
+.wdr-ui-element,
+.wdr-dropdown-content span {
+    white-space: normal !important;
+    word-break: break-word !important;
+}
+
+!* Adjust the width of specific elements if needed *!
+.wdr-toolbar li a, .wdr-dropdown li a {
+    max-width: 120px !important; !* Adjust this value as needed *!
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 5px 10px !important; !* Added padding for better spacing *!
+    white-space: normal !important; !* Allow text to wrap *!
+}
+
+!* Ensure the SVG icons and text are properly spaced *!
+.wdr-svg-icon {
+    margin-right: 8px !important; !* Adjust spacing as needed *!
+}
+
+!* Set the width of the dropdown menu *!
+.wdr-dropdown {
+    min-width: 220px !important; !* Adjust this value as needed *!
+}
+
+!* Additional styles for better appearance *!
+.wdr-toolbar {
+    padding: 10px 0 !important; !* Adding padding to the toolbar *!
+}
+
+.wdr-toolbar li a {
+    font-size: 14px !important; !* Adjust font size if needed *!
+    white-space: normal !important; !* Allow text to wrap *!
+    word-break: break-word !important; !* Break words if needed *!
+    text-align: center !important;
+}
+
+!* Ensure dropdown items have enough space *!
+.wdr-dropdown-content span {
+    padding: 5px 10px !important; !* Added padding for dropdown items *!
+    white-space: normal !important; !* Allow text to wrap *!
+    word-break: break-word !important; !* Break words if needed *!
+    display: block !important; !* Ensure the span is a block element *!
+}
+
+!* Custom styles for the toolbar wrapper to handle long text *!
+#wdr-toolbar-wrapper #wdr-toolbar a>span {
+    text-align: center !important;
+    text-overflow: ellipsis !important;
+    overflow: visible !important; !* Allow overflow to be visible *!
+    height: auto !important; !* Auto height to allow wrapping *!
+    max-width: 100px !important; !* Adjust the max-width to fit the content *!
+    word-break: break-word !important; !* Ensure words break correctly *!
+}
+
+!* Ensure sufficient space between toolbar items *!
+#wdr-toolbar-wrapper #wdr-toolbar li {
+    margin: 0 5px !important; !* Add margin to prevent overlap *!
+}
+*/

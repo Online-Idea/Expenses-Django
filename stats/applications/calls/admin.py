@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from applications.calls.models import ClientPrimatelMark, ClientPrimatel, CallPriceSetting, ChargeTypeChoice, \
-    ModerationChoice, CalltouchSetting
+    ModerationChoice, CalltouchSetting, Plan, Call
 from libs.services.models import Model, Mark
 
 
@@ -68,4 +68,20 @@ class ClientPrimatelAdmin(admin.ModelAdmin):
             call_price_setting.save()
 
 
+class PlanAdmin(admin.ModelAdmin):
+    list_display = ('id', 'client_primatel', 'datefrom', 'dateto', 'plan')
+    list_display_links = ('id', 'client_primatel', )
+    search_fields = ('client_primatel', )
+    fields = ('id', 'client_primatel', 'datefrom', 'dateto', 'plan', 'plan_for_day')
+    readonly_fields = ('id', 'plan_for_day')
+    save_on_top = True
+
+    def form_valid(self, request, obj=None):
+        response = super().form_valid(request)
+        obj.save()
+        return response
+
+
 admin.site.register(ClientPrimatel, ClientPrimatelAdmin)
+admin.site.register(Plan, PlanAdmin)
+admin.site.register(Call)

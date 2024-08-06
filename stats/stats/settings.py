@@ -179,6 +179,8 @@ STATICFILES_DIRS = [
 
 if live_deploy:
     STATIC_ROOT = '/home/django/django_venv/src/staticfiles/'
+else:
+    STATIC_ROOT = 'venv/src/staticfiles/'
 
 
 # Default primary key field type

@@ -86,14 +86,14 @@ class ConverterLogsBotDataAdmin(admin.ModelAdmin):
 
 
 class ConverterFilterAdmin(admin.ModelAdmin):
-    list_display = ('id', 'converter_task', 'field', 'condition', 'value')
+    list_display = ('active', 'id', 'converter_task', 'field', 'condition', 'value')
     list_display_links = ('id', 'converter_task', 'field')
-    list_editable = ('condition',)
+    list_editable = ('active', 'condition',)
     search_fields = ('converter_task', 'field')
-    list_filter = ('converter_task',)
-    fields = ('id', 'converter_task', 'field', 'condition', 'value', 'note')
+    list_filter = ('active', 'converter_task',)
+    fields = ('active', 'id', 'converter_task', 'field', 'condition', 'value', 'note')
     readonly_fields = ('id',)
-    ordering = ('converter_task', 'field')
+    ordering = ('converter_task', 'active', 'field')
 
 
 class ConditionalInline(admin.TabularInline):
@@ -117,13 +117,14 @@ class ConverterExtraProcessingNewChangesInline(admin.TabularInline):
 
 
 class ConverterExtraProcessingAdmin(admin.ModelAdmin):
-    list_display = ('id', 'converter_task', 'conditionals', 'new_changes')
+    list_display = ('active', 'id', 'converter_task', 'conditionals', 'new_changes')
     list_display_links = ('id', 'converter_task')
+    list_editable = ('active', )
     search_fields = ('converter_task__name', 'conditional__value', 'converterextraprocessingnewchanges__new_value')
-    list_filter = ('converter_task',)
-    fields = ('id', 'converter_task', 'note')
+    list_filter = ('active', 'converter_task',)
+    fields = ('active', 'id', 'converter_task', 'note')
     readonly_fields = ('id',)
-    ordering = ('converter_task', )
+    ordering = ('converter_task', 'active', )
     list_per_page = 10
     inlines = [ConditionalInline, ConverterExtraProcessingNewChangesInline]
     save_on_top = True

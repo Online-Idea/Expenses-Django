@@ -169,7 +169,7 @@ def template_xml(stock_path, template_path, task):
 
     # Данные шаблона
     fields = task.stock_fields
-    exception_col = ['modification_code', 'options_code', 'images', 'modification_explained', 'description']
+    exception_col = ['modification_code', 'options_code', 'images', 'modification_explained', 'description', 'vin']
     for i, car in enumerate(root.iter(fields.car_tag)):
         if stock_xml_filter(car, task):
             # Обычные поля
@@ -223,6 +223,11 @@ def template_xml(stock_path, template_path, task):
                     sheet.cell(row=i + 2, column=template_col['description'][1] + 1,
                                # value=car.findtext(fields.description))
                                value=multi_tags(fields.description, car, '\n'))
+
+            # VIN, если меньше 17 символов то добавляю в начало столько 'X' сколько не хватает до 17
+            vin = car.findtext(fields.vin)
+            vin = f"{'X' * (17 - len(vin))}{vin}" if len(vin) < 17 else vin
+            sheet.cell(row=i + 2, column=template_col['vin'][1] + 1, value=vin)
 
             # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
             # extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
@@ -326,7 +331,7 @@ def stock_xml_filter(car, task):
     :param task: task (запись) из таблицы Задачи конвертера
     :return: True если фильтры пройдены
     """
-    filters = ConverterFilter.objects.filter(converter_task=task)
+    filters = ConverterFilter.objects.filter(converter_task=task, active=True)
     dict_filters, stock_fields, result = [], [], []
 
     # Перевожу фильтры в словарь вида: {'values': values, 'condition': condition, 'field': field}
@@ -506,7 +511,7 @@ def stock_xlsx_filter(df, task):
     :param task: task (запись) из таблицы Задачи конвертера
     :return: Отфильтрованный dataframe
     """
-    filters = ConverterFilter.objects.filter(converter_task=task)
+    filters = ConverterFilter.objects.filter(converter_task=task, active=True)
     filter_strings = []
     for f in filters:
         filter_or = []

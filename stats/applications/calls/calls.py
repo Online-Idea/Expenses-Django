@@ -154,8 +154,8 @@ def prepare_pivot_data(queryset: QuerySet[Call]):
         'datetime': obj['datetime'].strftime('%d.%m.%Y'),
         'num_from': obj['num_from'],
         'num_to': obj['num_to'],
-        'num_redirect': obj['num_redirect'],
-        'duration': obj['duration'],
+        # 'num_redirect': obj['num_redirect'],
+        # 'duration': obj['duration'],
         'client_primatel__client__name': obj['client_primatel__client__name'],
         'mark__mark': obj['mark__mark'],
         'model__model': obj['model__model'],
@@ -176,7 +176,7 @@ def prepare_pivot_data(queryset: QuerySet[Call]):
         verbose_item = {verbose_names.get(k, k): v for k, v in item.items()}
         result_verbose_names.append(verbose_item)
 
-    return json.dumps(result_verbose_names)
+    return json.dumps(result_verbose_names, default=lambda o: 'null' if o is None else o)
 
 
 def get_calls_pivot_data(calls_qs: QuerySet[Call], datefrom: datetime, dateto: datetime) -> dict:
@@ -277,7 +277,8 @@ def get_calls_pivot_data(calls_qs: QuerySet[Call], datefrom: datetime, dateto: d
     }
 
     # Бюджет
-    total_budget = df.call_price.sum().astype(int)
+    total_budget = df.call_price.sum()
+    total_budget = total_budget.astype(int) if total_budget else 0
     budget_by_client = df.groupby('client_id')['call_price'].sum().astype(int)
     budget_by_client = budget_by_client.loc[client_order]
     budget = [total_budget] + budget_by_client.to_list()
@@ -285,19 +286,22 @@ def get_calls_pivot_data(calls_qs: QuerySet[Call], datefrom: datetime, dateto: d
     # План
     plan_queryset = Plan.objects.filter(client_primatel__client__in=client_order)
     plan_data = []
-    for plan in plan_queryset:
-        dates = pd.date_range(plan.datefrom, plan.dateto)
-        plan_for_days = [plan.plan_for_day] * len(dates)
-        clients = [plan.client_primatel.client.id] * len(dates)
-        for date, plan_for_day, client in zip(dates, plan_for_days, clients):
-            plan_data.append({'date': date, 'plan_for_day': plan_for_day, 'client_id': client})
-    df_plan = pd.DataFrame(plan_data)
-    filtered_by_daterange = df_plan[(df_plan.date >= datefrom) & (df_plan.date <= dateto)]
-    total_plan = filtered_by_daterange.plan_for_day.sum().astype(int)
-    grouped_by_client = filtered_by_daterange.groupby('client_id')['plan_for_day'].sum().astype(int)
-    grouped_by_client = grouped_by_client.reindex(client_order)
-    plan_by_client = grouped_by_client.fillna(0).astype(int).replace(0, '-').tolist()
-    plan = [total_plan] + plan_by_client
+    if plan_queryset:
+        for plan in plan_queryset:
+            dates = pd.date_range(plan.datefrom, plan.dateto)
+            plan_for_days = [plan.plan_for_day] * len(dates)
+            clients = [plan.client_primatel.client.id] * len(dates)
+            for date, plan_for_day, client in zip(dates, plan_for_days, clients):
+                plan_data.append({'date': date, 'plan_for_day': plan_for_day, 'client_id': client})
+        df_plan = pd.DataFrame(plan_data)
+        filtered_by_daterange = df_plan[(df_plan.date >= datefrom) & (df_plan.date <= dateto)]
+        total_plan = filtered_by_daterange.plan_for_day.sum().astype(int)
+        grouped_by_client = filtered_by_daterange.groupby('client_id')['plan_for_day'].sum().astype(int)
+        grouped_by_client = grouped_by_client.reindex(client_order)
+        plan_by_client = grouped_by_client.fillna(0).astype(int).replace(0, '-').tolist()
+        plan = [total_plan] + plan_by_client
+    else:
+        plan = ['-'] * len(budget)
 
     # Процент плана
     percent_plan = [round(budget[i] / plan[i] * 100, 1) if plan[i] != '-' else '-' for i in range(len(budget))]

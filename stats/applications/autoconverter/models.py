@@ -276,6 +276,7 @@ class ConverterFilter(BaseModel):
     condition = models.CharField(max_length=500, choices=CONDITION_CHOICES,
                                  default=CONDITION_CHOICES[2], verbose_name='Условие')
     value = models.CharField(max_length=500, help_text=value_help_text, verbose_name='Значение')
+    active = models.BooleanField(verbose_name='Активно', default=True)
     note = models.TextField(blank=True, null=True, verbose_name='Заметка')
 
     def __str__(self):
@@ -291,6 +292,7 @@ class ConverterFilter(BaseModel):
 class ConverterExtraProcessing(BaseModel):
     # Различные изменения прайса по условию
     converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.PROTECT)
+    active = models.BooleanField(verbose_name='Активно', default=True)
     note = models.TextField(blank=True, null=True, verbose_name='Заметка')
 
     def __str__(self):
@@ -334,7 +336,7 @@ class ConverterExtraProcessingNewChanges(BaseModel):
     converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.CASCADE,
                                                    verbose_name='Обработка прайса')
     price_column_to_change = models.CharField(max_length=500, verbose_name='Столбец прайса в котором менять')
-    new_value = models.CharField(max_length=5000, null=True, blank=True, help_text=new_value_help,
+    new_value = models.TextField(max_length=10000, null=True, blank=True, help_text=new_value_help,
                                  verbose_name='Новое значение')
     change_type = models.CharField(max_length=255, choices=CHANGE_TYPE_CHOICES, verbose_name='Как заменять',
                                    default=CHANGE_TYPE_CHOICES[0])

@@ -19,7 +19,7 @@ from applications.accounts.models import Client
 @allowed_users(allowed_groups=['admin'])
 def home(request):
     if request.method == 'POST':
-        form = ClientChooseForm(request.POST)
+        form = ClientChooseForm(request.POST, user=request.user)
 
         if not form.is_valid():
             return HttpResponse(status=400)
@@ -148,7 +148,7 @@ def home(request):
         return render(request, 'netcost/netcost.html', context)
 
     else:
-        form = ClientChooseForm()
+        form = ClientChooseForm(user=request.user)
 
     clients = Client.objects.filter(active=True)
     today = datetime.date.today()

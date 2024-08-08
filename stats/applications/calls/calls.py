@@ -63,7 +63,7 @@ def get_last_updated_call_datetime():
 
 
 def get_and_validate_form(request):
-    form = ClientChooseForm(request.POST)
+    form = ClientChooseForm(request.POST, user=request.user)
     return form if form.is_valid() else HttpResponse(form.errors)
 
 

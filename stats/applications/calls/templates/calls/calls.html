@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load auth_extras %}
 
 {% block headcontent %}
 
@@ -55,17 +56,20 @@
     </div>
 
     <!-- Добавить звонок -->
-    <div class="col-xl-6 text-end mt-3">
-      <button id="new-call" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#callModal" data-new="true">
-        Добавить звонок
-      </button>
-    </div>
+    {% if request.user|has_group:'admin' %}
+      <div class="col-xl-6 text-end mt-3">
+        <button id="new-call" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#callModal" data-new="true">
+          Добавить звонок
+        </button>
+      </div>
+    {% endif %}
   </div>
 
   <div class="row">
     <div class="col-xl-12 center">
 
-        <!--Ссылки на клиентов в agency.auto.ru-->
+      <!--Ссылки на клиентов в agency.auto.ru-->
+      {% if request.user|has_group:'admin' %}
         {% if agency_autoru_links %}
           <div class="agency-autoru-links">
             Кабинеты авто.ру:
@@ -74,61 +78,62 @@
             {% endfor %}
           </div>
         {% endif %}
+      {% endif %}
 
-        <!--Таблица звонков-->
-        <div class="table-responsive">
-          <table
-            id="datatable_calls"
-            class="table table-striped table-bordered dt-responsive hover"
-          >
-            <thead class="table-dark"></thead>
-          </table>
-        </div>
+      <!--Таблица звонков-->
+      <div class="table-responsive">
+        <table
+          id="datatable_calls"
+          class="table table-striped table-bordered dt-responsive hover"
+        >
+          <thead class="table-dark"></thead>
+        </table>
+      </div>
 
-        {% if call_data %}
-        <script language="javascript">
-          $(document).ready(function () {
+      {% if call_data %}
+      <script language="javascript">
+        $(document).ready(function () {
 
-            $.getJSON('{% static "js/datatables-ru.json" %}', function(data) {
-              let language_json = data;
+          $.getJSON('{% static "js/datatables-ru.json" %}', function(data) {
+            let language_json = data;
 
-              AjaxDatatableViewUtils.initialize_table(
-                $("#datatable_calls"),
-                "{% url 'ajax_datatable_calls' %}",
-                {
-                  fixedHeader: {
-                      header: true,
-                      footer: true
-                  },
-                  responsive: false,
-                  {#full_row_select: true,#}
-                  processing: true,
-                  autoWidth: true,
-                  scrollX: true,
-                  language: language_json,
-                  pageLength: 50,
-                  createdRow: styleRowOnCondition,
+            AjaxDatatableViewUtils.initialize_table(
+              $("#datatable_calls"),
+              "{% url 'ajax_datatable_calls' %}",
+              {
+                fixedHeader: {
+                    header: true,
+                    footer: true
                 },
-                {
-                  // extra_data
-                  filter_params: "{{ filter_params }}",
-                },
-              );
-            });
-
-            $('#datatable_calls').on('draw.dt', function () {
-              audioButtons('button[data-audio-url]');
-            });
-
-            $('#datatable_calls').on('rowCallback', function(event, table, row, data) {
-              if (data.repeat_call === 'Да') {
-                $(row).addClass('positive-text');
-              }
-            });
-
+                responsive: false,
+                {#full_row_select: true,#}
+                processing: true,
+                autoWidth: true,
+                scrollX: true,
+                language: language_json,
+                pageLength: 50,
+                createdRow: styleRowOnCondition,
+              },
+              {
+                // extra_data
+                filter_params: "{{ filter_params }}",
+              },
+            );
           });
-        </script>
-        {% endif %}
+
+          $('#datatable_calls').on('draw.dt', function () {
+            audioButtons('button[data-audio-url]');
+          });
+
+          $('#datatable_calls').on('rowCallback', function(event, table, row, data) {
+            if (data.repeat_call === 'Да') {
+              $(row).addClass('positive-text');
+            }
+          });
+
+        });
+      </script>
+      {% endif %}
 
       <!--Аудио плеер-->
       <div id="audio-player">

@@ -61,7 +61,7 @@ def calls(request):
         return render(request, 'calls/calls.html', context)
 
     else:
-        context = {'form': ClientChooseForm()}
+        context = {'form': ClientChooseForm(user=request.user)}
 
         query_params = request.GET.copy()
         if ('datefrom' in query_params and 'dateto' in query_params
@@ -192,7 +192,7 @@ def calls_pivot(request):
             context = context | calls_pivot_data  # Объединяю словари
         return render(request, 'calls/calls_pivot.html', context)
 
-    form = ClientChooseForm()
+    form = ClientChooseForm(user=request.user)
     datefrom, dateto = dates_for_daterange(end_of_month=True)
     last_updated = get_last_updated_call_datetime()
 
@@ -246,7 +246,7 @@ def calls_pivot_custom(request):
         context['call_data'] = prepare_pivot_data(call_data)
         return render(request, 'calls/calls_pivot_custom.html', context)
 
-    form = ClientChooseForm()
+    form = ClientChooseForm(user=request.user)
     datefrom, dateto = dates_for_daterange(end_of_month=True)
     context = {
         'form': form,

@@ -4,7 +4,9 @@ from datetime import timedelta
 from urllib.parse import urlencode
 
 from ajax_datatable.views import AjaxDatatableView
+from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 
 from applications.accounts.models import Client
 from applications.calls.models import Call
@@ -22,40 +24,43 @@ class CallDatatableView(AjaxDatatableView):
     length_menu = [[10, 20, 50, 100], [10, 20, 50, 100]]
     search_values_separator = '+'
 
-    column_defs = [
-        AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'id', 'visible': False, },
-        {'name': 'edit', 'title': 'Ред.', 'placeholder': True, 'searchable': False, 'orderable': False},
-        {'name': 'record', 'title': 'Запись звонка', 'searchable': False, 'orderable': False, 'autofilter': False},
-        {'name': 'primatel_call_id', 'visible': False, },
-        {'name': 'client', 'title': 'Клиент', 'foreign_field': 'client_primatel__client__name', 'orderable': True,
-            'searchable': True, },
-        {'name': 'datetime', 'title': 'Дата и время', 'orderable': True, 'searchable': True},
-        {'name': 'num_from', 'title': 'Исходящий', 'orderable': True, 'searchable': True},
-        {'name': 'num_to', 'title': 'Входящий', 'orderable': True, 'searchable': True},
-        {'name': 'duration', 'title': 'Длительность', 'orderable': True},
-        {'name': 'mark', 'title': 'Марка', 'foreign_field': 'mark__mark', 'orderable': True, 'searchable': True},
-        {'name': 'model', 'title': 'Модель', 'foreign_field': 'model__model', 'orderable': True, 'searchable': True},
-        {'name': 'target', 'title': 'Целевой', 'orderable': True, 'choices': True, 'autofilter': True},
-        {'name': 'moderation', 'title': 'М', 'orderable': True, 'choices': True, 'autofilter': True},
-        {'name': 'status', 'title': 'Статус звонка', 'orderable': True, 'choices': True, 'autofilter': True},
-        {'name': 'repeat_call', 'visible': False },
-        {'name': 'other_comments', 'title': 'Остальные комментарии', 'searchable': True},
-        {'name': 'client_primatel', 'visible': False, },
-        {'name': 'client_name', 'title': 'Имя клиента', 'searchable': True},
-        {'name': 'manager_name', 'title': 'Имя менеджера', 'orderable': True, 'searchable': True},
-        {'name': 'car_price', 'title': 'Стоимость автомобиля', 'orderable': True, },
-        {'name': 'call_price', 'title': 'Стоимость звонка', 'orderable': True, },
-        {'name': 'manual_edit', 'title': 'Ручное редактирование звонка', 'orderable': True, },
-        {'name': 'color', 'title': 'Цвет', 'orderable': True, },
-        {'name': 'body', 'title': 'Кузов', 'orderable': True, },
-        {'name': 'drive', 'title': 'Привод', 'orderable': True, },
-        {'name': 'engine', 'title': 'Двигатель', 'orderable': True, },
-        {'name': 'complectation', 'title': 'Комплектация', 'orderable': True, },
-        {'name': 'attention', 'title': 'Обратить внимание', 'orderable': True, },
-        {'name': 'city', 'title': 'Город', 'orderable': True, },
-        {'name': 'delete', 'title': 'Удалить', 'placeholder': True, 'searchable': False, 'orderable': False},
-    ]
+    def get_column_defs(self, request):
+        column_defs = [
+            self.render_row_tools_column_def(),
+            {'name': 'id', 'visible': False, },
+            {'name': 'record', 'title': 'Запись звонка', 'searchable': False, 'orderable': False, 'autofilter': False},
+            {'name': 'primatel_call_id', 'visible': False, },
+            {'name': 'client', 'title': 'Клиент', 'foreign_field': 'client_primatel__client__name', 'orderable': True, 'searchable': True, },
+            {'name': 'datetime', 'title': 'Дата и время', 'orderable': True, 'searchable': True},
+            {'name': 'num_from', 'title': 'Исходящий', 'orderable': True, 'searchable': True},
+            {'name': 'num_to', 'title': 'Входящий', 'orderable': True, 'searchable': True},
+            {'name': 'duration', 'title': 'Длительность', 'orderable': True},
+            {'name': 'mark', 'title': 'Марка', 'foreign_field': 'mark__mark', 'orderable': True, 'searchable': True},
+            {'name': 'model', 'title': 'Модель', 'foreign_field': 'model__model', 'orderable': True, 'searchable': True},
+            {'name': 'target', 'title': 'Целевой', 'orderable': True, 'choices': True, 'autofilter': True},
+            {'name': 'moderation', 'title': 'М', 'orderable': True, 'choices': True, 'autofilter': True},
+            {'name': 'status', 'title': 'Статус звонка', 'orderable': True, 'choices': True, 'autofilter': True},
+            {'name': 'repeat_call', 'visible': False },
+            {'name': 'other_comments', 'title': 'Остальные комментарии', 'searchable': True},
+            {'name': 'client_primatel', 'visible': False, },
+            {'name': 'client_name', 'title': 'Имя клиента', 'searchable': True},
+            {'name': 'manager_name', 'title': 'Имя менеджера', 'orderable': True, 'searchable': True},
+            {'name': 'car_price', 'title': 'Стоимость автомобиля', 'orderable': True, },
+            {'name': 'call_price', 'title': 'Стоимость звонка', 'orderable': True, },
+            {'name': 'manual_edit', 'title': 'Ручное редактирование звонка', 'orderable': True, },
+            {'name': 'color', 'title': 'Цвет', 'orderable': True, },
+            {'name': 'body', 'title': 'Кузов', 'orderable': True, },
+            {'name': 'drive', 'title': 'Привод', 'orderable': True, },
+            {'name': 'engine', 'title': 'Двигатель', 'orderable': True, },
+            {'name': 'complectation', 'title': 'Комплектация', 'orderable': True, },
+            {'name': 'attention', 'title': 'Обратить внимание', 'orderable': True, },
+            {'name': 'city', 'title': 'Город', 'orderable': True, },
+        ]
+        # Сейчас только админ может редактировать и удалять
+        if request.user.groups.filter(name='admin').exists():
+            column_defs.append({'name': 'edit', 'title': 'Ред.', 'placeholder': True, 'searchable': False, 'orderable': False})
+            column_defs.append({'name': 'delete', 'title': 'Удалить', 'placeholder': True, 'searchable': False, 'orderable': False})
+        return column_defs
 
     def get_initial_queryset(self, request=None):
         # Получаю переданные данные
@@ -90,12 +95,13 @@ class CallDatatableView(AjaxDatatableView):
         # TODO Добавить прямую (или с фильтрами) ссылку на agency.auto.ru
         #  когда будет настроена интеграция наших звонков со звонками авто.ру
         # Редактирование звонка
-        edit_button = f'''
-            <button class="btn btn-primary edit-btn" data-id="{row["pk"]}" data-bs-toggle="modal" data-bs-target="#callModal">
-                <i class="fa-regular fa-pen-to-square"></i>
-            </button> 
-        '''
-        row['edit'] = edit_button
+        if 'edit' in row:
+            edit_button = f'''
+                <button class="btn btn-primary edit-btn" data-id="{row["pk"]}" data-bs-toggle="modal" data-bs-target="#callModal">
+                    <i class="fa-regular fa-pen-to-square"></i>
+                </button> 
+            '''
+            row['edit'] = edit_button
 
         # Кнопка записи звонка
         play_record_button = f'''
@@ -124,11 +130,16 @@ class CallDatatableView(AjaxDatatableView):
         '''
 
         # Кнопка удаления
-        delete_button = f'''
-            <button class="btn btn-primary delete-btn" data-id="{row["pk"]}" onclick="deleteCall(event)">
-                <i class="fa-solid fa-trash"></i>
-            </button> 
-        '''
-        row['delete'] = delete_button
+        if 'delete' in row:
+            delete_button = f'''
+                <button class="btn btn-primary delete-btn" data-id="{row["pk"]}" onclick="deleteCall(event)">
+                    <i class="fa-solid fa-trash"></i>
+                </button> 
+            '''
+            row['delete'] = delete_button
 
         return row
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(CallDatatableView, self).dispatch(*args, **kwargs)

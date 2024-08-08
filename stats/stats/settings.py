@@ -153,7 +153,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'accounts.Client'
+AUTH_USER_MODEL = 'accounts.Account'
 LOGIN_REDIRECT_URL = '/accounts/profile/'
 
 # Internationalization

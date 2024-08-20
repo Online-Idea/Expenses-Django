@@ -1,9 +1,8 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from .serializers import CallSerializer
-from .views import *
 from . import ajax_datatable_views
+from .views import *
 
 router = routers.DefaultRouter()
 router.register(r'api/v1/calls', CallViewSet)

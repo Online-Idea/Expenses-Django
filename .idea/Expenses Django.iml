@@ -20,6 +20,7 @@
     </content>
     <orderEntry type="jdk" jdkName="Python 3.11 (Expenses-Django)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="pivottable" level="application" />
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Django" />

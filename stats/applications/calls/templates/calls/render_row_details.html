@@ -1,0 +1,18 @@
+    <div class="container m-0" style="max-width: 1024px;">
+      {% for row in rows %}
+        <div class="row mb-2">
+          {% for col in row %}
+            {% for key, val in col.items %}
+              <div class="col-{{ col_size }} p-1">
+                <div class="card">
+                  <div class="card-body">
+                    <small class="text-muted">{{ key }}:</small><br>
+                    <strong>{{ val }}</strong>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>

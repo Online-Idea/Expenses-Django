@@ -21,7 +21,11 @@ class ConverterManual(SuccessMessageMixin, FormView):
     def form_valid(self, form):
         tasks = form.cleaned_data['task_checkbox']
         for task in tasks:
-            get_price(ConverterTask.objects.get(pk=task.id))
+            task_obj = ConverterTask.objects.get(pk=task.id)
+            if task_obj.use_converter:
+                get_price(task_obj)
+            else:
+                get_price_without_converter(task_obj)
         return super().form_valid(form)
 
 

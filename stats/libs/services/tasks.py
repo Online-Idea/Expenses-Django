@@ -2,7 +2,10 @@
 from celery import shared_task
 from datetime import datetime
 
-from applications.autoconverter.converter import get_converter_tasks, get_price
+from applications.autoconverter.converter import get_converter_tasks, get_price, avilon_custom_task, \
+    get_price_without_converter
+from applications.calls.calltouch import CalltouchLogic
+from applications.calls.models import Call
 from applications.calls.primatel import PrimatelLogic
 from libs.autoru.autoru import *
 from .exkavator import modify_exkavator_xml
@@ -81,7 +84,10 @@ def teleph_calls(from_=None, to=None, clients=None):
 def converter_price(task_ids=None):
     tasks = get_converter_tasks(task_ids)
     for task in tasks:
-        get_price(task)
+        if task.use_converter:
+            get_price(task)
+        else:
+            get_price_without_converter(task)
 
 
 @shared_task
@@ -158,3 +164,27 @@ def get_primatel_data(from_: str = None, to: str = None):
         to = datetime.strptime(to, "%d.%m.%Y")
     logic = PrimatelLogic()
     logic.update_data(from_, to)
+
+
+@shared_task
+def update_calltouch(from_: str = None, to: str = None):
+    if not from_ or not to:
+        from_ = datetime.today() - timedelta(days=1)
+        to = datetime.today()
+    else:
+        from_ = datetime.strptime(from_, "%d.%m.%Y")
+        to = datetime.strptime(to, "%d.%m.%Y")
+    from_ = from_.replace(hour=0, minute=0, second=0, microsecond=0)
+    to = to.replace(hour=23, minute=59, second=59, microsecond=0)
+
+    logic = CalltouchLogic()
+    logic.get_calltouch_data(from_, to)
+    calls = Call.objects.filter(datetime__gte=from_, datetime__lte=to)
+    calls = logic.update_calls_with_calltouch_data(calls)
+    logic.send_our_data_to_calltouch(calls)
+    logic.check_tags(from_, to)
+
+
+@shared_task
+def avilon_custom():
+    avilon_custom_task()

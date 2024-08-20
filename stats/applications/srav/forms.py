@@ -14,7 +14,7 @@ class AutoruParsedAdChooseForm(forms.Form):
     #     mark_values = AutoruParsedAd.objects.values('mark').distinct()
     #     cache.set('autoru_parsed_ad_mark_values', mark_values, 86400)
 
-    mark_values = UniqueAutoruParsedAdMark.objects.all().order_by('mark')
+    mark_values = UniqueAutoruParsedAdMark.objects.all().order_by('mark').values_list('mark__id', flat=True)
     mark_checkbox = forms.ModelMultipleChoiceField(
         queryset=Mark.objects.filter(id__in=mark_values),
         widget=forms.CheckboxSelectMultiple(attrs={'checked': False}),

@@ -1,7 +1,10 @@
+import os
 from datetime import datetime
+from typing import List
 
 import requests
-from django.db.models import QuerySet, Min, Max
+from django.db.models import QuerySet, Min, Max, Q
+from django.urls import reverse
 from django.utils import timezone
 from requests.exceptions import JSONDecodeError
 
@@ -100,6 +103,8 @@ class CalltouchLogic:
         for calltouch_setting in calltouch_settings:
             calltouch_data.extend(self.get_calls_details(calltouch_setting.site_id, calltouch_setting.token, datefrom,
                                                          dateto))
+        for row in calltouch_data:
+            row['callId'] = str(row['callId'])
 
         existing_calls = CalltouchData.objects.filter(datetime__gte=datefrom, datetime__lte=dateto)
         existing_calls_ids = existing_calls.values_list('calltouch_call_id', flat=True)
@@ -123,14 +128,12 @@ class CalltouchLogic:
 
         updated_calls = []
         for row in calltouch_data:
-            if row['callId'] not in existing_calls:
+            if row['callId'] not in existing_calls_ids:
                 continue
             call = existing_calls.get(calltouch_call_id=row['callId'])
             call.call_tags = row['callTags']
             updated_calls.append(call)
 
-        # TODO новые создавать, имеющиеся обновлять. А то сейчас дубли добавляет
-        # TODO И почисти потом таблицу от дублей
         CalltouchData.objects.bulk_create(new_calls)
         CalltouchData.objects.bulk_update(updated_calls, ['call_tags'])
 
@@ -139,24 +142,30 @@ class CalltouchLogic:
         Привязывает CalltouchData к нашим Call
         :return: обновлённые Call с заполненными calltouch_data
         """
-        def filter_calltouch_data(calltouch_data, call, field, min_value, max_value):
+
+        def filter_calltouch_data(calltouch_data, field, original_value, min_value, max_value):
             """
             Рекурсивная функция которая фильтрует CalltouchData пока не найдет 1 или более звонков.
             Ищет через уменьшение min_value и увеличение max_value.
             :param calltouch_data: CalltouchData queryset
-            :param call: объект Call
             :param field: поле по которому фильтровать calltouch_data: 'timestamp' или 'duration'
             :param min_value: минимальное значение для field
             :param max_value: максимальное значение для field
             :return: список с отфильтрованными CalltouchData
             """
+            if (max_value - original_value) >= 50:  # Выхожу из рекурсии из если больше 50 вызовов
+                return []
             filtered = [row for row in calltouch_data if min_value <= getattr(row, field) <= max_value]
             if len(filtered) >= 1:
                 return filtered
             else:
                 min_value -= 1
                 max_value += 1
-                return filter_calltouch_data(calltouch_data, call, field, min_value, max_value)
+                return filter_calltouch_data(calltouch_data, field, original_value, min_value, max_value)
+
+        # Убираю из queryset звонки для которых нет CalltouchSetting
+        calltouch_settings = CalltouchSetting.objects.filter(active=True).values_list('client_primatel_id', flat=True)
+        queryset = queryset.filter(Q(client_primatel_id__in=calltouch_settings))
 
         # Данные по которым отфильтрую CalltouchData
         # client_primatels = queryset.distinct('client_primatel')
@@ -182,18 +191,19 @@ class CalltouchLogic:
             calltouch_data_by_numbers = calltouch_data.filter(num_from=call.num_from, num_to=call.num_redirect)
 
             # Если есть звонки совпадающие по num_from и num_to то пробую найти нужный по timestamp
+            filtered_by_timestamp = []
             if calltouch_data_by_numbers:
-                filtered_by_timestamp = filter_calltouch_data(calltouch_data_by_numbers, call, 'timestamp',
-                                                              timestamp_min, timestamp_max)
+                filtered_by_timestamp = filter_calltouch_data(calltouch_data_by_numbers, 'timestamp',
+                                                              timestamp_max, timestamp_min, timestamp_max)
             else:  # Иначе звонка почему-то нет в Calltouch, добавляю в список на отправление на почту
                 failed_filters.append(call)
 
-            # Если фильтрация по timestamp дала 1 результат значит звонок найден
+                # Если фильтрация по timestamp дала 1 результат значит звонок найден
             if len(filtered_by_timestamp) == 1:
                 call.calltouch_data = filtered_by_timestamp[0]
             else:  # Иначе проверяю по duration
-                filtered_by_duration = filter_calltouch_data(filtered_by_timestamp, call, 'duration',
-                                                             call.duration, call.duration)
+                filtered_by_duration = filter_calltouch_data(filtered_by_timestamp, 'duration',
+                                                             call.duration, call.duration, call.duration)
                 # Если фильтрация по duration дала 1 результат значит звонок найден
                 if len(filtered_by_duration) == 1:
                     call.calltouch_data = filtered_by_duration[0]
@@ -204,11 +214,11 @@ class CalltouchLogic:
 
         # Отправляю на почту звонки для которых не удалось заполнить calltouch_data
         if failed_filters:
-            failed_filters = '\n'.join([str(i) for i in failed_filters])
-            send_email('Не удалось привязать звонки к Calltouch', failed_filters, env('EMAIL_FOR_ERRORS'))
+            urls = self.make_calls_admin_urls(failed_filters)
+            body = 'Эти звонки не получилось найти в Calltouch:\n' + urls
+            send_email('Не удалось привязать звонки к Calltouch', body, env('EMAIL_FOR_ERRORS'))
 
-        return updated_calls
-
+        return queryset
 
     def post_calls_import(self, json):
         """
@@ -236,8 +246,10 @@ class CalltouchLogic:
             else:
                 state = 'online_idea_not_target'
 
-            website = ModerationChoice.get_site_name_by_choice(choice=call.moderation)
-            tags = ','.join([call.status, call.mark.mark, call.model.model, website, 'test333'])
+            tags = self.make_call_tags(call)
+            tags = ','.join(tags)
+
+            price = str(round(call.call_price / 120 * 100, 2)) if call.call_price else 0
 
             json = {
                 "platformName": "online-idea",
@@ -245,12 +257,74 @@ class CalltouchLogic:
                 "platformCallId": call.primatel_call_id,
                 "state": state,
                 "tags": tags,
-                "price": str(round(call.call_price / 120 * 100, 2)),
+                "price": price,
                 "currency": "rub",
                 "clientPhone": call.num_from,
                 "date": str(call.calltouch_data.timestamp),
                 "offerId": call.client_primatel.login
             }
             self.post_calls_import(json)
+
+    def make_call_tags(self, call: Call) -> List[str]:
+        """
+        Возвращает список тегов
+        :param call:
+        :return:
+        """
+        tags = []
+        if call.status:
+            tags.append(call.status)
+        if call.mark:
+            tags.append(call.mark.mark)
+        if call.model:
+            tags.append(call.model.model)
+        if call.moderation:
+            tags.append(ModerationChoice.get_site_name_by_choice(choice=call.moderation))
+        return tags
+
+    def check_tags(self, datefrom: datetime, dateto: datetime) -> None:
+        """
+        Проверяют данные наших звонков с тегами Calltouch. Если есть несовпадающие то отправляет на почту
+        :param datefrom:
+        :param dateto:
+        """
         # TODO после отправки наших данных делать запрос get_calls_details с params['withCallTags'] = True
         # TODO чтобы проверить всё ли дошло
+        self.get_calltouch_data(datefrom, dateto)
+        calls = Call.objects.filter(datetime__gte=datefrom, datetime__lte=dateto)
+        # Убираю из queryset звонки для которых нет CalltouchSetting
+        calltouch_settings = CalltouchSetting.objects.filter(active=True).values_list('client_primatel_id', flat=True)
+        calls = calls.filter(Q(client_primatel_id__in=calltouch_settings))
+
+        calls_with_failed_tags = []
+        for call in calls:
+            # Если не привязан к Calltouch то пропускаю т.к. другая функция сообщит об этом на почту
+            if not call.calltouch_data:
+                continue
+
+            if not call.calltouch_data.call_tags:  # Если у Calltouch нет тегов значит наши не дошли
+                calls_with_failed_tags.append(call)
+                continue
+
+            calltouch_tags = call.calltouch_data.call_tags
+            call_tags = self.make_call_tags(call)
+            calltouch_tags = [name for item in calltouch_tags for name in item['names']]  # Объединяю теги
+            if not all(tag in calltouch_tags for tag in call_tags):
+                calls_with_failed_tags.append(call)
+
+        # Отправляю на почту звонки у которых теги не совпадают
+        if calls_with_failed_tags:
+            urls = self.make_calls_admin_urls(calls_with_failed_tags)
+            body = 'Теги в Calltouch не совпадают с данными наших звонков:\n' + urls
+            send_email('Теги Calltouch не совпадают', body, env('EMAIL_FOR_ERRORS'))
+
+    def make_calls_admin_urls(self, calls: List[Call]):
+        """
+        Возвращает ссылки на редактирование Call в админ панели
+        :param calls:
+        :return:
+        """
+        website = env('WEBSITE')
+        admin_urls = [reverse('admin:calls_call_change', args=[call.id]) for call in calls]
+        full_urls = '\n'.join([f'{website}{url}' for url in admin_urls])
+        return full_urls

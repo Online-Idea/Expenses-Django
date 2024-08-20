@@ -1,5 +1,6 @@
 import io
 import logging
+import random
 import re
 from collections import Counter
 import ftplib
@@ -63,7 +64,9 @@ def get_price(task):
     logs = converter_logs(process_id)
     logs_xlsx = logs_to_xlsx(logs, template, task)
     import_result = onllline_worker(task)
-    message = f'Логи конвертера:\n{logs}\n\nОтчет импорта базы:\n{import_result}'
+    message = f'Логи конвертера:\n{logs}'
+    if import_result:
+        message += f'\n\nОтчет импорта базы:\n{import_result}'
     bot_messages(message, logs_xlsx, price, task)
     with open(logs_xlsx, 'rb') as file:
         file_content = file.read()
@@ -71,6 +74,25 @@ def get_price(task):
     os.remove(logs_xlsx)
     print(f'Клиент {task.slug} - прайс готов')
     return
+
+
+def get_price_without_converter(task):
+    """
+    Полный цикл для одного клиента но без конвертера. В качестве стока используется наш прайс
+    :param task:
+    :return:
+    """
+    template = converter_template(task)
+    if template.empty:
+        logging.info(f'По клиенту {task.client.name} пустой шаблон')
+        return
+    price = converter_process_result(None, template, task)
+    import_result = onllline_worker(task)
+    message = ''
+    if import_result:
+        message += f'\n\nОтчет импорта базы:\n{import_result}'
+    bot_messages(message, None, price, task)
+    print(f'Клиент {task.slug} - прайс готов')
 
 
 def converter_template(task):
@@ -134,7 +156,7 @@ def converter_template(task):
         return 'Неверный формат файла, должен быть xml или xlsx'
 
     # Убираю лишние пробелы
-    template = template.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    template = template.map(lambda x: x.strip() if isinstance(x, str) else x)
     # template = template.applymap(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
 
     with open(template_path, mode='rb') as file:
@@ -231,11 +253,13 @@ def template_xml(stock_path, template_path, task):
 
             # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
             # extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
-            task_has_source_stock = Conditional.objects.filter(converter_extra_processing__converter_task=task, source='Сток')
+            task_has_source_stock = Conditional.objects.filter(converter_extra_processing__converter_task=task,
+                                                               source='Сток')
             if task_has_source_stock:
                 # Беру Обработки прайса и Новые значения текущего таска
                 extras = ConverterExtraProcessing.objects.filter(converter_task=task)
-                extras_new_changes = ConverterExtraProcessingNewChanges.objects.filter(converter_extra_processing__in=extras)
+                extras_new_changes = ConverterExtraProcessingNewChanges.objects.filter(
+                    converter_extra_processing__in=extras)
                 for extra in extras:
                     conditionals = list(Conditional.objects.filter(converter_extra_processing=extra)
                                         .values('field'))
@@ -434,11 +458,11 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
         encoding = task.stock_fields.encoding
         df_stock = pd.read_csv(stock_path, decimal=',', sep=';', header=0, encoding=encoding, dtype=bool_cols_as_str)
 
-    # Проверяю если сток это наш прайс. На случай если прайс готов и нужно только фото подставить
+    # Проверяю если сток это наш прайс. На случай если прайс готов.
     # Если первые 4 столбца совпадают с our_price_first_4_cols И Исходный VIN в столбцах
     our_price_first_4_cols = ['Марка', 'Модель', 'Комплектация', 'Авто.ру Комплектация']
     if list(df_stock.columns[:4]) == our_price_first_4_cols and 'Исходный VIN' in df_stock.columns:
-        df_stock.loc[df_stock['Фото'].str.contains('gallery'), 'Фото'] = ''
+        # df_stock.loc[df_stock['Фото'].str.contains('gallery'), 'Фото'] = ''
         df_stock.T.reset_index().T.to_excel(template_path, sheet_name='Шаблон', header=False, index=False)
         return df_stock
 
@@ -497,7 +521,7 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
     # В Опции и пакеты заменяю переносы строк на пробел
     df_stock_copy['Опции и пакеты'].replace(r'\n', ' ', regex=True, inplace=True)
     # Убираю лишние пробелы
-    df_stock_copy = df_stock_copy .applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    df_stock_copy = df_stock_copy.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
     df_stock_copy.T.reset_index().T.to_excel(template_path, sheet_name='Шаблон', header=False, index=False)
 
@@ -560,6 +584,7 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
     new_changes = ConverterExtraProcessingNewChanges.objects.filter(converter_extra_processing__in=extra_processings)
 
     price_columns = get_models_verbose_names(Ad)
+    price_columns.append('Фото')
 
     # Если изменение зависит от данных в стоке то сначала эти данные добавляются к шаблону.
     # Потом шаблон передаётся сюда и добавляется к прайсу.
@@ -681,7 +706,7 @@ def converter_post(task):
     """
     Отправляет шаблон и настройки по которым нужно прогнать конвертер
     :param task: task (запись) из таблицы Задачи конвертера
-    :return: прайс как pandas dataframe
+    :return: processId по которому дальше можно получить прайс
     """
     # Отправляю шаблон
     url = 'http://151.248.118.19/Api/Stock/StartProcess'
@@ -704,16 +729,14 @@ def converter_post(task):
     return response.json()['processId']
 
 
-def converter_process_result(process_id, template, task):
+def converter_get_price_by_process_id(task, process_id):
     """
-    Возвращает готовый прайс
-    :param process_id: из converter_post
-    :param template: шаблон как pandas dataframe - если из шаблона нужны данные для прайса
+    # Получаю прайс от конвертера по process_id
     :param task: строка из таблицы Задачи конвертера
+    :param process_id: из converter_post
+    :return: прайс как pandas dataframe
     """
     client = task.slug
-
-    # Получаю прайс от конвертера по process_id
     url = 'http://151.248.118.19/Api/Stock/GetProcessResult'
     payload = {'processId': (None, process_id)}
     response = requests.post(url=url, files=payload)
@@ -738,6 +761,23 @@ def converter_process_result(process_id, template, task):
                    'Аксессуары в подарок', 'Быстрое оформление']
     for col in end_columns:
         read_file[col] = ''
+
+    os.remove(save_path_date)
+    return read_file
+
+
+def converter_process_result(process_id, template, task):
+    """
+    Возвращает готовый прайс
+    :param process_id: из converter_post
+    :param template: шаблон как pandas dataframe - если из шаблона нужны данные для прайса
+    :param task: строка из таблицы Задачи конвертера
+    """
+    client = task.slug
+    if task.use_converter:
+        read_file = converter_get_price_by_process_id(task, process_id)
+    else:
+        read_file = template
 
     # Переношу Описание из шаблона если оно есть в шаблоне
     if 'Описание' in template.columns:
@@ -784,6 +824,9 @@ def converter_process_result(process_id, template, task):
             raise ValueError('Файл с добавлением объявлений должен быть csv или xlsx')
         read_file = pd.concat([read_file, add_manually_df], axis=0)
 
+    if task.change_vin:
+        read_file = change_vin_to_random(read_file)
+
     # Сохраняю в csv
     save_path = f'converter/{client}/prices/price_{client}.csv'
 
@@ -802,7 +845,6 @@ def converter_process_result(process_id, template, task):
     task.price = save_path
     task.save()
 
-    os.remove(save_path_date)
     os.remove(save_path)
     return read_file
 
@@ -926,15 +968,40 @@ def bot_messages(logs, logs_xlsx, price, task):
         #         bot.send_message(chat_id.chat_id, logs[x:x + 4095])
         # else:
         #     bot.send_message(chat_id.chat_id, logs)
-        bot.send_document(chat_id.chat_id, InputFile(logs_xlsx))
+        if logs_xlsx:
+            bot.send_document(chat_id.chat_id, InputFile(logs_xlsx))
         bot.send_document(chat_id.chat_id, InputFile(price_save_path))
 
     os.remove(price_save_path)
     return
 
 
+def change_vin_to_random(price):
+    def modify_vin(vin):
+        if len(vin) == 17:
+            last_six = vin[-6:]
+            if last_six.isdigit():
+                # All last 6 characters are digits
+                random_number = str(random.randint(0, 999999)).zfill(6)
+                return vin[:-6] + random_number
+            else:
+                # Last 6 characters contain letters
+                for i in range(5, -1, -1):
+                    if last_six[i].isalpha():
+                        # Found the last letter
+                        prefix = last_six[:i + 1]
+                        digits_part = last_six[i + 1:]
+                        if digits_part.isdigit():
+                            random_number = str(random.randint(0, int(digits_part))).zfill(len(digits_part))
+                            return vin[:-6] + prefix + random_number
+                        break
+        return vin
+
+    price['VIN'] = price['Исходный VIN'].apply(modify_vin)
+    return price
+
+
 def save_on_ftp(save_path, file):
-    # TODO во всех применениях этой функции переписать чтобы передавался binary файл
     """
     Сохраняет файл на ftp
     :param save_path: полный путь к файлу
@@ -1001,3 +1068,45 @@ def get_configurations():
     if len(new_configurations):
         Configuration.objects.bulk_create(new_configurations)
     return
+
+
+def avilon_custom_task():
+    """
+    Особая задача для Авилон Премиум Волгоградка. С прайса Авилон Seres Aito берёт по одному, самому дешёвому
+    автомобилю, по фильтрам. Обновляет файл на ftp, который у Авилон Премиум Волгоградка прописан
+    в поле Добавить к прайсу.
+    :return:
+    """
+    avilon_seres_aito_task = ConverterTask.objects.get(pk=51)
+    avilon_premium_volgogradka_task = ConverterTask.objects.get(pk=22)
+
+    source_file = f'http://ph.onllline.ru/{avilon_seres_aito_task.price}'
+    file_to_update = avilon_premium_volgogradka_task.add_to_price.replace('http://ph.onllline.ru/', '')
+    temp_file = 'temp/avilon_custom_task.xlsx'
+
+    # Обновляю Авилон SERES AITO
+    get_price(task=avilon_seres_aito_task)
+
+    # Сортирую по Марке, Модели и Цене
+    df = pd.read_csv(source_file, decimal=',', sep=';', header=0, encoding='cp1251')
+    df = df.sort_values(by=['Марка', 'Модель', 'Цена'])
+
+    # Фильтрую и беру самый дешёвый по каждому фильтру
+    filters = [
+        {'Марка': 'AITO', 'Модель': 'M5'},
+        {'Марка': 'Seres', 'Модель': 'Aito M7'}
+    ]
+    result_df = pd.DataFrame()
+    for filter_cond in filters:
+        filtered_df = df
+        for key, value in filter_cond.items():
+            filtered_df = filtered_df[filtered_df[key] == value]
+        if not filtered_df.empty:
+            result_df = pd.concat([result_df, filtered_df.iloc[[0]]], ignore_index=True)
+
+    # Сохраняю в xlsx, отправляю на ftp
+    result_df.T.reset_index().T.to_excel(temp_file, sheet_name='data', header=False, index=False)
+    with open(temp_file, 'rb') as file:
+        file_content = file.read()
+        save_on_ftp(file_to_update, file_content)
+

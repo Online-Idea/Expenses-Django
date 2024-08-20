@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 
 from ajax_datatable.views import AjaxDatatableView
 from django.contrib.auth.decorators import login_required
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 
@@ -38,6 +39,7 @@ class CallDatatableView(AjaxDatatableView):
             {'name': 'mark', 'title': 'Марка', 'foreign_field': 'mark__mark', 'orderable': True, 'searchable': True},
             {'name': 'model', 'title': 'Модель', 'foreign_field': 'model__model', 'orderable': True, 'searchable': True},
             {'name': 'target', 'title': 'Целевой', 'orderable': True, 'choices': True, 'autofilter': True},
+            {'name': 'call_price', 'title': 'Стоимость звонка', 'orderable': True, },
             {'name': 'moderation', 'title': 'М', 'orderable': True, 'choices': True, 'autofilter': True},
             {'name': 'status', 'title': 'Статус звонка', 'orderable': True, 'choices': True, 'autofilter': True},
             {'name': 'repeat_call', 'visible': False },
@@ -46,19 +48,20 @@ class CallDatatableView(AjaxDatatableView):
             {'name': 'client_name', 'title': 'Имя клиента', 'searchable': True},
             {'name': 'manager_name', 'title': 'Имя менеджера', 'orderable': True, 'searchable': True},
             {'name': 'car_price', 'title': 'Стоимость автомобиля', 'orderable': True, },
-            {'name': 'call_price', 'title': 'Стоимость звонка', 'orderable': True, },
             {'name': 'manual_edit', 'title': 'Ручное редактирование звонка', 'orderable': True, },
-            {'name': 'color', 'title': 'Цвет', 'orderable': True, },
-            {'name': 'body', 'title': 'Кузов', 'orderable': True, },
-            {'name': 'drive', 'title': 'Привод', 'orderable': True, },
-            {'name': 'engine', 'title': 'Двигатель', 'orderable': True, },
-            {'name': 'complectation', 'title': 'Комплектация', 'orderable': True, },
+            {'name': 'color', 'title': 'Цвет', 'orderable': True, 'visible': False},
+            {'name': 'body', 'title': 'Кузов', 'orderable': True, 'visible': False},
+            {'name': 'drive', 'title': 'Привод', 'orderable': True, 'visible': False},
+            {'name': 'engine', 'title': 'Двигатель', 'orderable': True, 'visible': False},
+            {'name': 'complectation', 'title': 'Комплектация', 'orderable': True, 'visible': False},
             {'name': 'attention', 'title': 'Обратить внимание', 'orderable': True, },
             {'name': 'city', 'title': 'Город', 'orderable': True, },
         ]
-        # Сейчас только админ может редактировать и удалять
-        if request.user.groups.filter(name='admin').exists():
-            column_defs.append({'name': 'edit', 'title': 'Ред.', 'placeholder': True, 'searchable': False, 'orderable': False})
+
+        groups = request.user.groups.all().values_list('name', flat=True)
+        if any(item in groups for item in ['admin', 'listener']):
+            column_defs.insert(1, {'name': 'edit', 'title': 'Ред.', 'placeholder': True, 'searchable': False, 'orderable': False})
+        if 'admin' in groups:
             column_defs.append({'name': 'delete', 'title': 'Удалить', 'placeholder': True, 'searchable': False, 'orderable': False})
         return column_defs
 
@@ -127,7 +130,7 @@ class CallDatatableView(AjaxDatatableView):
             <div class="one-line">
                 {row['num_to']} <i class="fa-regular fa-copy" onclick="copyText(event)"></i>
             </div>
-        '''
+        ''' if row['num_to'] else ''
 
         # Кнопка удаления
         if 'delete' in row:
@@ -139,6 +142,36 @@ class CallDatatableView(AjaxDatatableView):
             row['delete'] = delete_button
 
         return row
+
+    def render_row_details(self, pk, request=None):
+        columns_per_row = 4
+        col_size = int(12 / columns_per_row)
+        fields = ['client_primatel', 'datetime', 'num_from', 'num_to', 'duration', 'mark', 'model', 'target',
+                  'moderation', 'status', 'other_comments', 'call_price',  'client_name',
+                  'manager_name', 'car_price', 'color', 'body', 'drive', 'engine', 'complectation',
+                  'city', 'num_redirect', 'manual_edit', 'attention', ]
+        translations = {
+            None: '',
+            False: 'Нет',
+            True: 'Да'
+        }
+
+        record = self.model.objects.get(pk=pk)
+        field_verbose_names = {field.name: field.verbose_name for field in record._meta.get_fields()}
+
+        rows = []
+        current_row = []
+        for field in fields:
+            value = getattr(record, field)
+            value = translations[value] if value in translations else value
+            current_row.append({field_verbose_names[field]: value})
+            if len(current_row) == columns_per_row:
+                rows.append(current_row)
+                current_row = []
+        if current_row:
+            rows.append(current_row)
+
+        return render_to_string('calls/render_row_details.html', {'rows': rows, 'col_size': col_size})
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):

@@ -174,9 +174,9 @@ class Call(BaseModel):
     # Когда и от кого
     datetime = models.DateTimeField(verbose_name='Дата и время')
     num_from = models.CharField(max_length=30, verbose_name='Исходящий')
-    num_to = models.CharField(max_length=30, verbose_name='Входящий')
+    num_to = models.CharField(max_length=30, blank=True, null=True, verbose_name='Входящий')
     num_redirect = models.CharField(max_length=30, blank=True, null=True, verbose_name='Номер переадресации')
-    duration = models.IntegerField(verbose_name='Длительность')
+    duration = models.IntegerField(blank=True, null=True, verbose_name='Длительность')
 
     # Марка и Модель
     mark = models.ForeignKey(Mark, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Марка')
@@ -220,6 +220,7 @@ class Call(BaseModel):
     # Данные колтач
     calltouch_data = models.ForeignKey('CalltouchData', blank=True, null=True, on_delete=models.SET_NULL,
                                        verbose_name='Данные Calltouch')
+
     deleted = models.BooleanField(default=False, verbose_name='Удалён')
 
     def __str__(self):

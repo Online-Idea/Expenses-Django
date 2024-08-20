@@ -152,7 +152,7 @@ def export_calls_for_callback(from_: str = None, to: str = None):
     minus_3_days = to.date() - timedelta(days=3)
     client_filter = ['avilon_premium_legenda_new', 'Gate_new', 'avilon_bmw_new',
                      'avilon_exeed_new', 'avilon_foton_new', 'Avilon_rising_new', 'FnGroup_new', 'avilon_exeed_legenda',
-                     'jlr_kuncevo_new', 'avilon_seres_aito', 'Gelly_Kuntsevo']
+                     'jlr_kuncevo_new', 'avilon_seres_aito', 'Gelly_Kuntsevo', 'Hit_Machinery', 'Sinomach_Machinery']
     calls = TelephCall.objects.filter(client__teleph_id__in=client_filter, datetime__gte=from_, datetime__lte=to) \
         .values('client__name', 'datetime', 'num_from', 'target', 'call_status', 'comment')
 

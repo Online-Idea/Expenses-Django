@@ -20,8 +20,6 @@
   </div>
 </div>
 
-
-
 <div class="container">
   <div class="row">
     <div class="col-xl-6 center">
@@ -69,7 +67,7 @@
     <div class="col-xl-12 center">
 
       <!--Ссылки на клиентов в agency.auto.ru-->
-      {% if request.user|has_group:'admin' %}
+      {% if request.user|has_group:'admin,listener' %}
         {% if agency_autoru_links %}
           <div class="agency-autoru-links">
             Кабинеты авто.ру:
@@ -464,7 +462,30 @@
     // Копирует текст в буфер, меняет иконку копирования на галочку, через 2 секунды обратно на иконку копирования
     event.preventDefault();
     let text = event.target.closest('td').innerText.trim();
-    navigator.clipboard.writeText(text);
+    {#navigator.clipboard.writeText(text);#}
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      // HTTPS
+      navigator.clipboard.writeText(text).then(function() {
+        console.log('Text copied to clipboard');
+      }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+      });
+    } else {
+      // HTTP
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        console.log('Text copied to clipboard (fallback)');
+      } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+      }
+      document.body.removeChild(textarea);
+    }
+
 
     const copyIcon = ['fa-regular', 'fa-copy'];
     const checkIcon = ['fa-solid', 'fa-check'];
@@ -479,7 +500,7 @@
   function deleteCall(event) {
     // Удаляет звонок, меняя в базе deleted на True
     if (confirm('Хотите удалить звонок?')) {
-      const id = event.target.dataset['id'];
+      const id = event.target.closest('button').dataset['id'];
       $.ajax({
         url: `/calls/delete/${id}/`,
         type: 'GET',

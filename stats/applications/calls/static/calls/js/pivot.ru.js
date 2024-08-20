@@ -16,6 +16,7 @@
     nf = $.pivotUtilities.numberFormat;
     tpl = $.pivotUtilities.aggregatorTemplates;
     frFmt = nf({
+      digitsAfterDecimal: 0,
       thousandsSep: " ",
       decimalSep: ","
     });

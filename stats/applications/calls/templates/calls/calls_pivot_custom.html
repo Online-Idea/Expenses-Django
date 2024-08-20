@@ -94,16 +94,16 @@
                     onclick="setReportClientMarkModelByModeration(this)"
             >Отчет #3
             </button>
-            <div class="hover-text hidden">Целевые и средняя стоимость звонка, по клиентам, марке и модели, по
-              площадкам
-            </div>
+            <div class="hover-text hidden">Средняя стоимость звонка, по клиентам, марке и модели, по площадкам </div>
           </div>
 
           <!-- Button to get current pivot table options -->
-          {% comment %}
-          <button type="button" class="btn btn-outline-info" onclick="getCurrentPivotOptions()">Get Current Options
+{% comment %}
+          <button type="button" class="btn btn-outline-info" onclick="getCurrentPivotOptions()">
+            Get Current Options
           </button>
 {% endcomment %}
+
 
           <div class="row">
             <div class="col-xl-12 center">
@@ -201,7 +201,8 @@
           let options = {
             rows: ['Клиент', 'Марка', 'Модель'],
             cols: ['Площадка'],
-            aggregatorName: 'Кол-во',
+            aggregatorName: 'Среднее',
+            vals: ['Стоимость звонка'],
             inclusions: {
               'Целевой': ['Да', 'ПМ - Целевой']
             }

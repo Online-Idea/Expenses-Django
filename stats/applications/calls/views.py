@@ -3,7 +3,7 @@ from datetime import datetime, date
 import urllib.parse
 
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, permissions
 
 from applications.accounts.models import Client
@@ -45,7 +45,7 @@ from libs.services.utils import get_all_fields_verbose_names, make_xlsx_for_down
 #     return render(request, 'calls/calls.html', context)
 
 
-@allowed_users(allowed_groups=['admin', 'client'])
+@allowed_users(allowed_groups=['admin', 'listener', 'client'])
 def calls(request):
     if request.method == 'POST':
         context = get_calls_data(request)
@@ -115,7 +115,7 @@ def calls(request):
         return render(request, 'calls/calls.html', context)
 
 
-@allowed_users(allowed_groups=['admin'])
+@allowed_users(allowed_groups=['admin', 'listener', 'client'])
 def download_calls(request):
     context = get_calls_data(request)
     columns = ['client_primatel__client__name', 'datetime', 'num_from', 'num_to', 'duration', 'mark__mark',
@@ -157,7 +157,19 @@ def new_call(request):
     return render(request, 'calls/call_modal.html', {'call_modal_form': form, 'new_call': True})
 
 
-@allowed_users(allowed_groups=['admin'])
+# @allowed_users(allowed_groups=['admin', 'listener', 'client'])
+# def get_calls_data(request):
+#     record_id = request.GET.get('record_id')
+#     record = get_object_or_404(Call, pk=record_id)
+#     data = {
+#         'num_from': record.num_from,
+#         'num_to': record.num_to,
+#         'num_redirect': record.num_redirect,
+#     }
+#     return JsonResponse(data)
+
+
+@allowed_users(allowed_groups=['admin', 'listener'])
 def edit_call(request, pk):
     # Тут только GET, POST и PUT через DRF
     record = Call.objects.get(pk=pk)
@@ -177,7 +189,7 @@ def delete_call(request, pk):
     return JsonResponse({'message': 'Звонок успешно удалён'})
 
 
-@allowed_users(allowed_groups=['admin', 'client'])
+@allowed_users(allowed_groups=['admin', 'listener', 'client'])
 def calls_pivot(request):
     if request.method == 'POST':
         context = get_calls_data(request)
@@ -205,7 +217,7 @@ def calls_pivot(request):
     return render(request, 'calls/calls_pivot.html', context)
 
 
-@allowed_users(allowed_groups=['admin', 'client'])
+@allowed_users(allowed_groups=['admin', 'listener', 'client'])
 def download_calls_pivot(request):
     context = get_calls_data(request)
 
@@ -234,7 +246,7 @@ def download_calls_pivot(request):
     return HttpResponse('По выбранным параметрам нет данных, попробуйте изменить период или клиентов')
 
 
-@allowed_users(allowed_groups=['admin', 'client'])
+@allowed_users(allowed_groups=['admin', 'listener', 'client'])
 def calls_pivot_custom(request):
     if request.method == 'POST':
         context = get_calls_data(request)

@@ -61,6 +61,10 @@ class ConverterTask(BaseModel):
         'add_to_price': 'Если нужно добавить объявления к прайсу после конвертера то укажи здесь ссылку на прайс с'
                         'этими объявлениями. Прайс размещай на наш ftp, '
                         'в папке converter/имя_клиента/add/имя_файла.xlsx',
+        'change_vin': 'Меняет последние 6 цифр VIN на случайные. Если в последних 6 цифрах есть буква то меняет цифры '
+                      'после последней буквы.',
+        'use_converter': 'Если в качестве стока используется наш прайс и конвертер не нужен для подставки фото, '
+                         'то выключи это. '
     }
 
     active = models.BooleanField(default=True, verbose_name='Активна')
@@ -77,6 +81,8 @@ class ConverterTask(BaseModel):
     stock_post_password = models.CharField(max_length=500, blank=True, null=True, verbose_name='POST-запрос Пароль')
 
     # Конвертер
+    use_converter = models.BooleanField(default=True, help_text=HELP_TEXTS['use_converter'],
+                                        verbose_name='Использовать конвертер')
     photos_folder = models.ForeignKey(to='PhotoFolder', on_delete=models.SET_NULL, null=True,
                                       verbose_name='Папка с фото')
     front = models.IntegerField(default=10, verbose_name='Начало')
@@ -90,6 +96,7 @@ class ConverterTask(BaseModel):
     price = models.URLField(null=True, blank=True, verbose_name='Прайс')
     add_to_price = models.URLField(null=True, blank=True, help_text=HELP_TEXTS['add_to_price'],
                                    verbose_name='Добавить к прайсу')
+    change_vin = models.BooleanField(default=False, help_text=HELP_TEXTS['change_vin'], verbose_name='Изменить VIN')
 
     # База onllline.ru
     import_to_onllline = models.BooleanField(default=False, help_text=HELP_TEXTS['import_to_onllline'],

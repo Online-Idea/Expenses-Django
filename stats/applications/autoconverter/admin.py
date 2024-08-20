@@ -32,8 +32,8 @@ class ConverterTaskAdmin(admin.ModelAdmin):
         (
             'Конвертер',
             {
-                'fields': ['photos_folder', 'front', 'back', 'interior', 'salon_only', 'template', 'stock_fields',
-                           'configuration', 'price', 'add_to_price', ]
+                'fields': ['use_converter', 'photos_folder', 'front', 'back', 'interior', 'salon_only', 'template',
+                           'stock_fields', 'configuration', 'price', 'add_to_price', 'change_vin', ]
             },
         ),
         (
@@ -89,7 +89,7 @@ class ConverterFilterAdmin(admin.ModelAdmin):
     list_display = ('active', 'id', 'converter_task', 'field', 'condition', 'value')
     list_display_links = ('id', 'converter_task', 'field')
     list_editable = ('active', 'condition',)
-    search_fields = ('converter_task', 'field')
+    search_fields = ('converter_task__name', 'field', 'value', 'note')
     list_filter = ('active', 'converter_task',)
     fields = ('active', 'id', 'converter_task', 'field', 'condition', 'value', 'note')
     readonly_fields = ('id',)

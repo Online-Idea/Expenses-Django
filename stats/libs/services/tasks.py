@@ -58,6 +58,8 @@ def autoru_calls(from_=None, to=None, clients=None):
         date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
         from_ = datetime.strptime(from_, date_format)
         to = datetime.strptime(to, date_format)
+        from_ = timezone.make_aware(from_)
+        to = timezone.make_aware(to)
 
     if not clients:
         clients = get_autoru_clients()
@@ -176,6 +178,8 @@ def update_calltouch(from_: str = None, to: str = None):
         to = datetime.strptime(to, "%d.%m.%Y")
     from_ = from_.replace(hour=0, minute=0, second=0, microsecond=0)
     to = to.replace(hour=23, minute=59, second=59, microsecond=0)
+    from_ = timezone.make_aware(from_)
+    to = timezone.make_aware(to)
 
     logic = CalltouchLogic()
     logic.get_calltouch_data(from_, to)

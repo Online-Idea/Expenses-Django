@@ -1,4 +1,5 @@
 {% extends 'base/base.html' %}
+{% load auth_extras %}
 {% load static %}
 
 {% block headcontent %}
@@ -39,287 +40,300 @@
 
   <div class="container">
     <div class="row">
-      <div class="col-xl-12 center">
+      <div class="col-xl-6 center">
         <h3 class="logo"><a href="{% url 'calls_pivot_custom' %}">Звонки. Сводная настраиваемая</a></h3>
-
-        <!--Выбор периода-->
-        <form method="POST" class="period" action="{% url 'calls_pivot_custom' %}">
-          {% csrf_token %}
-          {{ form.daterange }}
-          <button type="submit" class="btn btn-primary">Показать</button>
-          {% if request.method == 'POST' %}
-            <button type="button" class="btn btn-outline-primary" id="export-xlsx">Скачать</button>
-          {% endif %}
-          <!--Список клиентов-->
-          <details>
-            <summary>Клиенты</summary>
-            <div class="content">
-              <label for="id_select_all_clients">
-                {{ form.select_all_clients }}
-                Выбрать все
-              </label>
-              {{ form.client_checkbox }}
-            </div>
-          </details>
-        </form>
+      </div>
+      <div class="col-xl-6 text-end">
+        <p class="small-note text-end">Обновлено: {{ last_updated }}</p>
+        {% if request.user|has_group:'admin' %}
+          <button class="btn btn-outline-primary btn-sm">
+            <a
+              href="https://docs.google.com/document/d/11rOTSOJTznCVxQYE8uGOF56DbufO0bBteBnd8EKDR6Y/edit?usp=sharing"
+              target="_blank"
+            >?</a>
+          </button>
+        {% endif %}
       </div>
     </div>
 
-    <!--Сводная таблица-->
-    {% if request.method == 'POST' %}
-      <!-- PivotTable.js -->
-      <div class="row">
-        <div class="col-xl-12 center">
+    <div class="row">
+      <!--Выбор периода-->
+      <form method="POST" class="period" action="{% url 'calls_pivot_custom' %}">
+        {% csrf_token %}
+        {{ form.daterange }}
+        <button type="submit" class="btn btn-primary">Показать</button>
+        {% if request.method == 'POST' %}
+          <button type="button" class="btn btn-outline-primary" id="export-xlsx">Скачать</button>
+        {% endif %}
+        <!--Список клиентов-->
+        <details>
+          <summary>Клиенты</summary>
+          <div class="content">
+            <label for="id_select_all_clients">
+              {{ form.select_all_clients }}
+              Выбрать все
+            </label>
+            {{ form.client_checkbox }}
+          </div>
+        </details>
+      </form>
+    </div>
 
-          <!--Кнопки-заготовки-->
-          <div class="button-container">
-            <button type="button" class="btn btn-outline-success wdr-report-btn hover-button"
-                    id="report-client-by-moderation"
-                    onclick="setReportClientByModeration(this)"
-            >Отчет #1
-            </button>
-            <div class="hover-text hidden">Целевые, по клиентам, по площадкам</div>
-          </div>
-          <div class="button-container">
-            <button type="button" class="btn btn-outline-success wdr-report-btn hover-button"
-                    id="report-mark-model-by-client"
-                    onclick="setReportMarkModelByClient(this)"
-            >Отчет #2
-            </button>
-            <div class="hover-text hidden">Целевые, по марке и модели, по клиентам</div>
-          </div>
-          <div class="button-container">
-            <button type="button" class="btn btn-outline-success wdr-report-btn hover-button"
-                    id="report-client-mark-model-by-moderation"
-                    onclick="setReportClientMarkModelByModeration(this)"
-            >Отчет #3
-            </button>
-            <div class="hover-text hidden">Средняя стоимость звонка, по клиентам, марке и модели, по площадкам </div>
-          </div>
+  <!--Сводная таблица-->
+  {% if request.method == 'POST' %}
+    <!-- PivotTable.js -->
+    <div class="row">
+      <div class="col-xl-12 center">
 
-          <!-- Button to get current pivot table options -->
-{% comment %}
+        <!--Кнопки-заготовки-->
+        <div class="button-container">
+          <button type="button" class="btn btn-outline-success wdr-report-btn hover-button"
+                  id="report-client-by-moderation"
+                  onclick="setReportClientByModeration(this)"
+          >Отчет #1
+          </button>
+          <div class="hover-text hidden">Целевые, по клиентам, по площадкам</div>
+        </div>
+        <div class="button-container">
+          <button type="button" class="btn btn-outline-success wdr-report-btn hover-button"
+                  id="report-mark-model-by-client"
+                  onclick="setReportMarkModelByClient(this)"
+          >Отчет #2
+          </button>
+          <div class="hover-text hidden">Целевые, по марке и модели, по клиентам</div>
+        </div>
+        <div class="button-container">
+          <button type="button" class="btn btn-outline-success wdr-report-btn hover-button"
+                  id="report-client-mark-model-by-moderation"
+                  onclick="setReportClientMarkModelByModeration(this)"
+          >Отчет #3
+          </button>
+          <div class="hover-text hidden">Средняя стоимость звонка, по клиентам, марке и модели, по площадкам</div>
+        </div>
+
+        <!-- Button to get current pivot table options -->
+        {% comment %}
           <button type="button" class="btn btn-outline-info" onclick="getCurrentPivotOptions()">
             Get Current Options
           </button>
 {% endcomment %}
 
 
-          <div class="row">
-            <div class="col-xl-12 center">
+        <div class="row">
+          <div class="col-xl-12 center">
 
-              <div class="button-container">
-                <button type="button" class="btn btn-outline-success wdr-report-btn hover-button"
-                        id="transpose-rows-and-columns"
-                        onclick="transposeRowsAndColumns()"
-                ><i class="fa-solid fa-arrow-right-arrow-left fa-rotate-by" style="--fa-rotate-angle: 135deg;"></i>
-                </button>
-                <div class="hover-text hidden">Меняет местами строки и столбцы</div>
-              </div>
-
+            <div class="button-container">
+              <button type="button" class="btn btn-outline-success wdr-report-btn hover-button"
+                      id="transpose-rows-and-columns"
+                      onclick="transposeRowsAndColumns()"
+              ><i class="fa-solid fa-arrow-right-arrow-left fa-rotate-by" style="--fa-rotate-angle: 135deg;"></i>
+              </button>
+              <div class="hover-text hidden">Меняет местами строки и столбцы</div>
             </div>
+
           </div>
-
-
-          <div class="row">
-            <div class="col-xl-12 center">
-
-              <!-- Таблица -->
-              <div id="pivot-table-container">
-                <div id="pivot-table"></div>
-              </div>
-
-            </div>
-          </div>
-
         </div>
+
+
+        <div class="row">
+          <div class="col-xl-12 center">
+
+            <!-- Таблица -->
+            <div id="pivot-table-container">
+              <div id="pivot-table"></div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
+    </div>
 
-      <script>
-        const dataForPivot = {{ call_data|safe }};
-        let pivotTableContainer = $('#pivot-table-container');
-        let currentPivotTable;
+    <script>
+      const dataForPivot = {{ call_data|safe }};
+      let pivotTableContainer = $('#pivot-table-container');
+      let currentPivotTable;
 
-        function initializePivot(options) {
-          pivotTableContainer.empty();
-          pivotTableContainer.append('<div id="pivot-table"></div>');
-          options.renderers = $.extend($.pivotUtilities.renderers, $.pivotUtilities.export_renderers);
-          options = fixLocale(options);
-          currentPivotTable = $("#pivot-table").pivotUI(dataForPivot, options, false, 'ru');
-          currentPivotTable.addClass('table');
+      function initializePivot(options) {
+        pivotTableContainer.empty();
+        pivotTableContainer.append('<div id="pivot-table"></div>');
+        options.renderers = $.extend($.pivotUtilities.renderers, $.pivotUtilities.export_renderers);
+        options = fixLocale(options);
+        currentPivotTable = $("#pivot-table").pivotUI(dataForPivot, options, false, 'ru');
+        currentPivotTable.addClass('table');
+      }
+
+      $('#report-client-by-moderation').click();
+
+      function fixLocale(options) {
+        // Фикс для перевода на русский дополнительных рендереров
+        const translations = {
+          "Table": "Таблица",
+          "Table Barchart": "График столбцы",
+          "Heatmap": "Тепловая карта",
+          "Row Heatmap": "Тепловая карта по строке",
+          "Col Heatmap": "Тепловая карта по столбцу",
+          "TSV Export": "Экспорт TSV"
         }
-
-        $('#report-client-by-moderation').click();
-
-        function fixLocale(options) {
-          // Фикс для перевода на русский дополнительных рендереров
-          const translations = {
-            "Table": "Таблица",
-            "Table Barchart": "График столбцы",
-            "Heatmap": "Тепловая карта",
-            "Row Heatmap": "Тепловая карта по строке",
-            "Col Heatmap": "Тепловая карта по столбцу",
-            "TSV Export": "Экспорт TSV"
+        for (let key in options.renderers) {
+          if (key in translations) {
+            let translated = translations[key];
+            options.renderers[translated] = options.renderers[key];
+            delete options.renderers[key];
           }
-          for (let key in options.renderers) {
-            if (key in translations) {
-              let translated = translations[key];
-              options.renderers[translated] = options.renderers[key];
-              delete options.renderers[key];
-            }
+        }
+        return options;
+      }
+
+      function setReportClientByModeration(button) {
+        let options = {
+          rows: ['Клиент'],
+          cols: ['Площадка'],
+          aggregatorName: 'Кол-во',
+          inclusions: {
+            'Целевой': ['Да', 'ПМ - Целевой']
           }
-          return options;
         }
+        initializePivot(options);
+        changePressedReport(button);
+      }
 
-        function setReportClientByModeration(button) {
-          let options = {
-            rows: ['Клиент'],
-            cols: ['Площадка'],
-            aggregatorName: 'Кол-во',
-            inclusions: {
-              'Целевой': ['Да', 'ПМ - Целевой']
-            }
+      function setReportMarkModelByClient(button) {
+        let options = {
+          rows: ['Марка', 'Модель'],
+          cols: ['Клиент'],
+          aggregatorName: 'Кол-во',
+          inclusions: {
+            'Целевой': ['Да', 'ПМ - Целевой']
           }
-          initializePivot(options);
-          changePressedReport(button);
         }
+        initializePivot(options);
+        changePressedReport(button);
+      }
 
-        function setReportMarkModelByClient(button) {
-          let options = {
-            rows: ['Марка', 'Модель'],
-            cols: ['Клиент'],
-            aggregatorName: 'Кол-во',
-            inclusions: {
-              'Целевой': ['Да', 'ПМ - Целевой']
-            }
+      function setReportClientMarkModelByModeration(button) {
+        let options = {
+          rows: ['Клиент', 'Марка', 'Модель'],
+          cols: ['Площадка'],
+          aggregatorName: 'Среднее',
+          vals: ['Стоимость звонка'],
+          inclusions: {
+            'Целевой': ['Да', 'ПМ - Целевой']
           }
-          initializePivot(options);
-          changePressedReport(button);
         }
+        initializePivot(options);
+        changePressedReport(button);
+      }
 
-        function setReportClientMarkModelByModeration(button) {
-          let options = {
-            rows: ['Клиент', 'Марка', 'Модель'],
-            cols: ['Площадка'],
-            aggregatorName: 'Среднее',
-            vals: ['Стоимость звонка'],
-            inclusions: {
-              'Целевой': ['Да', 'ПМ - Целевой']
-            }
-          }
-          initializePivot(options);
-          changePressedReport(button);
-        }
+      function getCurrentPivotOptions() {
+        const pivotConfig = currentPivotTable.data('pivotUIOptions');
+        console.log(pivotConfig);
+        return pivotConfig;
+      }
 
-        function getCurrentPivotOptions() {
-          const pivotConfig = currentPivotTable.data('pivotUIOptions');
-          console.log(pivotConfig);
-          return pivotConfig;
-        }
+      function transposeRowsAndColumns() {
+        const pivotConfig = getCurrentPivotOptions();
+        const rows = pivotConfig.rows;
+        const cols = pivotConfig.cols;
 
-        function transposeRowsAndColumns() {
-          const pivotConfig = getCurrentPivotOptions();
-          const rows = pivotConfig.rows;
-          const cols = pivotConfig.cols;
+        pivotConfig.rows = cols;
+        pivotConfig.cols = rows;
+        initializePivot(pivotConfig);
+      }
 
-          pivotConfig.rows = cols;
-          pivotConfig.cols = rows;
-          initializePivot(pivotConfig);
-        }
+      // Function to convert table to JSON format for SheetJS
+      function tableToJSON(table) {
+        let data = [];
+        let rows = $(table).find('tr');
 
-        // Function to convert table to JSON format for SheetJS
-        function tableToJSON(table) {
-          let data = [];
-          let rows = $(table).find('tr');
+        rows.each(function (rowIndex) {
+          let row = [];
+          let cells = $(this).find('th, td');
 
-          rows.each(function (rowIndex) {
-            let row = [];
-            let cells = $(this).find('th, td');
+          cells.each(function () {
+            let cell = $(this);
+            let cellValue = cell.text();
+            let colspan = parseInt(cell.attr('colspan')) || 1;
+            let rowspan = parseInt(cell.attr('rowspan')) || 1;
 
-            cells.each(function () {
-              let cell = $(this);
-              let cellValue = cell.text();
-              let colspan = parseInt(cell.attr('colspan')) || 1;
-              let rowspan = parseInt(cell.attr('rowspan')) || 1;
+            row.push(cellValue);
 
-              row.push(cellValue);
-
-              // Заполняю пустыми ячейками справа от текущей если colspan > 1
-              if (colspan > 1) {
-                for (let cs = 1; cs < colspan; cs++) {
-                  row.push('');
-                }
+            // Заполняю пустыми ячейками справа от текущей если colspan > 1
+            if (colspan > 1) {
+              for (let cs = 1; cs < colspan; cs++) {
+                row.push('');
               }
-
-              // Дублирую ячейку вниз если у неё rowspan > 1, но только для рядов внутри tbody
-              let parent = $(rows[rowIndex]).parent()[0].tagName;
-              if (rowspan > 1 && parent === 'TBODY') {
-                for (let rs = 1; rs < rowspan; rs++) {
-                  if (!data[rowIndex + rs]) {
-                    data[rowIndex + rs] = [];
-                  }
-                  data[rowIndex + rs].push(cellValue);
-                }
-              }
-            });
-
-            if (!data[rowIndex]) {
-              data[rowIndex] = [];
             }
-            data[rowIndex].push(...row);
+
+            // Дублирую ячейку вниз если у неё rowspan > 1, но только для рядов внутри tbody
+            let parent = $(rows[rowIndex]).parent()[0].tagName;
+            if (rowspan > 1 && parent === 'TBODY') {
+              for (let rs = 1; rs < rowspan; rs++) {
+                if (!data[rowIndex + rs]) {
+                  data[rowIndex + rs] = [];
+                }
+                data[rowIndex + rs].push(cellValue);
+              }
+            }
           });
 
-          return data;
-        }
-
-        function autoWidth(ws) {
-          // Автоподбор ширины столбцов
-          const colWidth = [];
-          ws['!cols'] = [];
-          const range = XLSX.utils.decode_range(ws['!ref']);
-
-          for (let C = range.s.c; C <= range.e.c; ++C) {
-            let maxWidth = 10; // Default column width
-            for (let R = range.s.r; R <= range.e.r; ++R) {
-              const cellAddress = XLSX.utils.encode_cell({r: R, c: C});
-              const cell = ws[cellAddress];
-              if (cell && cell.v) {
-                const cellValue = cell.v.toString();
-                maxWidth = Math.max(maxWidth, cellValue.length * 1.2);
-              }
-            }
-            ws['!cols'].push({wpx: maxWidth * 6});
+          if (!data[rowIndex]) {
+            data[rowIndex] = [];
           }
-        }
-
-        function downloadXLSX() {
-          let tableData = tableToJSON($("table.pvtTable")[0]);
-
-          // Create a new workbook and add the data
-          let wb = XLSX.utils.book_new();
-          let ws = XLSX.utils.aoa_to_sheet(tableData);
-          XLSX.utils.book_append_sheet(wb, ws, "PivotTable");
-
-          // Apply auto-width
-          {#autoWidth(ws);#}
-
-          // Generate filename with current date
-          let today = new Date();
-          let dateString = today.toLocaleDateString('ru-RU').replace(/\./g, '/');
-          let filename = `Звонки. Сводная ${dateString}.xlsx`;
-
-          // Write to file
-          XLSX.writeFile(wb, filename);
-        }
-
-        // Bind click event to the export button
-        $('#export-xlsx').click(function () {
-          downloadXLSX();
+          data[rowIndex].push(...row);
         });
 
-      </script>
+        return data;
+      }
 
-    {% endif %}
+      function autoWidth(ws) {
+        // Автоподбор ширины столбцов
+        const colWidth = [];
+        ws['!cols'] = [];
+        const range = XLSX.utils.decode_range(ws['!ref']);
+
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          let maxWidth = 10; // Default column width
+          for (let R = range.s.r; R <= range.e.r; ++R) {
+            const cellAddress = XLSX.utils.encode_cell({r: R, c: C});
+            const cell = ws[cellAddress];
+            if (cell && cell.v) {
+              const cellValue = cell.v.toString();
+              maxWidth = Math.max(maxWidth, cellValue.length * 1.2);
+            }
+          }
+          ws['!cols'].push({wpx: maxWidth * 6});
+        }
+      }
+
+      function downloadXLSX() {
+        let tableData = tableToJSON($("table.pvtTable")[0]);
+
+        // Create a new workbook and add the data
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.aoa_to_sheet(tableData);
+        XLSX.utils.book_append_sheet(wb, ws, "PivotTable");
+
+        // Apply auto-width
+        {#autoWidth(ws);#}
+
+        // Generate filename with current date
+        let today = new Date();
+        let dateString = today.toLocaleDateString('ru-RU').replace(/\./g, '/');
+        let filename = `Звонки. Сводная ${dateString}.xlsx`;
+
+        // Write to file
+        XLSX.writeFile(wb, filename);
+      }
+
+      // Bind click event to the export button
+      $('#export-xlsx').click(function () {
+        downloadXLSX();
+      });
+
+    </script>
+
+  {% endif %}
 
   </div>
 

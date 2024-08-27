@@ -7,8 +7,8 @@ from typing import Union, List, Dict
 import numpy as np
 import pandas as pd
 import requests
-from django.db import IntegrityError
 from django.db.models import Q, Count, QuerySet
+from django.utils import timezone
 from pandas import DataFrame
 from rest_framework.utils.serializer_helpers import ReturnList
 
@@ -327,6 +327,7 @@ def add_autoru_calls(data, client):
         source = call['source']['raw']
         target = call['target']['raw']
         datetime = moscow_time(call['timestamp'])
+        datetime = timezone.make_aware(datetime)
         if billing_state == 'PAID':
             try:
                 billing_cost = int(call['billing']['cost']['amount']) / 100
@@ -719,7 +720,7 @@ def add_auction_history(data: DataFrame):
     :param data: df с данными аукциона
     """
     objs = [AutoruAuctionHistory(
-        datetime=row['datetime'],
+        datetime=timezone.make_aware(row['datetime']),
         autoru_region=row['autoru_region'],
         mark=row['mark'],
         model=row['model'],

@@ -35,46 +35,46 @@ def home(request):
         stats = Client.objects \
             .values('id', 'name', 'charge_type', 'commission_size', 'autoru_id', 'teleph_id') \
             .filter(id__in=clients_checked)
-        autorucalls = AutoruCall.objects \
+        autoru_calls = AutoruCall.objects \
             .values('client_id') \
             .filter(datetime__gte=daterange['from'], datetime__lte=daterange['to']) \
             .annotate(calls_sum=Sum('billing_cost'))
-        autoruproducts = AutoruProduct.objects \
+        autoru_products = AutoruProduct.objects \
             .values('client_id') \
             .filter(date__gte=daterange['from'], date__lte=daterange['to']) \
             .annotate(products_sum=Sum('total'))
-        telephcalls = TelephCall.objects \
+        teleph_calls = TelephCall.objects \
             .values('client_id') \
             .filter((Q(datetime__gte=daterange['from']) & Q(datetime__lte=daterange['to']))
                     & (Q(target='Да') | Q(target='ПМ - Целевой'))
                     & Q(moderation__startswith='М')) \
             .annotate(teleph_calls_sum=Sum('call_price'), teleph_target=Count('target'))
-        autorucalls_dict = {}
-        for row in autorucalls:
-            autorucalls_dict[row['client_id']] = {'calls_sum': row['calls_sum']}
-        autoruproducts_dict = {}
-        for row in autoruproducts:
-            autoruproducts_dict[row['client_id']] = {'products_sum': row['products_sum']}
-        telephcalls_dict = {}
-        for row in telephcalls:
-            telephcalls_dict[row['client_id']] = {'teleph_calls_sum': row['teleph_calls_sum'],
+        autoru_calls_dict = {}
+        for row in autoru_calls:
+            autoru_calls_dict[row['client_id']] = {'calls_sum': row['calls_sum']}
+        autoru_products_dict = {}
+        for row in autoru_products:
+            autoru_products_dict[row['client_id']] = {'products_sum': row['products_sum']}
+        teleph_calls_dict = {}
+        for row in teleph_calls:
+            teleph_calls_dict[row['client_id']] = {'teleph_calls_sum': row['teleph_calls_sum'],
                                                   'teleph_target': row['teleph_target']}
 
         # Форматирую для вывода
         for client in stats:
             try:
-                calls_sum = autorucalls_dict[client['autoru_id']]['calls_sum']
+                calls_sum = autoru_calls_dict[client['autoru_id']]['calls_sum']
             except KeyError:
                 calls_sum = 0
             try:
-                products_sum = autoruproducts_dict[client['autoru_id']]['products_sum']
+                products_sum = autoru_products_dict[client['autoru_id']]['products_sum']
             except KeyError:
                 products_sum = 0
             platform = calls_sum + products_sum
 
             if client['charge_type'] == Client.ChargeType.CALLS:  # звонки
                 try:
-                    teleph_calls_sum = telephcalls_dict[client['teleph_id']]['teleph_calls_sum']
+                    teleph_calls_sum = teleph_calls_dict[client['teleph_id']]['teleph_calls_sum']
                 except KeyError:
                     teleph_calls_sum = 0
             elif client['charge_type'] == Client.ChargeType.COMMISSION_PERCENT:  # комиссия процент
@@ -87,7 +87,7 @@ def home(request):
             teleph_calls_sum = 0 if not teleph_calls_sum else teleph_calls_sum
 
             try:
-                teleph_target = telephcalls_dict[client['teleph_id']]['teleph_target']
+                teleph_target = teleph_calls_dict[client['teleph_id']]['teleph_target']
             except KeyError:
                 teleph_target = 0
 

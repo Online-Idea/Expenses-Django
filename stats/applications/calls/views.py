@@ -260,9 +260,11 @@ def calls_pivot_custom(request):
 
     form = ClientChooseForm(user=request.user)
     datefrom, dateto = dates_for_daterange(end_of_month=True)
+    last_updated = get_last_updated_call_datetime()
     context = {
         'form': form,
         'datefrom': datefrom,
-        'dateto': dateto
+        'dateto': dateto,
+        'last_updated': last_updated,
     }
     return render(request, 'calls/calls_pivot_custom.html', context)

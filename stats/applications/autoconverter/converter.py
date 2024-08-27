@@ -1,33 +1,32 @@
+import datetime
+import ftplib
 import io
 import logging
+import os
 import random
 import re
+import xml.etree.ElementTree as ET
 from collections import Counter
-import ftplib
 from ftplib import FTP
 from functools import reduce
 from pathlib import Path
-import os
 
 import demoji
-import requests
-import datetime
-import xml.etree.ElementTree as ET
-
-from django.db.models import QuerySet
-from openpyxl import Workbook
 # import xlsxwriter
 import pandas as pd
+import requests
+from django.db.models import QuerySet
+from openpyxl import Workbook
 from pandas import DataFrame
 from telebot.types import InputFile
 
 from applications.ads.models import Ad
 from applications.autoconverter.models import *
 from applications.autoconverter.onllline_base import onllline_worker
-from libs.services.utils import get_models_verbose_names
-from stats.settings import env
 from libs.services.email_sender import send_email
 from libs.services.management.commands.bot import bot, break_message_to_parts
+from libs.services.utils import get_models_verbose_names, pandas_numeric_to_object
+from stats.settings import env
 
 
 # Список Конфигураций: POST http://151.248.118.19/Api/Configurations/GetList
@@ -38,14 +37,15 @@ from libs.services.management.commands.bot import bot, break_message_to_parts
 # POST http://151.248.118.19/Api/Stock/GetProcessStep
 # POST http://151.248.118.19/Api/Log/GetByProcessId
 
-def get_converter_tasks(task_ids: list = None) -> QuerySet:
+def get_converter_tasks(task_ids: list = None) -> list[ConverterTask] | QuerySet[ConverterTask]:
     """
     Собирает Задачи конвертера. Если есть task_ids то берёт только их, иначе все активные
     :param task_ids: список id модели ConverterTask
     :return: Django QuerySet с Задачами конвертера
     """
     if task_ids:
-        return ConverterTask.objects.filter(id__in=task_ids)
+        tasks = ConverterTask.objects.filter(id__in=task_ids)
+        return [tasks.get(id=task_id) for task_id in task_ids]  # Чтобы был тот же порядок что и в task_ids
     else:
         return ConverterTask.objects.filter(active=True)
 
@@ -55,6 +55,7 @@ def get_price(task):
     Полный цикл для одного клиента.
     :param task: строка из таблицы Задачи конвертера
     """
+    logging.info(f'Запускаю конвертер по задаче {task.name}')
     template = converter_template(task)
     if template.empty:
         logging.info(f'По клиенту {task.client.name} пустой шаблон')
@@ -72,7 +73,7 @@ def get_price(task):
         file_content = file.read()
         save_on_ftp(logs_xlsx, file_content)
     os.remove(logs_xlsx)
-    print(f'Клиент {task.slug} - прайс готов')
+    logging.info(f'Задача {task.name} - прайс готов')
     return
 
 
@@ -246,9 +247,12 @@ def template_xml(stock_path, template_path, task):
                                # value=car.findtext(fields.description))
                                value=multi_tags(fields.description, car, '\n'))
 
-            # VIN, если меньше 17 символов то добавляю в начало столько 'X' сколько не хватает до 17
+            # VIN
             vin = car.findtext(fields.vin)
-            vin = f"{'X' * (17 - len(vin))}{vin}" if len(vin) < 17 else vin
+            if task.fill_vin:
+                # Если меньше 17 символов то добавляю в начало столько 'X' сколько не хватает до 17
+                vin = f"{'X' * (17 - len(vin))}{vin}" if len(vin) < 17 else vin
+
             sheet.cell(row=i + 2, column=template_col['vin'][1] + 1, value=vin)
 
             # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
@@ -662,6 +666,8 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
                 .apply(lambda x: str(x) + change.new_value)
         # Когда нужно заменить полностью
         elif change.change_type == 'Полностью':
+            if df[change.price_column_to_change].dtype == 'float64':
+                df[change.price_column_to_change] = df[change.price_column_to_change].astype(object)
             df.loc[combined_mask, change.price_column_to_change] = change.new_value
 
     df = df.drop(df.filter(regex='_template').columns, axis=1)
@@ -797,7 +803,8 @@ def converter_process_result(process_id, template, task):
     read_file = price_extra_processing(read_file, task, template)
 
     # Мелкие замены
-    read_file.fillna('', inplace=True)
+    # read_file.fillna('', inplace=True)
+    read_file = pandas_numeric_to_object(read_file)
     read_file = read_file.astype(str).replace(
         {
             r"\.0$": "",

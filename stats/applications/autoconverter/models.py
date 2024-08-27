@@ -61,6 +61,8 @@ class ConverterTask(BaseModel):
         'add_to_price': 'Если нужно добавить объявления к прайсу после конвертера то укажи здесь ссылку на прайс с'
                         'этими объявлениями. Прайс размещай на наш ftp, '
                         'в папке converter/имя_клиента/add/имя_файла.xlsx',
+        'fill_vin': 'Добавляет в начало VIN знаки X если длина VIN меньше 17. '
+                    'Например VIN: 607130 станет XXXXXXXXXXX607130',
         'change_vin': 'Меняет последние 6 цифр VIN на случайные. Если в последних 6 цифрах есть буква то меняет цифры '
                       'после последней буквы.',
         'use_converter': 'Если в качестве стока используется наш прайс и конвертер не нужен для подставки фото, '
@@ -96,6 +98,8 @@ class ConverterTask(BaseModel):
     price = models.URLField(null=True, blank=True, verbose_name='Прайс')
     add_to_price = models.URLField(null=True, blank=True, help_text=HELP_TEXTS['add_to_price'],
                                    verbose_name='Добавить к прайсу')
+    fill_vin = models.BooleanField(default=False, help_text=HELP_TEXTS['fill_vin'],
+                                   verbose_name='Заполнить VIN знаками X')
     change_vin = models.BooleanField(default=False, help_text=HELP_TEXTS['change_vin'], verbose_name='Изменить VIN')
 
     # База onllline.ru

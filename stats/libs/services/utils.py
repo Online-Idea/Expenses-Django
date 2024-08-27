@@ -1,12 +1,17 @@
 import csv
 from datetime import datetime, timedelta
+
+import pandas as pd
 from django.db import models
+from django.utils import timezone
 from openpyxl.workbook import Workbook
 
 
 def last_30_days():
     minus_30 = (datetime.now() - timedelta(days=31)).replace(hour=0, minute=0)
     yesterday = (datetime.now() - timedelta(days=1)).replace(hour=23, minute=59)
+    minus_30 = timezone.make_aware(minus_30)
+    yesterday = timezone.make_aware(yesterday)
     return minus_30, yesterday
 
 
@@ -121,7 +126,7 @@ def export_queryset_to_csv(queryset, file_path=None):
     :return:
     """
     if not file_path:
-        file_path = 'exported.csv'
+        file_path = 'temp/exported_queryset.csv'
 
     with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
@@ -131,3 +136,15 @@ def export_queryset_to_csv(queryset, file_path=None):
         for row in queryset.values_list():
             writer.writerow([cell for cell in row])
 
+
+def pandas_numeric_to_object(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Меняет тип в датафрейме на object если он числовой, потом заполняет nan как ''
+    :param df:
+    :return:
+    """
+    for col in df.columns:
+        if df[col].dtype.kind in 'bifc':
+            df[col] = df[col].astype(object)
+            df[col] = df[col].fillna('')
+    return df

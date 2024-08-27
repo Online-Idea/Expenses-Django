@@ -33,7 +33,7 @@ class ConverterTaskAdmin(admin.ModelAdmin):
             'Конвертер',
             {
                 'fields': ['use_converter', 'photos_folder', 'front', 'back', 'interior', 'salon_only', 'template',
-                           'stock_fields', 'configuration', 'price', 'add_to_price', 'change_vin', ]
+                           'stock_fields', 'configuration', 'price', 'add_to_price', 'fill_vin', 'change_vin', ]
             },
         ),
         (

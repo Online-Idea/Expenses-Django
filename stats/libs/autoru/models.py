@@ -36,6 +36,7 @@ class AutoruProduct(BaseModel):
     product = models.CharField(max_length=255, verbose_name='Услуга')
     sum = models.FloatField(verbose_name='Стоимость')
     count = models.IntegerField(verbose_name='Количество')
+    # TODO удалить total, авто.ру присылает общую сумму в sum, дополнительно высчитывать не нужно
     total = models.FloatField(verbose_name='Сумма')
 
     def __str__(self):

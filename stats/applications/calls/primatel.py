@@ -243,6 +243,7 @@ class PrimatelLogic:
                 item['time'] = datetime.strptime(item['time'], '%Y-%m-%d %H:%M:%S')
                 item['time'] = timezone.make_aware(item['time'], timezone.get_current_timezone())
 
+                # TODO был баг когда дубли звонков добавились. Пока не нашёл из-за чего, возможно что-то отсюда
                 if item['callid'] not in existing_calls_primatel_call_ids:
                     new_call = Call(
                         datetime=item['time'],
@@ -295,6 +296,8 @@ class PrimatelLogic:
             dateto = datetime.now()
         datefrom = datefrom.replace(hour=0, minute=0, second=0)
         dateto = dateto.replace(hour=23, minute=59, second=59)
+        datefrom = timezone.make_aware(datefrom)
+        dateto = timezone.make_aware(dateto)
         cabinets = CabinetPrimatel.objects.filter(active=True)
 
         for cabinet in cabinets:

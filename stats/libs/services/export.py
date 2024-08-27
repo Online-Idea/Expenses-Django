@@ -6,6 +6,7 @@ from io import BytesIO
 import numpy as np
 import openpyxl
 import pandas as pd
+from django.utils import timezone
 from openpyxl.reader.excel import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.workbook.protection import WorkbookProtection
@@ -148,6 +149,8 @@ def export_calls_for_callback(from_: str = None, to: str = None):
         datetime_format = '%Y.%m.%d %H:%M:%S'
         from_ = datetime.strptime(from_, datetime_format)
         to = datetime.strptime(to, datetime_format)
+        from_ = timezone.make_aware(from_)
+        to = timezone.make_aware(to)
 
     minus_3_days = to.date() - timedelta(days=3)
     client_filter = ['avilon_premium_legenda_new', 'Gate_new', 'avilon_bmw_new',
@@ -172,6 +175,8 @@ def export_calls_for_callback(from_: str = None, to: str = None):
     df['date'] = df['datetime'].dt.date
     # Только мобильные. Мобильными считаю тех кто начинается на 79
     df = df[df['num_from'].astype(str).str.startswith('79')]
+    # Убираю звонки без статуса
+    df = df[df['call_status'].notna()]
 
     calls_to_callback = {}
     unique_clients = df['client__name'].unique()

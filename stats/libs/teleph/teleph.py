@@ -1,8 +1,10 @@
 import os
+from datetime import datetime
 
 import requests
 import urllib3
 from django.db.models import Q
+from django.utils import timezone
 
 from .models import *
 
@@ -17,7 +19,6 @@ def get_teleph_clients():
 
 
 def get_teleph_calls(from_, to, client):
-
     delete_teleph_calls(from_, to, client)
 
     urllib3.disable_warnings()
@@ -50,32 +51,31 @@ def add_teleph_calls(data, client):
     client_calls = TelephCall.objects.filter(client=client)
 
     for call in data['content']:
-        datetime = call['dateTime']
-        num_from = call['numFrom']
-        mark = call['mark']
-        model = call['model']
-        target = call['target']
-        moderation = call['moderation']
-        call_price = call['callPrice']
-        price_autoru = call['priceAutoRu']
-        price_drom = call['priceDrom']
-        call_status = call['callStatus']
-        price_of_car = call['price']
-        color = call['color']
-        body = call['body']
-        drive_unit = call['driveUnit']
-        engine = call['engine']
-        equipment = call['equipment']
-        comment = call['comment']
+        datetime_obj = datetime.strptime(call['dateTime'], '%Y-%m-%dT%H:%M:%S')
+        datetime_obj = timezone.make_aware(datetime_obj)
 
-        record_exists_check = client_calls.filter(datetime=f'{datetime}', num_from=f'{num_from}')
+        record_exists_check = client_calls.filter(datetime=datetime_obj, num_from=call['numFrom'])
         if record_exists_check.count() == 0:
-            teleph_calls.append(TelephCall(client=client, datetime=datetime, num_from=num_from,
-                                           mark=mark, model=model, target=target, moderation=moderation,
-                                           call_price=call_price, price_autoru=price_autoru, price_drom=price_drom,
-                                           call_status=call_status, price_of_car=price_of_car, color=color,
-                                           body=body, drive_unit=drive_unit, engine=engine, equipment=equipment,
-                                           comment=comment))
+            teleph_calls.append(TelephCall(
+                client=client,
+                datetime=datetime_obj,
+                num_from=call['numFrom'],
+                mark=call['mark'],
+                model=call['model'],
+                target=call['target'],
+                moderation=call['moderation'],
+                call_price=call['callPrice'],
+                price_autoru=call['priceAutoRu'],
+                price_drom=call['priceDrom'],
+                call_status=call['callStatus'],
+                price_of_car=call['price'],
+                color=call['color'],
+                body=call['body'],
+                drive_unit=call['driveUnit'],
+                engine=call['engine'],
+                equipment=call['equipment'],
+                comment=call['comment']
+            ))
     if len(teleph_calls) > 0:
         TelephCall.objects.bulk_create(teleph_calls)
 

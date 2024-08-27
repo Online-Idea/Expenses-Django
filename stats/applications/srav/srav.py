@@ -186,6 +186,7 @@ def check_and_create_unique_autoru_parsed_ad_objs(data: list):
         model.objects.bulk_create(new_objs)
 
     marks = get_unique(data, 'mark')
+    marks = [mark.id for mark in marks]
     regions = get_unique(data, 'region')
     dealers = get_unique(data, 'dealer')
 

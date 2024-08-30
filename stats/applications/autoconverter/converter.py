@@ -83,6 +83,7 @@ def get_price_without_converter(task):
     :param task:
     :return:
     """
+    logging.info(f'Запускаю задачу без конвертера {task.name}')
     template = converter_template(task)
     if template.empty:
         logging.info(f'По клиенту {task.client.name} пустой шаблон')
@@ -803,8 +804,8 @@ def converter_process_result(process_id, template, task):
     read_file = price_extra_processing(read_file, task, template)
 
     # Мелкие замены
-    # read_file.fillna('', inplace=True)
     read_file = pandas_numeric_to_object(read_file)
+    read_file.fillna('', inplace=True)
     read_file = read_file.astype(str).replace(
         {
             r"\.0$": "",

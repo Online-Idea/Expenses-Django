@@ -84,18 +84,18 @@
                     <td>{{ stat.platform|floatformat:"0" }}</td>
                     <td>{{ stat.calls_sum|floatformat:"0" }}</td>
                     <td>{{ stat.products_sum|floatformat:"0" }}</td>
-                    <td>{{ stat.teleph_target }}</td>
+                    <td>{{ stat.teleph_target|floatformat:"0" }}</td>
                     <td>{{ stat.call_cost|floatformat:"0" }}</td>
                     <td>{{ stat.client_cost|floatformat:"0" }}</td>
                     {% if stat.margin < 0 %}
-                    <td class="negative">{{ stat.margin|floatformat:"0" }}</td>
+                      <td class="negative">{{ stat.margin|floatformat:"0" }}</td>
                     {% else %}
-                    <td>{{ stat.margin|floatformat:"0" }}</td>
+                      <td>{{ stat.margin|floatformat:"0" }}</td>
                     {% endif %}
                     {% if stat.profit < 0 %}
-                    <td class="negative">{{ stat.profit|floatformat:"0" }}</td>
+                      <td class="negative">{{ stat.profit|floatformat:"0" }}</td>
                     {% else %}
-                    <td>{{ stat.profit|floatformat:"0" }}</td>
+                      <td>{{ stat.profit|floatformat:"0" }}</td>
                     {% endif %}
                 </tr>
                 {% endfor %}
@@ -103,25 +103,27 @@
                 <tfoot class="tfoot-dark">
                 <tr>
                     <td>Всего</td>
-                    <td>{{ subtotal.teleph_calls_sum|floatformat:"0" }}</td>
-                    <td>{{ subtotal.platform|floatformat:"0" }}</td>
-                    <td>{{ subtotal.calls_sum|floatformat:"0" }}</td>
-                    <td>{{ subtotal.products_sum|floatformat:"0" }}</td>
-                    <td>{{ subtotal.teleph_target }}</td>
-                    <td>{{ subtotal.calls_cost|floatformat:"0" }}</td>
-                    <td>{{ subtotal.client_cost|floatformat:"0" }}</td>
-                    {% if subtotal.margin < 0 %}
-                    <td class="negative">{{ subtotal.margin|floatformat:"0" }}</td>
+                    <td>{{ totals.teleph_calls_sum|floatformat:"0" }}</td>
+                    <td>{{ totals.platform|floatformat:"0" }}</td>
+                    <td>{{ totals.calls_sum|floatformat:"0" }}</td>
+                    <td>{{ totals.products_sum|floatformat:"0" }}</td>
+                    <td>{{ totals.teleph_target|floatformat:"0" }}</td>
+                    <td>{{ totals.call_cost|floatformat:"0" }}</td>
+                    <td>{{ totals.client_cost|floatformat:"0" }}</td>
+                    {% if totals.margin < 0 %}
+                      <td class="negative">{{ totals.margin|floatformat:"0" }}</td>
                     {% else %}
-                    <td>{{ subtotal.margin|floatformat:"0" }}</td>
+                      <td>{{ totals.margin|floatformat:"0" }}</td>
                     {% endif %}
-                    {% if subtotal.profit < 0 %}
-                    <td class="negative">{{ subtotal.profit|floatformat:"0" }}</td>
+
+                    {% if totals.profit < 0 %}
+                      <td class="negative">{{ totals.profit|floatformat:"0" }}</td>
                     {% else %}
-                    <td>{{ subtotal.profit|floatformat:"0" }}</td>
+                      <td>{{ totals.profit|floatformat:"0" }}</td>
                     {% endif %}
                 </tr>
                 </tfoot>
+
             </table>
             {% endif %}
         </div>

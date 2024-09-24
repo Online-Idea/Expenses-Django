@@ -115,9 +115,15 @@ class TargetChoice(models.TextChoices):
 
 
 class ModerationChoice(models.TextChoices):
-    M = 'М', _('М')
+    """
+    М, М(З) =  Автору
+    М (Б) = автору (Б)
+    БУ  = Автору БУ
+    Запас  = Заявки
+    """
+    AUTORU = 'Авто.ру', _('Авто.ру')
     # MZ = 'М(З)', _('М(З)')
-    MB = 'М(Б)', _('М(Б)')
+    AUTORU_B = 'Авто.ру (Б)', _('Авто.ру (Б)')
     # USED = 'БУ', _('БУ')
     AUTORU_USED = 'Авто.ру БУ', _('Авто.ру БУ')
     REQUEST = 'Заявка', _('Заявка')
@@ -137,7 +143,7 @@ class ModerationChoice(models.TextChoices):
         :param choice:
         :return:
         """
-        if choice in [cls.M, cls.MB, cls.AUTORU_USED]:
+        if choice in [cls.AUTORU, cls.AUTORU_B, cls.AUTORU_USED]:
             return 'Автору'
         elif choice in [cls.AVITO, cls.AVITO_USED, cls.REQUEST_AVITO]:
             return 'Авито'
@@ -227,7 +233,8 @@ class Call(BaseModel):
         return f'{self.client_primatel.name} | {self.num_from} | {self.datetime}'
 
     def clean_phone_number(self, number: str):
-        return number.replace('+', '')
+        if number:
+            return number.replace('+', '')
 
     def clean_phone_numbers(self):
         """

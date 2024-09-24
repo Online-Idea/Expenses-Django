@@ -75,7 +75,7 @@ def onllline_import_export(driver, task: ConverterTask):
 
     # Настройки импорта
     salon = task.onllline_salon_to_import
-    price = f'https://ph.onllline.ru/{task.price}'
+    price = f'http://ph.onllline.ru/{task.price}'
     import_mode = task.onllline_import_mode
 
     # Импортирую

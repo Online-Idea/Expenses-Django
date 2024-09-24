@@ -1,14 +1,17 @@
 from django.db import models
 
+from applications.calls.models import Call
 from libs.services.models import BaseModel, Mark, Model
 from applications.accounts.models import Client
 
+
 class AutoruCall(BaseModel):
+    call = models.ForeignKey(Call, on_delete=models.CASCADE, null=True, blank=True, verbose_name='Звонок')
     ad_id = models.CharField(max_length=255, null=True, verbose_name='id объявления')
     vin = models.CharField(max_length=17, null=True, verbose_name='VIN')
     client = models.ForeignKey(Client, to_field='autoru_id', on_delete=models.PROTECT, verbose_name='id клиента')
-    source = models.CharField(max_length=255, verbose_name='Исходящий')
-    target = models.CharField(max_length=255, verbose_name='Входящий')
+    num_from = models.CharField(max_length=255, verbose_name='Исходящий')
+    num_to = models.CharField(max_length=255, verbose_name='Входящий')
     datetime = models.DateTimeField(verbose_name='Дата и время')
     duration = models.IntegerField(verbose_name='Длительность')
     mark = models.CharField(max_length=255, null=True, verbose_name='Марка')
@@ -17,7 +20,7 @@ class AutoruCall(BaseModel):
     billing_cost = models.FloatField(null=True, verbose_name='Стоимость')
 
     def __str__(self):
-        return f'{self.client} | {self.source} | {self.datetime} | {self.duration}'
+        return f'{self.client} | {self.num_from} | {self.datetime} | {self.duration}'
 
     class Meta:
         db_table = 'autoru_autoru_call'
@@ -28,7 +31,7 @@ class AutoruCall(BaseModel):
 
 class AutoruProduct(BaseModel):
     ad_id = models.CharField(max_length=255, null=True, verbose_name='id объявления')
-    vin = models.CharField(max_length=17, null=True, verbose_name='VIN')
+    vin = models.CharField(max_length=17, null=True, blank=True, verbose_name='VIN')
     client = models.ForeignKey(Client, to_field='autoru_id', on_delete=models.CASCADE, verbose_name='id клиента')
     date = models.DateField(verbose_name='Дата')
     mark = models.CharField(max_length=255, null=True, verbose_name='Марка')
@@ -36,8 +39,6 @@ class AutoruProduct(BaseModel):
     product = models.CharField(max_length=255, verbose_name='Услуга')
     sum = models.FloatField(verbose_name='Стоимость')
     count = models.IntegerField(verbose_name='Количество')
-    # TODO удалить total, авто.ру присылает общую сумму в sum, дополнительно высчитывать не нужно
-    total = models.FloatField(verbose_name='Сумма')
 
     def __str__(self):
         return f'{self.client} | {self.date} | {self.product}'

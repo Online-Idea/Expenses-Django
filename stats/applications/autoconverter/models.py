@@ -262,7 +262,9 @@ class ConverterFilter(BaseModel):
     EQUALS = '=='
     NOT_EQUALS = '!='
     GREATER_THAN = '>'
+    GREATER_THAN_EQUALS = '>='
     LESS_THAN = '<'
+    LESS_THAN_EQUALS = '<='
     STARTS_WITH = 'starts_with'
     NOT_STARTS_WITH = 'not_starts_with'
     ENDS_WITH = 'ends_with'
@@ -273,14 +275,19 @@ class ConverterFilter(BaseModel):
         (EQUALS, 'равно'),
         (NOT_EQUALS, 'не равно'),
         (GREATER_THAN, 'больше'),
+        (GREATER_THAN_EQUALS, 'больше либо равно'),
         (LESS_THAN, 'меньше'),
+        (LESS_THAN_EQUALS, 'меньше либо равно'),
         (STARTS_WITH, 'начинается с'),
         (NOT_STARTS_WITH, 'не начинается с'),
         (ENDS_WITH, 'заканчивается на'),
         (NOT_ENDS_WITH, 'не заканчивается на'),
     ]
+    POSITIVE_CONDITIONS = [CONTAINS, EQUALS, STARTS_WITH, ENDS_WITH]
+    NEGATIVE_CONDITIONS = [NOT_CONTAINS, NOT_EQUALS, NOT_STARTS_WITH, NOT_ENDS_WITH]
     value_help_text = 'Для фильтрации по нескольким значениям пиши каждое между `` и разделяй запятыми.' \
-                      ' Например: `E (W/S213)`, `CLS (C257)`'
+                      ' Например: `E (W/S213)`, `CLS (C257)`. Для фильтрации по пустым значениям выбирай в условии' \
+                      ' не равно, в значении ""'
 
     converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.PROTECT)
     field = models.CharField(max_length=500, verbose_name='Поле')

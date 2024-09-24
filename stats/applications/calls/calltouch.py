@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 from requests.exceptions import JSONDecodeError
 
+from applications.calls.calls import find_call_in_another_model
 from applications.calls.models import Call, CalltouchSetting, CalltouchData, TargetChoice, ModerationChoice
 from libs.services.email_sender import send_email
 from stats.settings import env
@@ -143,33 +144,11 @@ class CalltouchLogic:
         :return: обновлённые Call с заполненными calltouch_data
         """
 
-        def filter_calltouch_data(calltouch_data, field, original_value, min_value, max_value):
-            """
-            Рекурсивная функция которая фильтрует CalltouchData пока не найдет 1 или более звонков.
-            Ищет через уменьшение min_value и увеличение max_value.
-            :param calltouch_data: CalltouchData queryset
-            :param field: поле по которому фильтровать calltouch_data: 'timestamp' или 'duration'
-            :param min_value: минимальное значение для field
-            :param max_value: максимальное значение для field
-            :return: список с отфильтрованными CalltouchData
-            """
-            if (max_value - original_value) >= 50:  # Выхожу из рекурсии из если больше 50 вызовов
-                return []
-            filtered = [row for row in calltouch_data if min_value <= getattr(row, field) <= max_value]
-            if len(filtered) >= 1:
-                return filtered
-            else:
-                min_value -= 1
-                max_value += 1
-                return filter_calltouch_data(calltouch_data, field, original_value, min_value, max_value)
-
         # Убираю из queryset звонки для которых нет CalltouchSetting
         calltouch_settings = CalltouchSetting.objects.filter(active=True).values_list('client_primatel_id', flat=True)
         queryset = queryset.filter(Q(client_primatel_id__in=calltouch_settings))
 
         # Данные по которым отфильтрую CalltouchData
-        # client_primatels = queryset.distinct('client_primatel')
-        # marks = queryset.distinct('mark')
         min_datetime = queryset.aggregate(Min('datetime'))['datetime__min']
         max_datetime = queryset.aggregate(Max('datetime'))['datetime__max']
         min_datetime = min_datetime.replace(hour=0, minute=0, second=0)
@@ -186,31 +165,13 @@ class CalltouchLogic:
         # Заполняю calltouch_data у наших звонков
         failed_filters = []
         for call in queryset:
-            timestamp_min = datetime.timestamp(call.datetime)
-            timestamp_max = timestamp_min
-            calltouch_data_by_numbers = calltouch_data.filter(num_from=call.num_from, num_to=call.num_redirect)
-
-            # Если есть звонки совпадающие по num_from и num_to то пробую найти нужный по timestamp
-            filtered_by_timestamp = []
-            if calltouch_data_by_numbers:
-                filtered_by_timestamp = filter_calltouch_data(calltouch_data_by_numbers, 'timestamp',
-                                                              timestamp_max, timestamp_min, timestamp_max)
-            else:  # Иначе звонка почему-то нет в Calltouch, добавляю в список на отправление на почту
+            found_call = find_call_in_another_model(call, call.num_from, call.num_redirect, calltouch_data)
+            if found_call:
+                call.calltouch_data = found_call
+            else:
                 failed_filters.append(call)
 
-                # Если фильтрация по timestamp дала 1 результат значит звонок найден
-            if len(filtered_by_timestamp) == 1:
-                call.calltouch_data = filtered_by_timestamp[0]
-            else:  # Иначе проверяю по duration
-                filtered_by_duration = filter_calltouch_data(filtered_by_timestamp, 'duration',
-                                                             call.duration, call.duration, call.duration)
-                # Если фильтрация по duration дала 1 результат значит звонок найден
-                if len(filtered_by_duration) == 1:
-                    call.calltouch_data = filtered_by_duration[0]
-                else:  # Иначе ошибка, добавляю в список на отправление на почту
-                    failed_filters.append(call)
-
-        updated_calls = Call.objects.bulk_update(queryset, ['calltouch_data'])
+        Call.objects.bulk_update(queryset, ['calltouch_data'])
 
         # Отправляю на почту звонки для которых не удалось заполнить calltouch_data
         if failed_filters:

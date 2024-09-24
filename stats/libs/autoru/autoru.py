@@ -17,6 +17,7 @@ from applications.srav.models import AutoruParsedAd, SravPivot
 from stats.settings import env
 from .models import *
 from ..services.email_sender import send_email
+from ..services.utils import extract_digits
 
 ENDPOINT = 'https://apiauto.ru/1.0'
 
@@ -107,6 +108,7 @@ def get_autoru_products(from_, to, client_id):
             product_response = requests.get(
                 url=f'{ENDPOINT}/dealer/wallet/product/{product_type}/activations/offer-stats',
                 headers=dealer_headers, params=product_params).json()
+
             if autoru_errors(product_response):
                 get_autoru_products(from_, to, client_id)
             # Добавляю
@@ -137,8 +139,7 @@ def add_autoru_products(data):
         for stat in range(len(offer['stats'])):
             sum = offer['stats'][stat]['sum']
             count = offer['stats'][stat]['count']
-            total = sum * count
-            if total > 0:  # Добавляю только те услуги за которые списали средства
+            if sum > 0:  # Добавляю только те услуги за которые списали средства
                 ad_id = offer['offer']['id']
                 try:
                     vin = offer['offer']['documents']['vin']
@@ -159,7 +160,7 @@ def add_autoru_products(data):
                 if record_exists_check.count() == 0:
                     autoru_products.append(AutoruProduct(ad_id=ad_id, vin=vin, client_id=client_id, date=date,
                                                          mark=mark, model=model, product=product,
-                                                         sum=sum, count=count, total=total))
+                                                         sum=sum, count=count))
     if len(autoru_products) > 0:
         AutoruProduct.objects.bulk_create(autoru_products)
 
@@ -184,7 +185,8 @@ def get_autoru_daily(from_, to, client_id):
         'pageNum': 1,
         'pageSize': 1000
     }
-    wallet_response = requests.get(url=f'{ENDPOINT}{wallet}', headers=dealer_headers, params=wallet_params).json()
+    wallet_response = requests.get(url=f'{ENDPOINT}{wallet}', headers=dealer_headers,
+                                   params=wallet_params).json()
     if autoru_errors(wallet_response):
         get_autoru_daily(from_, to, client_id)
 
@@ -217,14 +219,13 @@ def add_autoru_daily(data, client):
                 product = day['product']
                 sum = day['sum']
                 count = day['count']
-                total = sum * count
 
                 record_exists_check = AutoruProduct.objects.filter(
                     client_id=f'{client_id}', date=f'{date}', product=f'{product}')
                 if record_exists_check.count() == 0:
                     autoru_daily.append(AutoruProduct(ad_id=ad_id, vin=vin, client_id=client_id, date=date,
                                                       mark=mark, model=model, product=product,
-                                                      sum=sum, count=count, total=total))
+                                                      sum=sum, count=count))
     except KeyError:
         print(f'Клиент {client} пропущен. {data}')
         return
@@ -277,22 +278,20 @@ def get_autoru_calls(from_, to, client_id):
     if autoru_errors(calls_response):
         get_autoru_calls(from_, to, client_id)
 
-    try:
-        if calls_response['status'] == 'error':  # Пропускаю клиента если доступ запрещён
-            print(f'Клиент {client_id} пропущен. Отказано в доступе')
-            return
-    except KeyError:
-        if calls_response['pagination']['total_count'] > 0:
-            add_autoru_calls(calls_response, client_id)
-            # Если запрос возвращает больше одной страницы то иду по следующим
-            page_count = calls_response['pagination']['total_page_count']
-            if page_count > 1:
-                for page in range(2, page_count + 1):
-                    calls_body['pagination']['page'] = page
-                    calls_response = requests.post(url=f'{ENDPOINT}/{calltracking}', headers=dealer_headers,
-                                                   json=calls_body).json()
-                    add_autoru_calls(calls_response, client_id)
-    finally:
+    if 'status' in calls_response and calls_response['status'].lower() == 'error':
+        print(f'Клиент {client_id} пропущен: {calls_response}')
+        return
+
+    if calls_response['pagination']['total_count'] > 0:
+        add_autoru_calls(calls_response, client_id)
+        # Если запрос возвращает больше одной страницы то иду по следующим
+        page_count = calls_response['pagination']['total_page_count']
+        if page_count > 1:
+            for page in range(2, page_count + 1):
+                calls_body['pagination']['page'] = page
+                calls_response = requests.post(url=f'{ENDPOINT}/{calltracking}', headers=dealer_headers,
+                                               json=calls_body).json()
+                add_autoru_calls(calls_response, client_id)
         print(f'Клиент {client_id} | звонки')
 
 
@@ -324,8 +323,8 @@ def add_autoru_calls(data, client):
         except KeyError:
             billing_state = 'FREE'
         client_id = client
-        source = call['source']['raw']
-        target = call['target']['raw']
+        num_from = extract_digits(call['source']['raw'])
+        num_to = extract_digits(call['target']['raw'])
         datetime = moscow_time(call['timestamp'])
         datetime = timezone.make_aware(datetime)
         if billing_state == 'PAID':
@@ -337,9 +336,9 @@ def add_autoru_calls(data, client):
             billing_cost = 0
 
         record_exists_check = AutoruCall.objects.filter(
-            source=f'{source}', target=f'{target}', datetime=f'{datetime}')
+            num_from=f'{num_from}', num_to=f'{num_to}', datetime=f'{datetime}')
         if record_exists_check.count() == 0:
-            autoru_calls.append(AutoruCall(ad_id=ad_id, vin=vin, client_id=client_id, source=source, target=target,
+            autoru_calls.append(AutoruCall(ad_id=ad_id, vin=vin, client_id=client_id, num_from=num_from, num_to=num_to,
                                            datetime=datetime, duration=duration, mark=mark, model=model,
                                            billing_state=billing_state, billing_cost=billing_cost))
     if len(autoru_calls) > 0:
@@ -357,6 +356,8 @@ session_id = autoru_authenticate(env('AUTORU_LOGIN'), env('AUTORU_PASSWORD'))
 def update_autoru_catalog():
     """
     Обновляет каталог авто.ру
+    Этот вариант много ресурсов потребляет, но рабочий.
+    Если update_autoru_catalog2 работает без проблем то удалить этот
     """
     # Удаляю текущие
     AutoruCatalog.objects.all().delete()
@@ -456,6 +457,157 @@ def update_autoru_catalog():
                     ))
 
     AutoruCatalog.objects.bulk_create(rows)
+    return
+
+
+def update_autoru_catalog2():
+    """
+    Обновляет каталог авто.ру (без обработки марок и моделей).
+    Этот вариант должен меньше ресурсов потреблять
+    """
+    # Удаляю текущие данные в каталоге
+    AutoruCatalog.objects.all().delete()
+
+    # Скачиваю актуальный с потоковым парсингом
+    url = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
+    response = requests.get(url, stream=True)
+    response.raise_for_status()  # Ensure the request was successful
+
+    # Create an iterator to stream and parse the XML
+    context = ET.iterparse(response.raw, events=("start", "end"))
+    context = iter(context)
+    event, root = next(context)  # Get the root element
+
+    # Мои Марки и Модели
+    my_marks = {mark.autoru: mark for mark in Mark.objects.all()}
+    my_models = {(model.mark.autoru, model.autoru): model for model in Model.objects.all()}
+
+    # Начинаем работать с AutoruCatalog
+    rows = []
+    for event, elem in context:
+        if event == "end" and elem.tag == "mark":
+            mark_id = elem.get('id')
+            mark_name = elem.get('name')
+            mark_code = elem.find('code').text
+            my_mark_id = my_marks.get(mark_name)
+
+            for folder in elem.iter('folder'):
+                folder_id = folder.get('id')
+                folder_name = folder.get('name')
+                model_id = folder.find('model').get('id')
+                model_name = folder_name.split(',')[0]
+                model_code = folder.find('model').text
+                my_model_id = my_models.get((mark_name, model_name))
+                generation_id = folder.find('generation').get('id')
+
+                try:
+                    generation_name = folder_name.split(',')[1].strip()
+                except IndexError:
+                    generation_name = 'take_years'
+
+                for modification in folder.iter('modification'):
+                    modification_id = modification.get('id')
+                    modification_name = modification.get('name')
+                    configuration_id = modification.find('configuration_id').text
+                    tech_param_id = modification.find('tech_param_id').text
+                    body_type = modification.find('body_type').text
+                    years = modification.find('years').text
+
+                    if generation_name == 'take_years':
+                        generation_name = years
+
+                    for complectation in modification.iter('complectation'):
+                        complectation_id = complectation.get('id')
+                        complectation_name = complectation.text
+
+                        rows.append(AutoruCatalog(
+                            mark_id=mark_id,
+                            mark_name=mark_name,
+                            mark_code=mark_code,
+                            folder_id=folder_id,
+                            folder_name=folder_name,
+                            model_id=model_id,
+                            model_name=model_name,
+                            model_code=model_code,
+                            generation_id=generation_id,
+                            generation_name=generation_name,
+                            modification_id=modification_id,
+                            modification_name=modification_name,
+                            configuration_id=configuration_id,
+                            tech_param_id=tech_param_id,
+                            body_type=body_type,
+                            years=years,
+                            complectation_id=complectation_id,
+                            complectation_name=complectation_name,
+                            my_mark_id=my_mark_id,
+                            my_model_id=my_model_id,
+                        ))
+
+            root.clear()  # Clear memory for already processed elements
+
+    # Вставляем данные в AutoruCatalog одним запросом
+    if rows:
+        AutoruCatalog.objects.bulk_create(rows)
+
+    return
+
+
+def update_marks_and_models():
+    """
+    Обновляет марки и модели из XML.
+    """
+    # Скачиваем актуальный файл
+    url = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
+    response = requests.get(url, stream=True)
+    response.raise_for_status()  # Ensure the request was successful
+
+    # Create an iterator to stream and parse the XML
+    context = ET.iterparse(response.raw, events=("start", "end"))
+    context = iter(context)
+    event, root = next(context)  # Get the root element
+
+    # Мои Марки и Модели, кэшируем их в словари для быстрой проверки
+    my_marks = {mark.autoru: mark for mark in Mark.objects.all()}
+    my_models = {(model.mark.autoru, model.autoru): model for model in Model.objects.all()}
+
+    # Массивы для добавления новых марок и моделей
+    new_marks = []
+    new_models = []
+
+    # Обрабатываем все элементы <mark> потоком
+    for event, elem in context:
+        if event == "end" and elem.tag == "mark":
+            mark_name = elem.get('name')
+
+            # Если марки нет, добавляем её
+            if mark_name not in my_marks:
+                new_marks.append(Mark(
+                    mark=mark_name, teleph=mark_name, autoru=mark_name, avito=mark_name,
+                    drom=mark_name, human_name=mark_name))
+
+            # Работаем с моделями
+            for folder in elem.iter('folder'):
+                folder_name = folder.get('name')
+                model_name = folder_name.split(',')[0]
+
+                if (mark_name, model_name) not in my_models:
+                    new_models.append(Model(
+                        mark=my_marks.get(mark_name), model=model_name, teleph=model_name,
+                        autoru=model_name, avito=model_name, drom=model_name, human_name=model_name))
+
+            root.clear()  # Clear memory for already processed elements
+
+    # Добавляем новые марки и модели одним запросом
+    if new_marks:
+        Mark.objects.bulk_create(new_marks)
+        # Обновляем кеш с новыми марками
+        my_marks.update({mark.autoru: mark for mark in Mark.objects.all()})
+
+    if new_models:
+        Model.objects.bulk_create(new_models)
+        # Обновляем кеш с новыми моделями
+        my_models.update({(model.mark.autoru, model.autoru): model for model in Model.objects.all()})
+
     return
 
 
@@ -713,7 +865,6 @@ def auction_history_drop_unknown(all_bids: DataFrame) -> DataFrame:
     return sorted_df
 
 
-# TODO перенеси в auction приложение
 def add_auction_history(data: DataFrame):
     """
     Добавляет историю аукциона в базу
@@ -734,6 +885,7 @@ def add_auction_history(data: DataFrame):
     AutoruAuctionHistory.objects.bulk_create(objs)
 
 
+# TODO перенеси в srav приложение
 def process_parsed_ads(df: DataFrame, parser_datetime: datetime, region: str) -> List[Dict]:
     """
     Обрабатывает входящие данные от сравнительной
@@ -1068,7 +1220,7 @@ def post_feeds_task(client_id: int, section: str, price_url: str,
     dealer_headers = {**API_KEY, **session_id, 'x-dealer-id': f'{client_id}'}
 
     req_body = {
-        "internal_url": price_url,
+        # "internal_url": price_url,
         "settings": {
             "source": price_url,
             "delete_sale": delete_sale,

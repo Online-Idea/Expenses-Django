@@ -23,7 +23,7 @@ class LocalDatetimeInput(DateTimeInput):
 class CallForm(forms.ModelForm):
     class Meta:
         model = Call
-        fields = ['client_primatel', 'datetime', 'num_from', 'num_to', 'duration', 'mark', 'model', 'target',
+        fields = ['client_primatel', 'datetime', 'num_from', 'num_to', 'duration', 'mark', 'model', 'num_to',
                   'moderation', 'status', 'other_comments', 'call_price',  'client_name',
                   'manager_name', 'car_price', 'color', 'body', 'drive', 'engine', 'complectation',
                   'city', 'num_redirect', 'record', 'manual_edit', 'attention', ]

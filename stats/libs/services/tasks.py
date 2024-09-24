@@ -1,23 +1,29 @@
-# Celery tasks
 from celery import shared_task
-from datetime import datetime
+from django.db.models import Q
+from django.utils import timezone
+from datetime import datetime, timedelta
 
+from applications.accounts.models import Client
+from applications.auction.auction import get_and_add_auction_history
 from applications.autoconverter.converter import get_converter_tasks, get_price, avilon_custom_task, \
     get_price_without_converter
 from applications.calls.calltouch import CalltouchLogic
 from applications.calls.models import Call
 from applications.calls.primatel import PrimatelLogic
-from libs.autoru.autoru import *
+from libs.autoru.autoru import update_autoru_catalog, update_marks_and_models, update_autoru_catalog2, post_feeds_task, \
+    get_autoru_ads, take_out_ids, activate_autoru_ads, stop_autoru_ads, delete_autoru_ads
+from libs.teleph.teleph import get_teleph_clients, get_teleph_calls
 from .exkavator import modify_exkavator_xml
 from .export import export_calls_to_file, export_calls_for_callback
-from applications.accounts.models import Client
-from libs.teleph.teleph import get_teleph_clients, get_teleph_calls
 from .utils import last_30_days
+from ..autoru.refactor_autoru import AutoruLogic, get_autoru_clients
 
 
 @shared_task
 def autoru_catalog():
-    update_autoru_catalog()
+    # update_autoru_catalog()
+    update_marks_and_models()
+    update_autoru_catalog2()
 
 
 @shared_task
@@ -30,22 +36,9 @@ def autoru_products(from_=None, to=None, clients=None):
     if not clients:
         clients = get_autoru_clients()
 
+    logic = AutoruLogic()
     for client in clients:
-        get_autoru_products(from_, to, client)
-
-
-@shared_task
-def autoru_daily(from_=None, to=None, clients=None):
-    if not from_ and not to:  # Если обе даты не заполнены то берём последние 30 дней
-        from_, to = last_30_days()
-    elif not from_ or not to:  # Если одна дата не заполнена то выдать ошибку
-        raise ValueError('Даты должны быть либо обе заполнены либо ни одной')
-
-    if not clients:
-        clients = get_autoru_clients()
-
-    for client in clients:
-        get_autoru_daily(from_, to, client)
+        logic.get_and_add_products(from_, to, client)
 
 
 @shared_task
@@ -64,8 +57,9 @@ def autoru_calls(from_=None, to=None, clients=None):
     if not clients:
         clients = get_autoru_clients()
 
+    logic = AutoruLogic()
     for client in clients:
-        get_autoru_calls(from_, to, client)
+        logic.get_and_add_calls(from_, to, client)
 
 
 @shared_task
@@ -109,17 +103,7 @@ def auction_history(client_ids=None):
         clients = Client.objects.filter(Q(id__in=client_ids) & Q(autoru_id__isnull=False))
     else:
         clients = Client.objects.filter(Q(active=True) & Q(autoru_id__isnull=False))
-    # clients = Client.objects.filter(id__in=[46, 48])
-    # clients = Client.objects.filter(id__in=[1])
-    datetime_ = datetime.today()
-    responses = [get_auction_history(client) for client in clients]
-
-    dfs = [prepare_auction_history(data=response, datetime_=datetime_) for response in responses if response]
-    if dfs:
-        all_bids = pd.concat(dfs)
-        all_bids = auction_history_drop_unknown(all_bids)
-
-        add_auction_history(all_bids)
+    get_and_add_auction_history(clients)
 
 
 @shared_task
@@ -156,7 +140,7 @@ def get_and_delete_autoru_ads(autoru_id: int):
 
 
 @shared_task
-def get_primatel_data(from_: str = None, to: str = None):
+def get_primatel_data(from_: str = None, to: str = None, download_records: bool = True):
     # TODO если to минус from_ больше 10 то разбивать на несколько запросов по 10 дней каждый
     if not from_ or not to:
         from_ = datetime.today() - timedelta(days=1)
@@ -165,7 +149,7 @@ def get_primatel_data(from_: str = None, to: str = None):
         from_ = datetime.strptime(from_, "%d.%m.%Y")
         to = datetime.strptime(to, "%d.%m.%Y")
     logic = PrimatelLogic()
-    logic.update_data(from_, to)
+    logic.update_data(from_, to, download_records)
 
 
 @shared_task

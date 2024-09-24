@@ -5,6 +5,22 @@ from django.utils.html import linebreaks, format_html
 from applications.autoconverter.models import *
 
 
+class ActiveConverterTaskFilter(admin.SimpleListFilter):
+    # Фильтр для админ панели который показывает только активные ConverterTask
+    title = 'Задача Конвертера'
+    parameter_name = 'converter_task'
+
+    def lookups(self, request, model_admin):
+        # Возвращает список активных ConverterTask
+        return [(task.id, task.name) for task in ConverterTask.objects.filter(active=True)]
+
+    def queryset(self, request, queryset):
+        # Фильтрует queryset по выбранной ConverterTask если передано значение
+        if self.value():
+            return queryset.filter(converter_task__id=self.value())
+        return queryset
+
+
 class ConverterTaskAdmin(admin.ModelAdmin):
     list_display = ('id', 'client', 'name', 'active', 'photos_folder', 'configuration')
     list_display_links = ('id', 'client', 'name')
@@ -90,7 +106,7 @@ class ConverterFilterAdmin(admin.ModelAdmin):
     list_display_links = ('id', 'converter_task', 'field')
     list_editable = ('active', 'condition',)
     search_fields = ('converter_task__name', 'field', 'value', 'note')
-    list_filter = ('active', 'converter_task',)
+    list_filter = ('active', ActiveConverterTaskFilter,)
     fields = ('active', 'id', 'converter_task', 'field', 'condition', 'value', 'note')
     readonly_fields = ('id',)
     ordering = ('converter_task', 'active', 'field')
@@ -121,7 +137,7 @@ class ConverterExtraProcessingAdmin(admin.ModelAdmin):
     list_display_links = ('id', 'converter_task')
     list_editable = ('active', )
     search_fields = ('converter_task__name', 'conditional__value', 'converterextraprocessingnewchanges__new_value')
-    list_filter = ('active', 'converter_task',)
+    list_filter = ('active', ActiveConverterTaskFilter,)
     fields = ('active', 'id', 'converter_task', 'note')
     readonly_fields = ('id',)
     ordering = ('converter_task', 'active', )
@@ -150,7 +166,6 @@ class ConverterExtraProcessingAdmin(admin.ModelAdmin):
     #     if db_field.name == 'new_value':
     #         kwargs['widget'] = forms.Textarea(attrs={'rows': 5, 'cols': 40})
     #     return super().formfield_for_dbfield(db_field, **kwargs)
-
 
 admin.site.register(ConverterTask, ConverterTaskAdmin)
 admin.site.register(StockFields, StockFieldsAdmin)

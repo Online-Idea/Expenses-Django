@@ -1,5 +1,7 @@
 import csv
+import re
 from datetime import datetime, timedelta
+from typing import List, Union
 
 import pandas as pd
 from django.db import models
@@ -148,3 +150,89 @@ def pandas_numeric_to_object(df: pd.DataFrame) -> pd.DataFrame:
             df[col] = df[col].astype(object)
             df[col] = df[col].fillna('')
     return df
+
+
+def extract_digits(s: str) -> str:
+    """
+    Вытаскивает из строки числа, сцепляет их как одну строку.
+    :param s:
+    :return:
+    """
+    return re.sub(r'\D', '', s)
+
+
+def datetime_ru_str_to_datetime(*args) -> List[datetime]:
+    """
+    Переводит строковые даты и время в datetime объекты
+    :param args: строки с датой и временем, форматы:
+        '%d.%m.%Y %H:%M:%S',
+        '%d.%m.%Y %H:%M',
+        '%d.%m.%Y'
+        datetime тоже можно передавать - вернутся без изменений
+    :return: список с datetime объектами
+    """
+    dt_formats = [
+        '%d.%m.%Y %H:%M:%S',
+        '%d.%m.%Y %H:%M',
+        '%d.%m.%Y'
+    ]
+    result = []
+    for arg in args:
+        if isinstance(arg, datetime):
+            result.append(arg)
+            continue
+
+        for dt_format in dt_formats:
+            try:
+                parsed_date = datetime.strptime(arg, dt_format)
+            except ValueError:
+                continue
+            else:
+                result.append(parsed_date)
+                break
+    return result
+
+
+def get_nested_value(dictionary: dict, keys: str, default: Union[str, int] = None) -> Union[str, int]:
+    """
+    Возвращает данные со словаря dictionary по ключам keys если эти данные есть в словаре.
+    Иначе возвращает default.
+    Например если dictionary = {'key1': {'key2': 123}} и keys = 'key1.key2' то вернёт 123
+    :param dictionary: словарь с данными
+    :param keys: ключи в словарях по которым нужно взять данные
+    :param default: значение по умолчанию если по ключам keys нет данных
+    :return: данные по ключам keys либо default
+    """
+    value = dictionary
+    for key in keys.split('.'):
+        if isinstance(value, dict) and key in value:
+            value = value[key]
+        else:
+            return default
+    return value
+
+
+def add_keys_to_dict(existing_dict: dict, keys_path: str, value: any = None) -> dict:
+    """
+    Создаёт ключи в словаре если их нет.
+    Если value передано то ставит его как значение последнего ключа иначе оставляет пустым словарём
+    :param existing_dict: существующий словарь
+    :param keys_path: путь ключей который должен быть в словаре. Строка с ключами разделёнными точкой
+    :param value: значение для последнего ключа
+    :return: словарь с нужными ключами
+    """
+    keys = keys_path.split('.')
+    current_dict = existing_dict
+
+    for key in keys[:-1]:  # Traverse until the second-to-last key
+        if key not in current_dict:
+            current_dict[key] = {}
+        current_dict = current_dict[key]
+
+    # If value is provided, set it; otherwise, set the last key to an empty dict
+    if value is not None:
+        current_dict[keys[-1]] = value
+    else:
+        current_dict[keys[-1]] = {}
+
+    return existing_dict

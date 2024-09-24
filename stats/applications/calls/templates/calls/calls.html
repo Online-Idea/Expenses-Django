@@ -100,6 +100,15 @@
       <script language="javascript">
         $(document).ready(function () {
 
+          function datatableDrawCallback(settings) {
+            // После сохранения звонка меняет цвет иконки редактирования
+            const id = $('#recordId').val();
+            if (id) {
+              let editBtn = $(`button.edit-btn[data-id=${id}]`)[0];
+              changeLastEditedButton(editBtn);
+            }
+          }
+
           $.getJSON('{% static "js/datatables-ru.json" %}', function(data) {
             let language_json = data;
 
@@ -119,6 +128,7 @@
                 language: language_json,
                 pageLength: 50,
                 createdRow: styleRowOnCondition,
+                drawCallback: datatableDrawCallback,
               },
               {
                 // extra_data
@@ -410,7 +420,7 @@
         audioButtonForModal(event);
         manualEdit();
       }
-      // Кнопка Обновить модального окна
+      // Кнопка Сохранить модального окна
       $('#save-btn').on('click', function (e) {
         e.preventDefault();
 
@@ -460,10 +470,9 @@
             row.invalidate().draw();
           });
         }
-
       });
-
     })
+
   });
 
   function copyText(event) {

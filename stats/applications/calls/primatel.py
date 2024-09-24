@@ -4,6 +4,7 @@ from io import BytesIO
 from typing import List
 
 import requests
+from django.core.exceptions import MultipleObjectsReturned
 from django.utils import timezone
 
 from applications.autoconverter.converter import save_on_ftp
@@ -144,9 +145,9 @@ class PrimatelLogic:
             if 'error_message' in str(record.content):
                 continue
 
-            save_path = f'{env("FTP")}/calls/{call.client_primatel.client.slug}/records/{call.primatel_call_id}.mp3'
+            save_path = f'/calls/{call.client_primatel.client.slug}/records/{call.primatel_call_id}.mp3'
             save_on_ftp(save_path, record.content)
-            call.record = save_path
+            call.record = f'{env("FTP")}{save_path}'
 
         Call.objects.bulk_update(calls, ['record'])
 
@@ -211,13 +212,17 @@ class PrimatelLogic:
         :return:
         """
         clients = ClientPrimatel.objects.filter(cabinet_primatel=cabinet_primatel, active=True)
-        sips = SipPrimatel.objects.filter(client_primatel__in=clients)
+        sips = SipPrimatel.objects.filter(client_primatel__in=clients, sip_login__contains='did')
+        # TODO баг с дублями звонков возможно начинается отсюда. Быть может что один primatel_call_id на разных sip или client
         existing_calls = Call.objects.filter(sip_primatel__in=sips, datetime__gte=from_, datetime__lte=to, deleted=False)
         existing_calls_primatel_call_ids = existing_calls.values_list('primatel_call_id', flat=True)
 
         step = 7
         new_calls = []
+        # TODO возможно что баг с дублями звонков из-за того что не было проверки по звонкам которые добавляются в список на создание
+        new_calls_primatel_call_ids = []
         updated_calls = []
+        doubled_calls = []
 
         # while from_ < to:
         for sip in sips:
@@ -244,7 +249,8 @@ class PrimatelLogic:
                 item['time'] = timezone.make_aware(item['time'], timezone.get_current_timezone())
 
                 # TODO был баг когда дубли звонков добавились. Пока не нашёл из-за чего, возможно что-то отсюда
-                if item['callid'] not in existing_calls_primatel_call_ids:
+                if (item['callid'] not in existing_calls_primatel_call_ids
+                        and item['callid'] not in new_calls_primatel_call_ids):
                     new_call = Call(
                         datetime=item['time'],
                         num_from=item['numfrom'],
@@ -262,29 +268,47 @@ class PrimatelLogic:
                         new_call.target = 'Нет'
 
                     new_calls.append(new_call)
+                    new_calls_primatel_call_ids.append(item['callid'])
                 else:
-                    updated_call = existing_calls.get(primatel_call_id=item['callid'])
-                    updated_call.datetime = item['time']
-                    updated_call.num_from = item['numfrom']
-                    updated_call.num_to = item['numto']
-                    updated_call.num_redirect = item['destination']
-                    updated_call.duration = item['duration']
-                    updated_calls.append(updated_call)
+                    try:
+                        updated_call = existing_calls.get(primatel_call_id=item['callid'])
+                    except Call.DoesNotExist:
+                        updated_call = next((call for call in new_calls if call.primatel_call_id == item['callid']), None)
+                    except MultipleObjectsReturned:
+                        doubled_calls.append({
+                            'primatel_call_id': item['callid'],
+                            'existing_calls': existing_calls_primatel_call_ids,
+                            'new_calls': new_calls_primatel_call_ids
+                        })
+                    else:
+                        updated_call.datetime = item['time']
+                        updated_call.num_from = item['numfrom']
+                        updated_call.num_to = item['numto']
+                        updated_call.num_redirect = item['destination']
+                        updated_call.duration = item['duration']
+                        updated_calls.append(updated_call)
 
             # from_ = from_ + timedelta(days=step)
 
         Call.objects.bulk_create(new_calls)
         Call.objects.bulk_update(updated_calls, fields=['datetime', 'num_from', 'num_to', 'num_redirect', 'duration'])
+
+        # TODO посмотреть через pdb на живом
+        if doubled_calls:
+            send_email(subject='Появились дубли звонков', body=f'doubled_calls:\n{doubled_calls}', recipients=env('EMAIL_FOR_ERRORS'))
+
         # Повторно вызываю save() чтобы выполнить функции в нём, возможно что это нужно переделать
         save_again = Call.objects.filter(datetime__gte=from_, datetime__lte=to, deleted=False)
         for obj in save_again:
             obj.save()
 
-    def update_data(self, datefrom=None, dateto=None):
+    def update_data(self, datefrom=None, dateto=None, download_records: bool = True):
         """
         Главная функция которая вызывает остальные
         :param datefrom:
         :param dateto:
+        :param download_records: если не нужно скачивать записи звонков то ставь False.
+                                 Так быстрее соберутся данные звонков
         :return:
         """
         self.request_count = 0
@@ -298,14 +322,19 @@ class PrimatelLogic:
         dateto = dateto.replace(hour=23, minute=59, second=59)
         datefrom = timezone.make_aware(datefrom)
         dateto = timezone.make_aware(dateto)
+        date_periods = split_date_range(datefrom, dateto)
         cabinets = CabinetPrimatel.objects.filter(active=True)
 
         for cabinet in cabinets:
             self.request_login(cabinet.login, cabinet.password)
             self.update_list_users(cabinet)
             self.update_list_sips(cabinet)
-            self.update_calls_details(cabinet, datefrom, dateto)
-            self.download_missing_call_records(cabinet, datefrom, dateto)
+            for date_period in date_periods:
+                self.update_calls_details(cabinet, date_period[0], date_period[1])
+
+            if download_records:
+                for date_period in date_periods:
+                    self.download_missing_call_records(cabinet, date_period[0], date_period[1])
 
         update_numbers()
 
@@ -330,7 +359,8 @@ def update_numbers():
     :return:
     """
     client_primatels = ClientPrimatel.objects.filter(active=True)
-    calls = Call.objects.filter(client_primatel__in=client_primatels).values('client_primatel', 'num_to')
+    calls = (Call.objects.filter(client_primatel__in=client_primatels, num_to__isnull=False)
+             .values('client_primatel', 'num_to'))
     for client in client_primatels:
         numbers = (calls.filter(client_primatel=client).values_list('num_to', flat=True)
                    .distinct().order_by('num_to'))
@@ -348,8 +378,29 @@ def send_email_request_to_fill_in_fields(objs):
     links = [f'{WEBSITE}/admin/calls/clientprimatel/{i.id}/change/' for i in objs]
     subject = 'Нужно заполнить клиентов'
     body = 'Здравствуйте, нужно заполнить новых клиентов в базе:\n\n' + '\n'.join(links)
-    recipients = 'evgen0nlin3@gmail.com'
+    recipients = env('EMAIL_FOR_ERRORS')
     send_email(subject, body, recipients)
+
+
+def split_date_range(datefrom: datetime, dateto: datetime, max_days: int = 10):
+    """
+    Разбивает период на кортежи, в каждом период не больше max_days.
+    Использую для Приматела т.к. у них ограничение не больше 10 дней в периоде.
+    :param datefrom:
+    :param dateto:
+    :param max_days:
+    :return:
+    """
+    result = []
+    current_start = datefrom
+
+    while current_start <= dateto:
+        current_end = min(current_start + timedelta(days=max_days - 1), dateto)
+        current_end = current_end.replace(hour=23, minute=59, second=59)
+        result.append((current_start, current_end))
+        current_start = (current_end + timedelta(days=1)).replace(hour=0, minute=0, second=0)
+
+    return result
 
 
 # logic = PrimatelLogic()

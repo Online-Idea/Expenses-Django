@@ -10,7 +10,7 @@ class TelephCall(BaseModel):
     num_from = models.CharField(max_length=255, verbose_name='Исходящий')
     mark = models.CharField(max_length=255, null=True, verbose_name='Марка')
     model = models.CharField(max_length=255, null=True, verbose_name='Модель')
-    num_to = models.CharField(max_length=255, null=True, verbose_name='Входящий')
+    target = models.CharField(max_length=255, null=True, verbose_name='Целевой')
     moderation = models.CharField(max_length=255, null=True, verbose_name='Модерация')
     call_price = models.FloatField(null=True, verbose_name='Стоимость')
     price_autoru = models.FloatField(null=True, verbose_name='Стоимость авто.ру')

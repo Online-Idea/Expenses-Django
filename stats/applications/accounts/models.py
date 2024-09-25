@@ -1,12 +1,14 @@
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import AbstractUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
-from django.contrib.auth.models import AbstractUser, PermissionsMixin, BaseUserManager
 from django.db.models import Q
-from slugify import slugify
-from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from slugify import slugify
+
+from libs.services.models import BaseModel
 
 
 class ClientManager(BaseUserManager):
@@ -31,16 +33,39 @@ class ClientManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class Client(AbstractBaseUser, PermissionsMixin):
+class Account(AbstractBaseUser, PermissionsMixin):
     username_validator = UnicodeUsernameValidator()
 
+    name = models.CharField(max_length=500, verbose_name='Имя')
+    email = models.EmailField(unique=True)
+    is_staff = models.BooleanField(default=False)
+    username = models.CharField(_("username"), max_length=150, unique=True, validators=[username_validator], )
+    is_active = models.BooleanField(_("active"), default=True, )
+    date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
+    groups = models.ManyToManyField(Group, blank=True, verbose_name=_('groups'), related_name='custom_accounts')
+    user_permissions = models.ManyToManyField(Permission, blank=True, verbose_name=_('user permissions'),
+                                              related_name='custom_accounts')
+
+    objects = ClientManager()
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Аккаунт'
+        verbose_name_plural = 'Аккаунты'
+        ordering = ['email']
+
+
+class Client(BaseModel):
     class ChargeType(models.TextChoices):
         CALLS = 'звонки', _('Звонки')
         COMMISSION_PERCENT = 'комиссия процент', _('Комиссия Процент')
         COMMISSION_SUM = 'комиссия сумма', _('Комиссия Сумма')
 
     name = models.CharField(max_length=255, verbose_name='Имя', default='name')
-    email = models.EmailField(unique=True)
     slug = models.SlugField(max_length=300, allow_unicode=True, db_index=True, verbose_name='Slug')
     manager = models.CharField(max_length=255, null=True, verbose_name='Менеджер')
     active = models.BooleanField(default='1', verbose_name='Активен')
@@ -51,22 +76,9 @@ class Client(AbstractBaseUser, PermissionsMixin):
     autoru_name = models.CharField(max_length=500, null=True, blank=True, verbose_name='Имя на авто.ру')
     avito_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id авито')
     drom_id = models.IntegerField(null=True, blank=True, unique=True, verbose_name='id drom')
-    is_staff = models.BooleanField(default=False)
-    username = models.CharField(
-        _("username"),
-        max_length=150,
-        unique=True,
-        validators=[username_validator],
-    )
-    is_active = models.BooleanField(
-        _("active"),
-        default=True,
-    )
-    date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
 
-    objects = ClientManager()
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    def __str__(self):
+        return self.name
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None, *args, **kwargs):
         self.slug = slugify(self.name)
@@ -82,6 +94,19 @@ class Client(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'Клиент'
         verbose_name_plural = 'Клиенты'
         ordering = ['name']
+
+
+class AccountClient(BaseModel):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, verbose_name='Аккаунт')
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name='Клиент')
+
+    def __str__(self):
+        return f'{self.account.name} - {self.client.name}'
+
+    class Meta:
+        db_table = 'accounts_account_client'
+        verbose_name = 'Аккаунт-Клиент'
+        verbose_name_plural = 'Аккаунты-Клиенты'
 
 
 class Application(models.Model):

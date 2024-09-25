@@ -1,29 +1,33 @@
-import io
-import re
-from collections import Counter
+import datetime
 import ftplib
+import io
+import logging
+import os
+import random
+import re
+import xml.etree.ElementTree as ET
+from collections import Counter
 from ftplib import FTP
 from functools import reduce
 from pathlib import Path
-import os
+from urllib.parse import urlparse
 
 import demoji
-import requests
-import datetime
-import xml.etree.ElementTree as ET
-
-from django.db.models import QuerySet
-from openpyxl import Workbook
 # import xlsxwriter
 import pandas as pd
+import requests
+from django.db.models import QuerySet
+from openpyxl import Workbook
 from pandas import DataFrame
 from telebot.types import InputFile
 
+from applications.ads.models import Ad
 from applications.autoconverter.models import *
 from applications.autoconverter.onllline_base import onllline_worker
-from stats.settings import env
 from libs.services.email_sender import send_email
 from libs.services.management.commands.bot import bot, break_message_to_parts
+from libs.services.utils import get_models_verbose_names, pandas_numeric_to_object
+from stats.settings import env
 
 
 # Список Конфигураций: POST http://151.248.118.19/Api/Configurations/GetList
@@ -34,14 +38,15 @@ from libs.services.management.commands.bot import bot, break_message_to_parts
 # POST http://151.248.118.19/Api/Stock/GetProcessStep
 # POST http://151.248.118.19/Api/Log/GetByProcessId
 
-def get_converter_tasks(task_ids: list = None) -> QuerySet:
+def get_converter_tasks(task_ids: list = None) -> list[ConverterTask] | QuerySet[ConverterTask]:
     """
     Собирает Задачи конвертера. Если есть task_ids то берёт только их, иначе все активные
     :param task_ids: список id модели ConverterTask
     :return: Django QuerySet с Задачами конвертера
     """
     if task_ids:
-        return ConverterTask.objects.filter(id__in=task_ids)
+        tasks = ConverterTask.objects.filter(id__in=task_ids)
+        return [tasks.get(id=task_id) for task_id in task_ids]  # Чтобы был тот же порядок что и в task_ids
     else:
         return ConverterTask.objects.filter(active=True)
 
@@ -51,18 +56,46 @@ def get_price(task):
     Полный цикл для одного клиента.
     :param task: строка из таблицы Задачи конвертера
     """
+    logging.info(f'Запускаю конвертер по задаче {task.name}')
     template = converter_template(task)
+    if template.empty:
+        logging.info(f'По клиенту {task.client.name} пустой шаблон')
+        return
     process_id = converter_post(task)
     price = converter_process_result(process_id, template, task)
     logs = converter_logs(process_id)
     logs_xlsx = logs_to_xlsx(logs, template, task)
     import_result = onllline_worker(task)
-    message = f'Логи конвертера:\n{logs}\n\nОтчет импорта базы:\n{import_result}'
+    message = f'Логи конвертера:\n{logs}'
+    if import_result:
+        message += f'\n\nОтчет импорта базы:\n{import_result}'
     bot_messages(message, logs_xlsx, price, task)
-    save_on_ftp(logs_xlsx)
+    with open(logs_xlsx, 'rb') as file:
+        file_content = file.read()
+        save_on_ftp(logs_xlsx, file_content)
     os.remove(logs_xlsx)
-    print(f'Клиент {task.slug} - прайс готов')
+    logging.info(f'Задача {task.name} - прайс готов')
     return
+
+
+def get_price_without_converter(task):
+    """
+    Полный цикл для одного клиента но без конвертера. В качестве стока используется наш прайс
+    :param task:
+    :return:
+    """
+    logging.info(f'Запускаю задачу без конвертера {task.name}')
+    template = converter_template(task)
+    if template.empty:
+        logging.info(f'По клиенту {task.client.name} пустой шаблон')
+        return
+    price = converter_process_result(None, template, task)
+    import_result = onllline_worker(task)
+    message = ''
+    if import_result:
+        message += f'\n\nОтчет импорта базы:\n{import_result}'
+    bot_messages(message, None, price, task)
+    print(f'Клиент {task.slug} - прайс готов')
 
 
 def converter_template(task):
@@ -107,7 +140,7 @@ def converter_template(task):
         file.write(response.content)
     # with open(stock_path, mode='w', encoding=task.stock_fields.encoding) as file:
     #     file.write(response.text)
-    save_on_ftp(stock_path)
+    save_on_ftp(stock_path, response.content)
 
     # Путь шаблона
     template_path = f'converter/{slug}/templates/template_{slug}_{file_date}.xlsx'
@@ -123,13 +156,16 @@ def converter_template(task):
     elif content_type == 'csv':
         template = template_xlsx_or_csv(stock_path, 'csv', template_path, task)
     else:
-        return 'Неверный формат файла, должен быть xml или xlsx'
+        logging.error('Неверный формат файла, должен быть xml или xlsx')
+        return None
 
     # Убираю лишние пробелы
-    template = template.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    template = template.map(lambda x: x.strip() if isinstance(x, str) else x)
     # template = template.applymap(lambda x: x.replace(' ', '') if isinstance(x, str) else x)
 
-    save_on_ftp(template_path)
+    with open(template_path, mode='rb') as file:
+        file_content = file.read()
+        save_on_ftp(template_path, file_content)
     os.remove(stock_path)
 
     return template
@@ -159,7 +195,7 @@ def template_xml(stock_path, template_path, task):
 
     # Данные шаблона
     fields = task.stock_fields
-    exception_col = ['modification_code', 'options_code', 'images', 'modification_explained', 'description']
+    exception_col = ['modification_code', 'options_code', 'images', 'modification_explained', 'description', 'vin']
     for i, car in enumerate(root.iter(fields.car_tag)):
         if stock_xml_filter(car, task):
             # Обычные поля
@@ -214,18 +250,34 @@ def template_xml(stock_path, template_path, task):
                                # value=car.findtext(fields.description))
                                value=multi_tags(fields.description, car, '\n'))
 
-            # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
-            extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
-            if extras:
-                for extra in extras:
-                    conditionals = list(Conditional.objects.filter(converter_extra_processing=extra.id)
-                                        .values('field'))
+            # VIN
+            vin = car.findtext(fields.vin)
+            if task.fill_vin:
+                # Если меньше 17 символов то добавляю в начало столько 'X' сколько не хватает до 17
+                vin = f"{'X' * (17 - len(vin))}{vin}" if len(vin) < 17 else vin
 
-                    # Когда нужно брать значение из другого столбца
-                    if extra.new_value[:4] == '%col':
-                        column_name_extra = re.findall(r'"(.*?)"', extra.new_value)[0]
-                        column_name_extra += '__stock'
-                        conditionals.append({'field': column_name_extra})
+            sheet.cell(row=i + 2, column=template_col['vin'][1] + 1, value=vin)
+
+            # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
+            # extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
+            task_has_source_stock = Conditional.objects.filter(converter_extra_processing__converter_task=task,
+                                                               source='Сток')
+            if task_has_source_stock:
+                # Беру Обработки прайса и Новые значения текущего таска
+                extras = ConverterExtraProcessing.objects.filter(converter_task=task, active=True)
+                extras_new_changes = ConverterExtraProcessingNewChanges.objects.filter(
+                    converter_extra_processing__in=extras)
+                for extra in extras:
+                    conditionals = list(Conditional.objects.filter(converter_extra_processing=extra)
+                                        .values('field'))
+                    curr_extra_new_changes = extras_new_changes.filter(converter_extra_processing=extra)
+
+                    for new_change in curr_extra_new_changes:
+                        # Когда нужно брать значение из другого столбца
+                        if new_change.new_value[:4] == '%col':
+                            column_name_extra = re.findall(r'"(.*?)"', new_change.new_value)[0]
+                            column_name_extra += '__stock'
+                            conditionals.append({'field': column_name_extra})
 
                     for cond in conditionals:
                         column_name = cond['field']
@@ -310,7 +362,7 @@ def stock_xml_filter(car, task):
     :param task: task (запись) из таблицы Задачи конвертера
     :return: True если фильтры пройдены
     """
-    filters = ConverterFilter.objects.filter(converter_task=task)
+    filters = ConverterFilter.objects.filter(converter_task=task, active=True)
     dict_filters, stock_fields, result = [], [], []
 
     # Перевожу фильтры в словарь вида: {'values': values, 'condition': condition, 'field': field}
@@ -413,11 +465,11 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
         encoding = task.stock_fields.encoding
         df_stock = pd.read_csv(stock_path, decimal=',', sep=';', header=0, encoding=encoding, dtype=bool_cols_as_str)
 
-    # Проверяю если сток это наш прайс. На случай если прайс готов и нужно только фото подставить
+    # Проверяю если сток это наш прайс. На случай если прайс готов.
     # Если первые 4 столбца совпадают с our_price_first_4_cols И Исходный VIN в столбцах
     our_price_first_4_cols = ['Марка', 'Модель', 'Комплектация', 'Авто.ру Комплектация']
     if list(df_stock.columns[:4]) == our_price_first_4_cols and 'Исходный VIN' in df_stock.columns:
-        df_stock.loc[df_stock['Фото'].str.contains('gallery'), 'Фото'] = ''
+        # df_stock.loc[df_stock['Фото'].str.contains('gallery'), 'Фото'] = ''
         df_stock.T.reset_index().T.to_excel(template_path, sheet_name='Шаблон', header=False, index=False)
         return df_stock
 
@@ -458,10 +510,13 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
             df_stock_copy[col[0]] = ''
 
     # Для обработки прайса когда нужно смотреть по стоку. Добавляю столбец к шаблону
-    extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
-    if extras:
+    # extras = ConverterExtraProcessing.objects.filter(converter_task=task, source='Сток')
+    task_has_source_stock = Conditional.objects.filter(converter_extra_processing__converter_task=task, source='Сток')
+    if task_has_source_stock:
+        # Беру Обработки прайса и Новые значения текущего таска
+        extras = ConverterExtraProcessing.objects.filter(converter_extra_processing__converter_task=task, active=True)
         for extra in extras:
-            conditionals = Conditional.objects.filter(converter_extra_processing=extra.id)
+            conditionals = list(Conditional.objects.filter(converter_extra_processing=extra).values('field'))
             for cond in conditionals:
                 column_name = cond.field
                 if column_name not in template_col:
@@ -473,7 +528,7 @@ def template_xlsx_or_csv(stock_path, filetype, template_path, task):
     # В Опции и пакеты заменяю переносы строк на пробел
     df_stock_copy['Опции и пакеты'].replace(r'\n', ' ', regex=True, inplace=True)
     # Убираю лишние пробелы
-    df_stock_copy = df_stock_copy .applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    df_stock_copy = df_stock_copy.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
     df_stock_copy.T.reset_index().T.to_excel(template_path, sheet_name='Шаблон', header=False, index=False)
 
@@ -487,7 +542,7 @@ def stock_xlsx_filter(df, task):
     :param task: task (запись) из таблицы Задачи конвертера
     :return: Отфильтрованный dataframe
     """
-    filters = ConverterFilter.objects.filter(converter_task=task)
+    filters = ConverterFilter.objects.filter(converter_task=task, active=True)
     filter_strings = []
     for f in filters:
         filter_or = []
@@ -531,22 +586,27 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
     :param template: шаблон в виде pandas dataframe
     :return: Готовый прайс с изменениями
     """
-    changes = ConverterExtraProcessing.objects.filter(converter_task=task)
+    extra_processings = ConverterExtraProcessing.objects.filter(converter_task=task, active=True)
+    conditionals = Conditional.objects.filter(converter_extra_processing__in=extra_processings)
+    new_changes = ConverterExtraProcessingNewChanges.objects.filter(converter_extra_processing__in=extra_processings)
+
+    price_columns = get_models_verbose_names(Ad)
+    price_columns.append('Фото')
 
     # Если изменение зависит от данных в стоке то сначала эти данные добавляются к шаблону.
     # Потом шаблон передаётся сюда и добавляется к прайсу.
-    if changes.filter(source='Сток'):
+    if conditionals.filter(source='Сток'):
         template = template.add_suffix('_template')
         df = pd.merge(df, template, left_index=True, right_index=True)
 
     # Для каждого изменения по клиенту
-    for change in changes:
-        conditionals = Conditional.objects.filter(converter_extra_processing=change.id)
+    for change in new_changes:
+        curr_conditionals = conditionals.filter(converter_extra_processing=change.converter_extra_processing)
         masks = []
 
         # Для каждого условия в изменении
-        for cond in conditionals:
-            if change.source == 'Сток':
+        for cond in curr_conditionals:
+            if cond.source == 'Сток':
                 cond.field += '_template'
 
             # Если несколько значений
@@ -570,20 +630,36 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
                 elif cond.condition == ConverterFilter.NOT_EQUALS:
                     or_masks.append(df[cond.field] != value)
                 elif cond.condition == ConverterFilter.GREATER_THAN:
+                    df[cond.field] = pd.to_numeric(df[cond.field], errors='coerce').dropna().astype(int)
                     or_masks.append(df[cond.field] > value)
+                    df[cond.field] = df[cond.field].fillna('')
+                elif cond.condition == ConverterFilter.GREATER_THAN_EQUALS:
+                    df[cond.field] = pd.to_numeric(df[cond.field], errors='coerce').dropna().astype(int)
+                    or_masks.append(df[cond.field] >= value)
+                    df[cond.field] = df[cond.field].fillna('')
                 elif cond.condition == ConverterFilter.LESS_THAN:
+                    df[cond.field] = pd.to_numeric(df[cond.field], errors='coerce').dropna().astype(int)
                     or_masks.append(df[cond.field] < value)
+                    df[cond.field] = df[cond.field].fillna('')
+                elif cond.condition == ConverterFilter.LESS_THAN_EQUALS:
+                    df[cond.field] = pd.to_numeric(df[cond.field], errors='coerce').dropna().astype(int)
+                    or_masks.append(df[cond.field] <= value)
+                    df[cond.field] = df[cond.field].fillna('')
                 elif cond.condition == ConverterFilter.STARTS_WITH:
-                    or_masks.append(df[cond.field].str.startswith(value))
+                    or_masks.append(df[cond.field].str.startswith(str(value)))
                 elif cond.condition == ConverterFilter.NOT_STARTS_WITH:
-                    or_masks.append(~df[cond.field].str.startswith(value))
+                    or_masks.append(~df[cond.field].str.startswith(str(value)))
                 elif cond.condition == ConverterFilter.ENDS_WITH:
-                    or_masks.append(df[cond.field].str.endswith(value))
+                    or_masks.append(df[cond.field].str.endswith(str(value)))
                 elif cond.condition == ConverterFilter.NOT_ENDS_WITH:
-                    or_masks.append(~df[cond.field].str.endswith(value))
+                    or_masks.append(~df[cond.field].str.endswith(str(value)))
 
-            # Несколько значений через ИЛИ
-            combined_or_mask = reduce(lambda x, y: x | y, or_masks)
+            # Несколько значений через И если условие было отрицательным
+            if cond.condition in ConverterFilter.NEGATIVE_CONDITIONS:
+                combined_or_mask = reduce(lambda x, y: x & y, or_masks)
+            # Иначе через ИЛИ
+            else:
+                combined_or_mask = reduce(lambda x, y: x | y, or_masks)
             combined_or_mask = combined_or_mask.fillna(False)
             masks.append(combined_or_mask)
 
@@ -594,7 +670,9 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
         # Когда нужно брать значение из другого столбца
         if change.new_value and change.new_value[:4] == '%col':
             column = re.findall(r'"(.*?)"', change.new_value)[0]
-            if change.source == 'Сток':
+            # if change.source == 'Сток':
+            #     column += '__stock_template'
+            if column not in price_columns:
                 column += '__stock_template'
             df.loc[combined_mask, change.price_column_to_change] = df[column]
         # Когда нужно добавить в начало
@@ -607,6 +685,8 @@ def price_extra_processing(df: DataFrame, task: ConverterTask, template: DataFra
                 .apply(lambda x: str(x) + change.new_value)
         # Когда нужно заменить полностью
         elif change.change_type == 'Полностью':
+            if df[change.price_column_to_change].dtype == 'float64':
+                df[change.price_column_to_change] = df[change.price_column_to_change].astype(object)
             df.loc[combined_mask, change.price_column_to_change] = change.new_value
 
     df = df.drop(df.filter(regex='_template').columns, axis=1)
@@ -651,7 +731,7 @@ def converter_post(task):
     """
     Отправляет шаблон и настройки по которым нужно прогнать конвертер
     :param task: task (запись) из таблицы Задачи конвертера
-    :return: прайс как pandas dataframe
+    :return: processId по которому дальше можно получить прайс
     """
     # Отправляю шаблон
     url = 'http://151.248.118.19/Api/Stock/StartProcess'
@@ -674,16 +754,14 @@ def converter_post(task):
     return response.json()['processId']
 
 
-def converter_process_result(process_id, template, task):
+def converter_get_price_by_process_id(task, process_id):
     """
-    Возвращает готовый прайс
-    :param process_id: из converter_post
-    :param template: шаблон как pandas dataframe - если из шаблона нужны данные для прайса
+    # Получаю прайс от конвертера по process_id
     :param task: строка из таблицы Задачи конвертера
+    :param process_id: из converter_post
+    :return: прайс как pandas dataframe
     """
     client = task.slug
-
-    # Получаю прайс от конвертера по process_id
     url = 'http://151.248.118.19/Api/Stock/GetProcessResult'
     payload = {'processId': (None, process_id)}
     response = requests.post(url=url, files=payload)
@@ -694,10 +772,39 @@ def converter_process_result(process_id, template, task):
     os.makedirs(os.path.dirname(save_path_date), exist_ok=True)
     with open(save_path_date, 'wb') as file:
         file.write(response.content)
-    save_on_ftp(save_path_date)
+    save_on_ftp(save_path_date, response.content)
 
     # Обработки прайса
     read_file = pd.read_excel(save_path_date, decimal=',')
+
+    # Добавляю столбцы базы которых нет в прайсе после конвертера
+    read_file.insert(37, 'Дата размещения', '')
+    read_file.insert(38, 'Кол. в ПТС', '')
+    read_file = read_file.drop(columns=['Блокировано', 'Блокировка на авто.ру'])
+    end_columns = ['ComID', 'Онлайн-показ', 'Avito gen', 'Avito mod', 'Avito com', 'Avito mid',
+                   'Гарантия производителя', 'Валюта', 'Авито аукцион', 'Двери', 'Гарантия на ремонт',
+                   'КАСКО в подарок', 'Комплект шин в подарок', 'Скидка на КАСКО', 'ТО в подарок',
+                   'Аксессуары в подарок', 'Ускоренное оформление', 'Спецусловия кредита']
+    for col in end_columns:
+        read_file[col] = ''
+
+    os.remove(save_path_date)
+    return read_file
+
+
+def converter_process_result(process_id, template, task):
+    """
+    Возвращает готовый прайс
+    :param process_id: из converter_post
+    :param template: шаблон как pandas dataframe - если из шаблона нужны данные для прайса
+    :param task: строка из таблицы Задачи конвертера
+    """
+    client = task.slug
+    if task.use_converter:
+        read_file = converter_get_price_by_process_id(task, process_id)
+    else:
+        read_file = template
+
     # Переношу Описание из шаблона если оно есть в шаблоне
     if 'Описание' in template.columns:
         read_file['Описание2'] = template['Описание']
@@ -712,11 +819,13 @@ def converter_process_result(process_id, template, task):
     read_file.loc[read_file['Максималка'].isna(), 'Максималка'] = read_file[['Трейд-ин', 'Кредит', 'Страховка']].sum(
         axis=1)
 
+    read_file.fillna('', inplace=True)
+
     # Различные изменения прайса по условию
     read_file = price_extra_processing(read_file, task, template)
 
     # Мелкие замены
-    read_file.fillna('', inplace=True)
+    read_file = pandas_numeric_to_object(read_file)
     read_file = read_file.astype(str).replace(
         {
             r"\.0$": "",
@@ -739,7 +848,12 @@ def converter_process_result(process_id, template, task):
             add_manually_df = pd.read_excel(task.add_to_price, decimal=',')
         else:
             raise ValueError('Файл с добавлением объявлений должен быть csv или xlsx')
+        float_columns = ['Цена', 'Трейд-ин', 'Кредит', 'Страховка', 'Максималка']
+        add_manually_df[float_columns] = add_manually_df[float_columns].fillna(0).astype(int)
         read_file = pd.concat([read_file, add_manually_df], axis=0)
+
+    if task.change_vin:
+        read_file = change_vin_to_random(read_file)
 
     # Сохраняю в csv
     save_path = f'converter/{client}/prices/price_{client}.csv'
@@ -752,12 +866,13 @@ def converter_process_result(process_id, template, task):
     #     f.write(csv_string)
     read_file.to_csv(save_path, sep=';', header=True, index=False, decimal=',', encoding='cp1251', errors='ignore',
                      lineterminator='\n')
-    save_on_ftp(save_path)
+    with open(save_path, 'rb') as file:
+        file_content = file.read()
+        save_on_ftp(save_path, file_content)
 
     task.price = save_path
     task.save()
 
-    os.remove(save_path_date)
     os.remove(save_path)
     return read_file
 
@@ -881,37 +996,79 @@ def bot_messages(logs, logs_xlsx, price, task):
         #         bot.send_message(chat_id.chat_id, logs[x:x + 4095])
         # else:
         #     bot.send_message(chat_id.chat_id, logs)
-        bot.send_document(chat_id.chat_id, InputFile(logs_xlsx))
+        if logs_xlsx:
+            bot.send_document(chat_id.chat_id, InputFile(logs_xlsx))
         bot.send_document(chat_id.chat_id, InputFile(price_save_path))
 
     os.remove(price_save_path)
     return
 
 
-def save_on_ftp(save_path):
+def change_vin_to_random(price):
+    def modify_vin(vin):
+        if len(vin) == 17:
+            last_six = vin[-6:]
+            if last_six.isdigit():
+                # All last 6 characters are digits
+                random_number = str(random.randint(0, 999999)).zfill(6)
+                return vin[:-6] + random_number
+            else:
+                # Last 6 characters contain letters
+                for i in range(5, -1, -1):
+                    if last_six[i].isalpha():
+                        # Found the last letter
+                        prefix = last_six[:i + 1]
+                        digits_part = last_six[i + 1:]
+                        if digits_part.isdigit():
+                            random_number = str(random.randint(0, int(digits_part))).zfill(len(digits_part))
+                            return vin[:-6] + prefix + random_number
+                        break
+        return vin
+
+    price['VIN'] = price['Исходный VIN'].apply(modify_vin)
+    return price
+
+
+def save_on_ftp(save_path, file):
     """
     Сохраняет файл на ftp
-    :param save_path: полный путь к файлу
+    :param save_path: путь к файлу
+    :param file: binary файл
     """
     file_path = Path(save_path)
-    with FTP('ph.onllline.ru', env('FTP_LOGIN'), env('FTP_PASSWORD')) as ftp, open(save_path, 'rb') as file:
+    # with FTP('ph.onllline.ru', env('FTP_LOGIN'), env('FTP_PASSWORD')) as ftp, open(save_path, 'rb') as file:
+    with FTP('ph.onllline.ru', env('FTP_LOGIN'), env('FTP_PASSWORD')) as ftp:
+        # TODO передавать несколько файлов, не только один
         cd_tree(ftp, str(file_path.parents[0]))
-        ftp.storbinary(f'STOR {file_path.name}', file)
+        # file = io.BytesIO(file)
+        # ftp.storbinary(f'STOR {file_path.name}', file)
+        ftp.storbinary(f'STOR {file_path.name}', io.BytesIO(file))
         ftp.cwd('/')
     return
 
 
-def cd_tree(ftp, path):
+def cd_tree(ftp: FTP, url_path: str) -> None:
     """
+    Перемещается по папкам ftp по пути из url_path.
     Создаёт папки на ftp если они не существуют
     :param ftp: FTP класс из ftplib
-    :param path: путь который нужен на ftp
+    :param url_path: путь который нужен на ftp
     """
-    path = path.replace('\\', '/')  # Костыль для windows
+    url_path = url_path.replace('\\', '/')  # Костыль для Windows
+
+    # Вытаскиваю путь из ссылки
+    parsed_url = urlparse(url_path)
+    path = parsed_url.path.strip('/')
+
+    # Если ссылка не полная
+    if not path.startswith('/'):
+        path = '/' + path
+
+    # Перемещаюсь по папкам из пути
     for folder in path.split('/'):
         try:
             ftp.cwd(folder)
-        except ftplib.error_perm:
+        except ftplib.error_perm:  # Создаю папку если не существует
             ftp.mkd(folder)
             ftp.cwd(folder)
     return
@@ -951,3 +1108,44 @@ def get_configurations():
     if len(new_configurations):
         Configuration.objects.bulk_create(new_configurations)
     return
+
+
+def avilon_custom_task():
+    """
+    Особая задача для Авилон Премиум Волгоградка. С прайса Авилон Seres Aito берёт по одному, самому дешёвому
+    автомобилю, по фильтрам. Обновляет файл на ftp, который у Авилон Премиум Волгоградка прописан
+    в поле Добавить к прайсу.
+    :return:
+    """
+    avilon_seres_aito_task = ConverterTask.objects.get(pk=51)
+    avilon_premium_volgogradka_task = ConverterTask.objects.get(pk=22)
+
+    source_file = f'http://ph.onllline.ru/{avilon_seres_aito_task.price}'
+    file_to_update = avilon_premium_volgogradka_task.add_to_price.replace('http://ph.onllline.ru/', '')
+    temp_file = 'temp/avilon_custom_task.xlsx'
+
+    # Обновляю Авилон SERES AITO
+    get_price(task=avilon_seres_aito_task)
+
+    # Сортирую по Марке, Модели и Цене
+    df = pd.read_csv(source_file, decimal=',', sep=';', header=0, encoding='cp1251')
+    df = df.sort_values(by=['Марка', 'Модель', 'Цена'])
+
+    # Фильтрую и беру самый дешёвый по каждому фильтру
+    filters = [
+        {'Марка': 'AITO', 'Модель': 'M5'},
+        {'Марка': 'Seres', 'Модель': 'Aito M7'}
+    ]
+    result_df = pd.DataFrame()
+    for filter_cond in filters:
+        filtered_df = df
+        for key, value in filter_cond.items():
+            filtered_df = filtered_df[filtered_df[key] == value]
+        if not filtered_df.empty:
+            result_df = pd.concat([result_df, filtered_df.iloc[[0]]], ignore_index=True)
+
+    # Сохраняю в xlsx, отправляю на ftp
+    result_df.T.reset_index().T.to_excel(temp_file, sheet_name='data', header=False, index=False)
+    with open(temp_file, 'rb') as file:
+        file_content = file.read()
+        save_on_ftp(file_to_update, file_content)

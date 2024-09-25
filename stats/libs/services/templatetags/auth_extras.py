@@ -8,7 +8,8 @@ register = template.Library()
 @register.filter(name='has_group')
 def has_group(user, group_names):
     """
-    Проверяет есть ли у пользователя нужные группы
+    Проверяет есть ли у пользователя нужные группы, можно несколько, разделённых запятой, пример:
+    {% if request.user|has_group:"admin,client" %}
     :param user: пользователь как request.user
     :param group_names: имена групп
     :return:

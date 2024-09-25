@@ -4,7 +4,9 @@ from openpyxl.styles import Border, Side, Alignment, PatternFill, Font
 from openpyxl.workbook import Workbook
 from openpyxl.utils import get_column_letter
 
+from libs.services.models import BaseModel
 from libs.services.utils import split_daterange
+from applications.srav.models import UniqueAutoruParsedAdMark, UniqueAutoruParsedAdRegion, UniqueAutoruParsedAdDealer
 
 # Цвета заливок
 BLUE_FILL = PatternFill(start_color='DEE6EF', end_color='DEE6EF', fill_type='solid')
@@ -167,3 +169,27 @@ def format_comparison(wb: Workbook, sheet_name: str, dealer_for_comparison: str 
     ws.auto_filter.ref = ws.dimensions
 
     return wb
+
+
+def check_and_create_unique_autoru_parsed_ad_objs(data: list):
+    """
+    Создаёт новые уникальные Марки, Регионы и Дилеров
+    :param data:
+    :return:
+    """
+    def get_unique(data: list, field: str):
+        return list(set(getattr(d, field) for d in data))
+
+    def create_new(potential_objs: list[set], model: BaseModel, field: str):
+        existing_objs = model.objects.all().values_list(field, flat=True)
+        new_objs = [model(**{field: obj}) for obj in potential_objs if obj not in existing_objs]
+        model.objects.bulk_create(new_objs)
+
+    marks = get_unique(data, 'mark')
+    marks = [mark.id for mark in marks]
+    regions = get_unique(data, 'region')
+    dealers = get_unique(data, 'dealer')
+
+    create_new(marks, UniqueAutoruParsedAdMark, 'mark')
+    create_new(regions, UniqueAutoruParsedAdRegion, 'region')
+    create_new(dealers, UniqueAutoruParsedAdDealer, 'dealer')

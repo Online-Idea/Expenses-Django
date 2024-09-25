@@ -1,0 +1,179 @@
+{% extends 'base/base.html' %}
+{% load auth_extras %}
+{% load static %}
+
+{% block headcontent %}
+
+  <title>Звонки. Сводная</title>
+
+  {% include 'base/daterange_picker.html' %}
+
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <div class="row">
+      <div class="col-xl-6 center">
+        <h3 class="logo"><a href="{% url 'calls_pivot' %}">Звонки. Сводная</a></h3>
+      </div>
+      <div class="col-xl-6 text-end">
+        <p class="small-note text-end">Обновлено: {{ last_updated }}</p>
+        {% if request.user|has_group:'admin' %}
+          <button class="btn btn-outline-primary btn-sm">
+            <a
+              href="https://docs.google.com/document/d/11rOTSOJTznCVxQYE8uGOF56DbufO0bBteBnd8EKDR6Y/edit?usp=sharing"
+              target="_blank"
+            >?</a>
+          </button>
+        {% endif %}
+      </div>
+    </div>
+
+  <div class="row">
+    <!--Выбор периода-->
+    <form method="POST" class="period" action="{% url 'calls_pivot' %}">
+      {% csrf_token %}
+      {{ form.daterange }}
+      <button type="submit" class="btn btn-primary">Показать</button>
+      <button type="submit" class="btn btn-outline-primary" formaction="{% url 'download_calls_pivot' %}">Скачать
+      </button>
+      <!--Список клиентов-->
+      <details>
+        <summary>Клиенты</summary>
+        <div class="content">
+          <label for="id_select_all_clients">
+            {{ form.select_all_clients }}
+            Выбрать все
+          </label>
+          {{ form.client_checkbox }}
+        </div>
+      </details>
+    </form>
+
+    <!--Сводная таблица звонков-->
+    {% if request.method == 'POST' %}
+      {% if pivot_data %}
+        <table id="calls_pivot" class="row-border hover order-column stripe compact">
+          <thead class="thead-dark">
+          <tr>
+            <th>Дата</th>
+            <th>Итого</th>
+
+            {% for client in clients %}
+              <th>{{ client }}</th>
+            {% endfor %}
+
+          </tr>
+          </thead>
+          <tbody>
+          {% for day, value in pivot_data.items %}
+            <tr>
+
+              <td data-order="{{ value.timestamp }}">
+                <a href="{{ value.day_url }}" class="black-url">{{ day }}</a>
+              </td>
+
+              <td class="text-end" data-order="{{ value.row_total_yes }}">
+                <a href="{{ value.day_url }}" class="black-url">
+                  <b>{{ value.row_total_yes }}</b> ({{ value.row_total_all }})
+                </a>
+              </td>
+
+              {% for cell in value.data %}
+                <td class="text-end" data-order="{{ cell.target_total_yes }}">
+                  <a href="{{ cell.link }}" class="black-url">
+                    <b>{{ cell.target_total_yes }}</b> ({{ cell.target_total_all }})
+                  </a>
+                </td>
+              {% endfor %}
+
+            </tr>
+          {% endfor %}
+          </tbody>
+          <tfoot class="tfoot-dark">
+          <tr>
+            <th class="text-end">Всего</th>
+
+            <td class="text-end">
+              <a href="{{ pivot_grand_totals.grand_total_url }}" class="white-url">
+                {{ pivot_grand_totals.totals_yes_sum }} ({{ pivot_grand_totals.totals_all_sum }})
+              </a>
+            </td>
+
+            {% for col in pivot_grand_totals.combined_totals %}
+              <td class="text-end">
+                <a href="{{ col.client_urls }}" class="white-url">
+                  <b>{{ col.column_totals_yes }}</b> ({{ col.column_totals_all }})
+                </a>
+              </td>
+            {% endfor %}
+
+          </tr>
+
+          <tr>
+            <th class="text-end">Бюджет</th>
+            {% for cell in budget %}
+              <td class="text-end">{{ cell }}</td>
+            {% endfor %}
+          </tr>
+
+          <tr>
+            <th class="text-end">План</th>
+            {% for cell in plan %}
+              <td class="text-end">{{ cell }}</td>
+            {% endfor %}
+          </tr>
+
+          <tr>
+            <th class="text-end">%</th>
+            {% for cell in percent_plan %}
+              <td class="text-end {% if cell >= 90 %} negative-text {% endif %} ">{{ cell }}</td>
+            {% endfor %}
+          </tr>
+          </tfoot>
+        </table>
+
+      {% else %}
+        <p>За выбранный период нет данных</p>
+      {% endif %}
+
+      <script>
+        $(document).ready(function () {
+          let table = $('#calls_pivot').DataTable({
+            fixedHeader: {
+              header: true,
+              footer: true
+            },
+            order: [
+              [0, 'desc'],
+            ],
+            pageLength: 50,
+            language: {
+              url: '{% static "js/datatables-ru.json" %}'
+            },
+          });
+        });
+      </script>
+    {% endif %}
+
+  </div>
+  </div>
+  </div>
+
+  <script>
+    $(document).ready(function () {
+      <!--Чекбокс Выбрать все для клиентов-->
+      $('#id_select_all_clients').click(function () {
+        $('input[type=checkbox][name=client_checkbox]').prop('checked', $(this).prop('checked'));
+      });
+    });
+
+    // Отмечает ранее выбранные чекбоксы
+    document.addEventListener("DOMContentLoaded", function () {
+      {% if clients_checked %}
+        selected_checkboxes({{ clients_checked|safe }}, 'client_checkbox', 'select_all_clients');
+      {% endif %}
+    });
+  </script>
+
+{% endblock %}

@@ -14,6 +14,6 @@ def allowed_users(allowed_groups=[]):
             if group in allowed_groups:
                 return view_func(request, *args, **kwargs)
             else:
-                return HttpResponse('У Вас нет доступа к этой странице')
+                return redirect('accounts/login')
         return wrapper_func
     return decorator

@@ -38,13 +38,16 @@ def onllline_worker(task: ConverterTask):
     return import_result
 
 
-def onllline_authorize(driver):
+def onllline_authorize(driver, login=None):
     """
     Авторизация на onllline.ru
     :return:
     """
+    if login is None:
+        login = os.getenv('ONLLLINE_AUTH_LOGIN')
+
     login_input = driver.find_element(By.NAME, 'auth_login')
-    login_input.send_keys(os.getenv('ONLLLINE_AUTH_LOGIN'))
+    login_input.send_keys(login)
     time.sleep(0.2)
     password_input = driver.find_element(By.NAME, 'auth_password')
     password_input.send_keys(os.getenv('ONLLLINE_AUTH_PASSWORD'))
@@ -52,6 +55,9 @@ def onllline_authorize(driver):
     submit_btn = driver.find_element(By.NAME, 'auth_go')
     submit_btn.click()
     time.sleep(0.5)
+    # Если один бот выдаёт ошибку "Пользователь уже авторизован на другом компьютере", то пробую через другого бота
+    if 'Пользователь уже авторизован' in driver.page_source:
+        onllline_authorize(driver, os.getenv('ONLLLINE_AUTH_LOGIN2'))
 
 
 def onllline_import_export(driver, task: ConverterTask):
@@ -69,7 +75,7 @@ def onllline_import_export(driver, task: ConverterTask):
 
     # Настройки импорта
     salon = task.onllline_salon_to_import
-    price = f'https://ph.onllline.ru/{task.price}'
+    price = f'http://ph.onllline.ru/{task.price}'
     import_mode = task.onllline_import_mode
 
     # Импортирую
@@ -79,8 +85,11 @@ def onllline_import_export(driver, task: ConverterTask):
     wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
     time.sleep(1)
 
-    import_input = driver.find_element(By.NAME, 'import_file_text')
-    import_input.send_keys(price)
+    try:
+        import_input = driver.find_element(By.NAME, 'import_file_text')
+        import_input.send_keys(price)
+    except NoSuchElementException:
+        driver.save_screenshot('something_fucked.jpg')
 
     # Вариант импорта
     import_select_element = driver.find_element(By.NAME, 'import_mode')

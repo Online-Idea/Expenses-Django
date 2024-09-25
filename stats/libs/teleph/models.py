@@ -5,12 +5,12 @@ from applications.accounts.models import Client
 
 
 class TelephCall(BaseModel):
-    client = models.ForeignKey(Client, to_field='teleph_id', on_delete=models.CASCADE, verbose_name='id клиента')
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name='id клиента')
     datetime = models.DateTimeField(verbose_name='Дата и время')
     num_from = models.CharField(max_length=255, verbose_name='Исходящий')
     mark = models.CharField(max_length=255, null=True, verbose_name='Марка')
     model = models.CharField(max_length=255, null=True, verbose_name='Модель')
-    target = models.CharField(max_length=255, null=True, verbose_name='Входящий')
+    target = models.CharField(max_length=255, null=True, verbose_name='Целевой')
     moderation = models.CharField(max_length=255, null=True, verbose_name='Модерация')
     call_price = models.FloatField(null=True, verbose_name='Стоимость')
     price_autoru = models.FloatField(null=True, verbose_name='Стоимость авто.ру')

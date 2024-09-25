@@ -71,75 +71,77 @@
       }
 
       $(document).ready(function () {
-        AjaxDatatableViewUtils.initialize_table(
-          $("#datatable_comparison"),
-          "{% url 'ajax_datatable_comparison' %}",
-          {
-            // extra_options (example)
-            rowGroup: {
-              dataSrc: [
-                "datetime",
-                "region",
-                // 'mark',
-                // 'model',
-                "modification",
-                // 'complectation',
-                // 'year'
-              ],
-            },
 
-            fixedHeader: true,
-            responsive: false,
-            // full_row_select: true,
-            processing: true,
-            autoWidth: true,
-            scrollX: true,
-            language: { url: '{% static "js/datatables-ru.json" %}', },
-            pageLength: 50,
+        $.getJSON('{% static "js/datatables-ru.json" %}', function(data) {
+          let language_json = data;
 
-            rowCallback: (row, data) => {
-              colorCells(row, data, "price_with_discount_diff", 8);
-              colorCells(row, data, "price_no_discount_diff", 9);
+          AjaxDatatableViewUtils.initialize_table(
+            $("#datatable_comparison"),
+            "{% url 'ajax_datatable_comparison' %}",
+            {
+              // extra_options (example)
+              rowGroup: {
+                dataSrc: [
+                  "datetime",
+                  "region",
+                  // 'mark',
+                  // 'model',
+                  "modification",
+                  // 'complectation',
+                  // 'year'
+                ],
+              },
 
-              // Крашу голубым весь ряд выбранного дилера
-              const chosen_dealer = $("#id_dealer")[0].value;
-              if (data.dealer === chosen_dealer) {
-                $(row).removeClass();
-                $(row).addClass("chosen-dealer");
+              fixedHeader: true,
+              responsive: false,
+              // full_row_select: true,
+              processing: true,
+              autoWidth: true,
+              scrollX: true,
+              language: language_json,
+              pageLength: 50,
+
+              rowCallback: (row, data) => {
+                colorCells(row, data, "price_with_discount_diff", 8);
+                colorCells(row, data, "price_no_discount_diff", 9);
+
+                // Крашу голубым весь ряд выбранного дилера
+                const chosen_dealer = $("#id_dealer")[0].value;
+                if (data.dealer === chosen_dealer) {
+                  $(row).removeClass();
+                  $(row).addClass("chosen-dealer");
+                }
+              },
+
+              drawCallback: function(settings) {
+                // Добавляю границы над уникальными автомобилями
+                let prev_car = '';
+                let curr_car, mark, model, complectation, year;
+
+                $("#datatable_comparison tr").each(function () {
+                  const $tr = $(this);
+                  mark = $tr.find('td:eq(1)').text();
+                  model = $tr.find('td:eq(2)').text();
+                  complectation = $tr.find('td:eq(3)').text();
+                  year = $tr.find('td:eq(4)').text();
+
+                  curr_car = [mark, model, complectation, year].join();
+
+                  if (prev_car !== curr_car) {
+                      $tr.addClass('thick-border');
+                  }
+
+                  prev_car = curr_car;
+                });
               }
             },
-
-            drawCallback: function(settings) {
-              // Добавляю границы над уникальными автомобилями
-              let prev_car = '';
-              let curr_car, mark, model, complectation, year;
-
-              $("#datatable_comparison tr").each(function () {
-                const $tr = $(this);
-                mark = $tr.find('td:eq(1)').text();
-                model = $tr.find('td:eq(2)').text();
-                complectation = $tr.find('td:eq(3)').text();
-                year = $tr.find('td:eq(4)').text();
-
-                curr_car = [mark, model, complectation, year].join();
-
-                if (prev_car !== curr_car) {
-                    $tr.addClass('thick-border');
-                }
-
-                prev_car = curr_car;
-              });
-            }
-          },
-          {
-            // extra_data
-            filter_params: "{{ filter_params }}",
-            dealer_for_comparison: "{{ dealer_for_comparison }}",
-          },
-        );
-
-
-
+            {
+              // extra_data
+              filter_params: "{{ filter_params }}",
+              dealer_for_comparison: "{{ dealer_for_comparison }}",
+            },
+          );
+        });
       });
       </script>
     {% endif %}

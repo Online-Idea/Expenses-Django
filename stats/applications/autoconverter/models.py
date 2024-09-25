@@ -2,6 +2,7 @@ import json
 
 from django.db import models
 from django.db.models import Q
+from django import forms
 from django.utils.html import strip_tags
 from slugify import slugify
 
@@ -60,6 +61,12 @@ class ConverterTask(BaseModel):
         'add_to_price': 'Если нужно добавить объявления к прайсу после конвертера то укажи здесь ссылку на прайс с'
                         'этими объявлениями. Прайс размещай на наш ftp, '
                         'в папке converter/имя_клиента/add/имя_файла.xlsx',
+        'fill_vin': 'Добавляет в начало VIN знаки X если длина VIN меньше 17. '
+                    'Например VIN: 607130 станет XXXXXXXXXXX607130',
+        'change_vin': 'Меняет последние 6 цифр VIN на случайные. Если в последних 6 цифрах есть буква то меняет цифры '
+                      'после последней буквы.',
+        'use_converter': 'Если в качестве стока используется наш прайс и конвертер не нужен для подставки фото, '
+                         'то выключи это. '
     }
 
     active = models.BooleanField(default=True, verbose_name='Активна')
@@ -76,6 +83,8 @@ class ConverterTask(BaseModel):
     stock_post_password = models.CharField(max_length=500, blank=True, null=True, verbose_name='POST-запрос Пароль')
 
     # Конвертер
+    use_converter = models.BooleanField(default=True, help_text=HELP_TEXTS['use_converter'],
+                                        verbose_name='Использовать конвертер')
     photos_folder = models.ForeignKey(to='PhotoFolder', on_delete=models.SET_NULL, null=True,
                                       verbose_name='Папка с фото')
     front = models.IntegerField(default=10, verbose_name='Начало')
@@ -89,6 +98,9 @@ class ConverterTask(BaseModel):
     price = models.URLField(null=True, blank=True, verbose_name='Прайс')
     add_to_price = models.URLField(null=True, blank=True, help_text=HELP_TEXTS['add_to_price'],
                                    verbose_name='Добавить к прайсу')
+    fill_vin = models.BooleanField(default=False, help_text=HELP_TEXTS['fill_vin'],
+                                   verbose_name='Заполнить VIN знаками X')
+    change_vin = models.BooleanField(default=False, help_text=HELP_TEXTS['change_vin'], verbose_name='Изменить VIN')
 
     # База onllline.ru
     import_to_onllline = models.BooleanField(default=False, help_text=HELP_TEXTS['import_to_onllline'],
@@ -250,7 +262,9 @@ class ConverterFilter(BaseModel):
     EQUALS = '=='
     NOT_EQUALS = '!='
     GREATER_THAN = '>'
+    GREATER_THAN_EQUALS = '>='
     LESS_THAN = '<'
+    LESS_THAN_EQUALS = '<='
     STARTS_WITH = 'starts_with'
     NOT_STARTS_WITH = 'not_starts_with'
     ENDS_WITH = 'ends_with'
@@ -261,20 +275,27 @@ class ConverterFilter(BaseModel):
         (EQUALS, 'равно'),
         (NOT_EQUALS, 'не равно'),
         (GREATER_THAN, 'больше'),
+        (GREATER_THAN_EQUALS, 'больше либо равно'),
         (LESS_THAN, 'меньше'),
+        (LESS_THAN_EQUALS, 'меньше либо равно'),
         (STARTS_WITH, 'начинается с'),
         (NOT_STARTS_WITH, 'не начинается с'),
         (ENDS_WITH, 'заканчивается на'),
         (NOT_ENDS_WITH, 'не заканчивается на'),
     ]
+    POSITIVE_CONDITIONS = [CONTAINS, EQUALS, STARTS_WITH, ENDS_WITH]
+    NEGATIVE_CONDITIONS = [NOT_CONTAINS, NOT_EQUALS, NOT_STARTS_WITH, NOT_ENDS_WITH]
     value_help_text = 'Для фильтрации по нескольким значениям пиши каждое между `` и разделяй запятыми.' \
-                      ' Например: `E (W/S213)`, `CLS (C257)`'
+                      ' Например: `E (W/S213)`, `CLS (C257)`. Для фильтрации по пустым значениям выбирай в условии' \
+                      ' не равно, в значении ""'
 
     converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.PROTECT)
     field = models.CharField(max_length=500, verbose_name='Поле')
     condition = models.CharField(max_length=500, choices=CONDITION_CHOICES,
                                  default=CONDITION_CHOICES[2], verbose_name='Условие')
     value = models.CharField(max_length=500, help_text=value_help_text, verbose_name='Значение')
+    active = models.BooleanField(verbose_name='Активно', default=True)
+    note = models.TextField(blank=True, null=True, verbose_name='Заметка')
 
     def __str__(self):
         return f'{self.field} {self.condition} {self.value}'
@@ -288,37 +309,12 @@ class ConverterFilter(BaseModel):
 
 class ConverterExtraProcessing(BaseModel):
     # Различные изменения прайса по условию
-    SOURCE_CHOICES = [
-        ('Сток', 'Сток'),
-        ('Прайс', 'Прайс')
-    ]
-    CHANGE_TYPE_CHOICES = [
-        ('Полностью', 'Полностью'),
-        ('Добавить в начало', 'Добавить в начало'),
-        ('Добавить в конец', 'Добавить в конец'),
-    ]
-    new_value_help = 'Если одно значение для всех то пиши его, если из другого столбца то пиши имя столбца' \
-                     'в формате: %col:"имя_столбца"'
-
     converter_task = models.ForeignKey(to='ConverterTask', verbose_name='Задача конвертера', on_delete=models.PROTECT)
-    source = models.CharField(max_length=500, choices=SOURCE_CHOICES, verbose_name='Источник')
-    price_column_to_change = models.CharField(max_length=500, verbose_name='Столбец прайса в котором менять')
-    new_value = models.CharField(max_length=5000, null=True, blank=True, help_text=new_value_help,
-                                 verbose_name='Новое значение')
-    change_type = models.CharField(max_length=255, choices=CHANGE_TYPE_CHOICES, verbose_name='Как заменять',
-                                   default=CHANGE_TYPE_CHOICES[0])
+    active = models.BooleanField(verbose_name='Активно', default=True)
+    note = models.TextField(blank=True, null=True, verbose_name='Заметка')
 
     def __str__(self):
-        return f'{self.converter_task.name} {self.source} -> {self.price_column_to_change} {self.new_value}'
-
-    def save(self, *args, **kwargs):
-        # Добавляю переносы строк
-        if self.new_value:
-            if self.change_type == 'Добавить в начало':
-                self.new_value += '\n\n'
-            elif self.change_type == 'Добавить в конец':
-                self.new_value = '\n\n' + self.new_value
-        super().save(*args, **kwargs)
+        return f'{self.converter_task.name}'
 
     class Meta:
         db_table = 'autoconverter_converter_extra_processing'
@@ -327,7 +323,12 @@ class ConverterExtraProcessing(BaseModel):
 
 
 class Conditional(BaseModel):
-    converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.PROTECT)
+    SOURCE_CHOICES = [
+        ('Сток', 'Сток'),
+        ('Прайс', 'Прайс')
+    ]
+    source = models.CharField(max_length=500, choices=SOURCE_CHOICES, verbose_name='Источник')
+    converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.CASCADE)
     field = models.CharField(max_length=500, help_text=StockFields.multi_tags_help, verbose_name='Поле')
     condition = models.CharField(max_length=500, choices=ConverterFilter.CONDITION_CHOICES,
                                  default=ConverterFilter.CONDITION_CHOICES[2], verbose_name='Условие')
@@ -339,3 +340,40 @@ class Conditional(BaseModel):
     class Meta:
         verbose_name = 'Условие'
         verbose_name_plural = 'Условия'
+
+
+class ConverterExtraProcessingNewChanges(BaseModel):
+    CHANGE_TYPE_CHOICES = [
+        ('Полностью', 'Полностью'),
+        ('Добавить в начало', 'Добавить в начало'),
+        ('Добавить в конец', 'Добавить в конец'),
+    ]
+    new_value_help = 'Если одно значение для всех то пиши его, если из другого столбца то пиши имя столбца' \
+                     'в формате: %col:"имя_столбца"'
+
+    converter_extra_processing = models.ForeignKey(ConverterExtraProcessing, on_delete=models.CASCADE,
+                                                   verbose_name='Обработка прайса')
+    price_column_to_change = models.CharField(max_length=500, verbose_name='Столбец прайса в котором менять')
+    new_value = models.TextField(max_length=10000, null=True, blank=True, help_text=new_value_help,
+                                 verbose_name='Новое значение')
+    change_type = models.CharField(max_length=255, choices=CHANGE_TYPE_CHOICES, verbose_name='Как заменять',
+                                   default=CHANGE_TYPE_CHOICES[0])
+
+    def __str__(self):
+        return f'{self.converter_extra_processing} -> {self.price_column_to_change}: {self.new_value}'
+
+    def save(self, *args, **kwargs):
+        # Добавляю переносы строк
+        if self.new_value:
+            if self.change_type == 'Добавить в начало':
+                self.new_value += '\n\n'
+            elif self.change_type == 'Добавить в конец':
+                self.new_value = '\n\n' + self.new_value
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'autoconverter_converter_extra_processing_new_changes'
+        verbose_name = 'Обработка прайса новое значение'
+        verbose_name_plural = 'Обработка прайса новые значения'
+
+

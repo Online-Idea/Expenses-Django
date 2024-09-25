@@ -135,12 +135,13 @@ class AbstractModification(BaseModel):
         @classmethod
         def get_name_attr(cls, value: str) -> str:
             """
-            Метод класса для получения напзвания атрибута по значению value
+            Метод класса для получения наименования атрибута по его значению.
 
             :param value: Значение атрибута
-            :return название атрибута
+            :return: Наименование атрибута
             """
-            return next(attr for attr, val in cls.__members__.items() if val == value)
+            # return next(attr for attr, val in cls.__members__.items() if val == value)
+            return cls.__members__.get(value, value)
 
     class EngineType(models.TextChoices):
         """
@@ -175,22 +176,18 @@ class AbstractModification(BaseModel):
                                    verbose_name='Тип двигателя')
     transmission = models.CharField(max_length=64, choices=Transmission.choices,
                                     verbose_name='Коробка передач')
-    power = models.IntegerField(verbose_name='Мощность')
+    power_hp = models.IntegerField(verbose_name='Мощность в лошадиных силах', default=0)
+    power_kw = models.IntegerField(verbose_name='Мощность в киловатах', default=0)
     engine_volume = models.FloatField(null=True, blank=True,
                                       verbose_name='Объём двигателя')
     body_type = models.CharField(max_length=64, choices=BodyTypes.choices,
                                  verbose_name='Кузов')
     doors = models.IntegerField(null=True, blank=True,
                                 verbose_name='Количество дверей')
-    battery_capacity = models.IntegerField(null=True, blank=True,
+    battery_capacity = models.FloatField(null=True, blank=True,
                                            verbose_name='Ёмкость батареи')
     load_capacity = models.IntegerField(null=True, blank=True,
                                         verbose_name='Грузоподъёмность')
-
-    # autoru_modification_id = models.IntegerField(null=True, blank=True, verbose_name='Авто.ру Модификация ID')
-    # autoru_complectation_id = models.IntegerField(null=True, blank=True, verbose_name='Авто.ру Комплектация ID')
-    # avito_modification_id = models.IntegerField(null=True, blank=True, verbose_name='Авито Модификация ID')
-    # avito_complectation_id = models.IntegerField(null=True, blank=True, verbose_name='Авито Комплектация ID')
 
     class Meta:
         abstract = True
@@ -274,9 +271,13 @@ class Modification(AbstractModification):
             drive = 'RWD'
         elif self.drive == Modification.Drive.FULL:
             drive = '4WD'
-        transmission = Modification.Transmission[self.transmission].label
+        else:
+            drive = self.drive
+        transmission = Modification.Transmission.get_name_attr(self.transmission)
+        # transmission = Modification.Transmission[self.transmission].label
         # TODO настроить вид модификации по такому шаблону: 1.5 181 л.с. 4WD дизель AMT
-        self.short_name = f'{engine_volume} {self.power} л.с. {drive} {self.engine_type} {transmission}'
+        self.short_name = (f'{engine_volume} {self.power_hp if self.power_hp else self.power_kw} '
+                           f'{"л.с." if self.power_hp else "кВт"} {drive} {self.engine_type} {transmission}')
         super().save(*args, **kwargs)
 
     def __str__(self):

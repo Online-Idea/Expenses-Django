@@ -1,0 +1,88 @@
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.page-title {
+    font-size: 2rem;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 15px;
+    border-radius: 5px;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border-radius: 5px;
+}
+
+.table {
+    margin-top: 20px;
+}
+
+.reg-item {
+    display: inline-block;
+    margin-left: 10px;
+}
+/* Контейнер для номера и региона */
+.reg-item {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Расстояние между номером и регионом */
+}
+
+/* Стиль для номера автомобиля */
+.number-n {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #333; /* Темный цвет для номера */
+}
+
+/* Стиль для региона автомобиля */
+.region-num {
+    font-size: 1.1rem;
+    color: #555; /* Чуть светлее номер */
+}
+
+/* Стиль для подписи RUS */
+.russia {
+    font-size: 1rem;
+    color: #999; /* Более светлый оттенок для RUS */
+    border: 1px solid #fcfcfc;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+/* Дополнительные стили для таблицы */
+.table-hover tbody tr:hover {
+    background-color: #f1f1f1; /* Подсветка строки при наведении */
+}
+
+.table-success {
+    background-color: #d4edda; /* Светло-зеленый фон для активных строк */
+}
+
+.table-danger {
+    background-color: #f8d7da; /* Светло-красный фон для неактивных строк */
+}
+
+/* Отступы и стили для заголовков таблицы */
+
+/* Общие стили для ячеек таблицы */
+.table tbody td {
+    padding: 10px;
+    vertical-align: middle;
+    border-top: 1px solid #dee2e6;
+}
+

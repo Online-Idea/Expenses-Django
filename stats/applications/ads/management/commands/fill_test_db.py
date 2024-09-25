@@ -1,8 +1,9 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from random import randint
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+
 
 from applications.accounts.models import Client
 from applications.ads.models import Ad, Salon
@@ -12,7 +13,7 @@ import pandas as pd
 import argparse
 from typing import Union
 from faker import Faker
-
+from django.utils import timezone
 fake = Faker()
 
 
@@ -168,7 +169,7 @@ class Command(BaseCommand):
                 client=client,
                 name=fake.first_name(),
                 price_url=fake.url(),
-                datetime_updated=datetime.now(),
+                datetime_updated=timezone.now(),
                 working_hours=fake.date(),
                 city=fake.city(),
                 address=fake.address(),

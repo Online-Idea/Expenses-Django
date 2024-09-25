@@ -92,6 +92,7 @@ INSTALLED_APPS = [
     'libs.avito.apps.AvitoConfig',
     'libs.autoru.apps.AutoruConfig',
     'libs.teleph.apps.TelephConfig',
+    'libs.transport_check.apps.TransportCheckConfig',
 
 ]
 

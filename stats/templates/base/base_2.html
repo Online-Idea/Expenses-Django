@@ -50,37 +50,37 @@
 <!--Navbar-->
 <div class="container">
     {% if request.user|has_group:"admin" %}
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
                 aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-        <div class="navbar-nav">
+            <div class="navbar-nav">
 
-            <a class="nav-item nav-link" href="{% url 'home' %}">Себестоимость</a>
-            <a class="nav-item nav-link" href="{% url 'converter_manual' %}">Автоконвертер</a>
-            <a class="nav-item nav-link" href="{% url 'auction' %}">Аукцион</a>
-            <a class="nav-item nav-link" href="{% url 'ads_app:ads' %}">Объявления</a>
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                   aria-expanded="false">
-                    Конкуренты
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{% url 'comparison' %}">Сравнительная</a></li>
-                    <li><a class="dropdown-item" href="{% url 'parsed_ads' %}">Выдача</a></li>
-                </ul>
+                <a class="nav-item nav-link" href="{% url 'home' %}">Себестоимость</a>
+                <a class="nav-item nav-link" href="{% url 'converter_manual' %}">Автоконвертер</a>
+                <a class="nav-item nav-link" href="{% url 'auction' %}">Аукцион</a>
+                <a class="nav-item nav-link" href="{% url 'ads_app:ads' %}">Объявления</a>
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false">
+                        Конкуренты
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'comparison' %}">Сравнительная</a></li>
+                        <li><a class="dropdown-item" href="{% url 'parsed_ads' %}">Выдача</a></li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+            <div class="navbar-nav ms-auto">
+                {% if request.user.is_authenticated %}
+                <a class="nav-item nav-link" href="{% url 'accounts_app:profile' %}">{{ user.username }}</a>
+                <a class="nav-item nav-link" href="{% url 'accounts_app:logout' %}">Выйти</a>
+                {% endif %}
             </div>
         </div>
-    {% endif %}
-    <div class="navbar-nav ms-auto">
-        {% if request.user.is_authenticated %}
-            <a class="nav-item nav-link" href="{% url 'accounts_app:profile' %}">{{ user.username }}</a>
-            <a class="nav-item nav-link" href="{% url 'accounts_app:logout' %}">Выйти</a>
-        {% endif %}
-    </div>
-    </div>
     </nav>
 </div>
 <!--Navbar Конец-->

@@ -6,7 +6,7 @@ from typing import Union, List, Tuple, Any
 from django.db import models
 from django.urls import reverse
 
-from applications.mainapp.models import BaseModel, Model, Mark, BodyTypes,Colors
+from applications.mainapp.models import BaseModel, Model, Mark, BodyTypes, Colors
 from applications.accounts.models import Client
 
 
@@ -251,6 +251,14 @@ class Ad(BaseModel):
         return self.availability or 'В наличии'
 
     def get_preview_video(self):
+        """
+        Возвращает URL превью-видео из ссылки на YouTube.
+
+        Ищет идентификатор видео в URL, сохраняет его и формирует URL для превью-видео.
+        Если идентификатор не найден, возвращает None.
+
+        :return: URL превью-видео или None.
+        """
         pattern = (
             r'(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})'
         )
@@ -261,6 +269,14 @@ class Ad(BaseModel):
         return None
 
     def get_sum_discount_display(self) -> int:
+        """
+        Возвращает сумму всех скидок.
+
+        Если `max_discount` содержит значение, оно возвращается.
+        В противном случае возвращается сумма значений `trade_in`, `credit` и `insurance`, если они присутствуют.
+
+        :return: Сумма всех скидок.
+        """
         return self.max_discount or sum(
             [num for num in
              [self.trade_in, self.credit, self.insurance]
@@ -268,10 +284,24 @@ class Ad(BaseModel):
         )
 
     def get_good_price(self) -> str:
+        """
+        Возвращает итоговую цену после вычета всех скидок.
+
+        Рассчитывается новая цена, исходя из оригинальной цены (`price`) и суммы всех скидок, форматируется и возвращается.
+
+        :return: Итоговая цена после вычета всех скидок.
+        """
         new_price = self.price - self.get_sum_discount_display()
         return Ad.get_formatted_price(new_price)
 
     def get_modification_display(self) -> str:
+        """
+        Возвращает описание модификации автомобиля.
+
+        Формирует строку, содержащую отформатированные значения объема двигателя, мощности, типа двигателя, трансмиссии и привода.
+
+        :return: Описание модификации автомобиля.
+        """
         return (
             f"{self.get_engine_display()} / {self.get_power_display()} / "
             f"{self.engine_type} / {self.transmission} / {self.drive}"

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from applications.ads.models import Ad, Mark, Model
+from applications.ads.models import Ad
+from applications.mainapp.models import Mark, Model
 
 
 class AdSerializer(serializers.ModelSerializer):

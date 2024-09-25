@@ -8,6 +8,8 @@ from django.db import transaction
 from lxml.etree import Element
 from requests import Response
 from libs.avito.models import *
+from utils.colored_logger import ColoredLogger
+from utils.clear_space import clear_space
 
 # ANSI код для цвета текста
 CYAN = '\033[96m'
@@ -21,6 +23,37 @@ RESET = '\033[0m'
 
 # Разделитель с цветом
 SLASH_CYAN = CYAN + ' | ' + RESET
+
+
+def process_name(name):
+    if 'hyb' in name:
+        return name.replace('hyb', ' Hybrid')
+    return name
+
+
+def clear_generation_name(name):
+    # Удаляет годы в формате (2016—2020) из названия поколения
+    name = re.sub(r'\s*\(\d{4}—\d{4}\)', '', name).strip().title()
+    # Нормализует римские цифры
+    name = normalize_roman_numerals(name)
+    return name
+
+
+def normalize_roman_numerals(name):
+    # Словарь для замены некорректных римских цифр
+    roman_numerals = {
+        'Ii': 'II',
+        'Iii': 'III',
+        'Iv': 'IV',
+        'Vi': 'VI',
+        'Vii': 'VII',
+        'Viii': 'VIII',
+        'Ix': 'IX'
+    }
+    # Замена некорректных римских цифр на корректные
+    for incorrect, correct in roman_numerals.items():
+        name = re.sub(incorrect, correct, name, flags=re.IGNORECASE)
+    return name
 
 
 def procces_modification(**kwargs) -> AvitoModification:
@@ -48,13 +81,31 @@ def procces_modification(**kwargs) -> AvitoModification:
 
         # Получение названия трансмиссии
         if 'transmission' in kwargs:
-            transmission = AvitoModification.Transmission.get_name_attr(kwargs['transmission'])
+            transmission_mapping = {
+                'Автомат': 'AT',
+                'Робот': 'RWD',
+                'Вариатор': 'CVT',
+                'Механика': 'MT'
+            }
+            transmission = transmission_mapping[kwargs['transmission']]
+        # Определение мощности в зависимости от типа двигателя
+        engine_type = kwargs.get('engine_type')
+        if engine_type == 'Электро':
+            kwargs['power_kw'] = kwargs['power']
+            kwargs['power_hp'] = 0  # Обнуляем мощность в л.с., если двигатель электрический
+        else:
+            kwargs['power_hp'] = kwargs['power']
+            kwargs['power_kw'] = 0  # Обнуляем мощность в кВт, если двигатель не электрический
+            kwargs['battery_capacity'] = 0
 
         # Формирование краткого названия модификации
-        kwargs['short_name'] = (f'{engine_volume} {kwargs["power"]}л.с. {drive} '
+        kwargs['short_name'] = (f'{engine_volume} {kwargs["power_hp"] if kwargs["power_hp"] else kwargs["power_kw"]} '
+                                f'{"л.с." if kwargs["power_hp"] else "кВт"} {drive} '
                                 f'{kwargs["engine_type"]} {transmission}')
-        kwargs['clients_name'] = kwargs['name']
 
+        kwargs['clients_name'] = process_name(kwargs['name'])
+        kwargs['name'] = process_name(kwargs['name'])
+        del kwargs['power']
         return AvitoModification(**kwargs)
     except KeyError as e:
         raise ValueError(f"Отсутствует обязательный аргумент: {e}")
@@ -187,7 +238,7 @@ class Command(BaseCommand):
                 for generation_el in model_el.iterfind('./Generation'):
                     generation_instance = AvitoGeneration(
                         model=model_instance,
-                        name=generation_el.get('name'),
+                        name=clear_generation_name(generation_el.get('name')),
                         id_generation_avito=generation_el.get('id'),
                     )
                     self.create_instance['generations'].append(generation_instance)

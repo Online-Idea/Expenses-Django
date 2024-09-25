@@ -15,7 +15,6 @@ from . import serializers
 
 class FilterAdsView(APIView):
     def get(self, request, *args, **kwargs):
-        print(request.query_params)
         # Получение параметров фильтрации из запроса
         filters = {}
 
@@ -53,70 +52,95 @@ class FilterAdsView(APIView):
 
         # Применяем фильтры к объявлениям
         filtered_ads = Ad.objects.filter(**filters)
-        print(filtered_ads)
         serializer = serializers.AdSerializer(filtered_ads, many=True)
         return Response(serializer.data)
 
 
 class MarkListView(ListAPIView):
-    queryset = Mark.objects.filter(ads__isnull=False).distinct()
     serializer_class = serializers.MarkSerializer
+    def get_queryset(self):
+        salon_id = self.request.query_params.getlist('salon_id')
+        queryset = Mark.objects.filter(ads__isnull=False)
+        if salon_id:
+            salon_id = int(salon_id[0])
+            queryset = queryset.filter(ads__salon_id=salon_id)  # Фильтруем по salon_id
+
+        queryset = queryset.distinct()
+        return queryset
 
 
 class ModelsByMarkView(ListAPIView):
     serializer_class = serializers.ModelSerializer
 
     def get_queryset(self):
+        salon_id = self.request.query_params.getlist('salon_id')
         marks = self.request.query_params.getlist('marks')
 
         if not marks:
             return Ad.objects.none()
 
         queryset = Model.objects.filter(ads__mark__id__in=marks).distinct()
+        if salon_id:
+            salon_id = int(salon_id[0])
+            queryset = queryset.filter(ads__salon_id=salon_id)  # Фильтруем по salon_id
 
+        queryset = queryset.distinct()
         return queryset
+
 
 
 class ModificationsByModelView(ListAPIView):
     serializer_class = serializers.ModificationSerializer
 
     def get_queryset(self):
+        salon_id = self.request.query_params.getlist('salon_id')
         models = self.request.query_params.getlist('models')
 
         if not models:
             return Ad.objects.none()
 
-        queryset = Ad.objects.filter(model__id__in=models).distinct('model__id')
+        queryset = Ad.objects.filter(model__id__in=models).distinct()
+        if salon_id:
+            salon_id = int(salon_id[0])
+            queryset = queryset.filter(salon_id=salon_id)  # Фильтруем по salon_id
+
+        queryset = queryset.distinct()
         return queryset
 
 
 class BodiesByModelView(ListAPIView):
     def list(self, request, *args, **kwargs):
+        salon_id = self.request.query_params.getlist('salon_id')
         model_ids = self.request.query_params.getlist('models')
         if not model_ids:
             return Response({'error': 'No models provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-        bodies = Ad.objects.filter(model_id__in=model_ids).values('body_type').distinct()
+        if salon_id:
+            salon_id = int(salon_id[0])
+        bodies = Ad.objects.filter(model_id__in=model_ids, salon_id=salon_id).values('body_type').distinct()
         return Response(bodies)
 
 
 class ConfigurationsByModelView(ListAPIView):
     def list(self, request, *args, **kwargs):
+        salon_id = self.request.query_params.getlist('salon_id')
         model_ids = self.request.query_params.getlist('models')
         if not model_ids:
             return Response({'error': 'No models provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-        configurations = Ad.objects.filter(model_id__in=model_ids).values('complectation').distinct()
+        if salon_id:
+            salon_id = int(salon_id[0])
+        configurations = Ad.objects.filter(model_id__in=model_ids, salon_id=salon_id).values('complectation').distinct()
         return Response(configurations)
 
 
 class ColorsByModelView(ListAPIView):
     def list(self, request, *args, **kwargs):
+        salon_id = self.request.query_params.getlist('salon_id')
         model_ids = self.request.query_params.getlist('models')
         if not model_ids:
             return Response({'error': 'No models provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-        colors = Ad.objects.filter(model_id__in=model_ids).values('color').distinct()
+        if salon_id:
+            salon_id = int(salon_id[0])
+        colors = Ad.objects.filter(model_id__in=model_ids, salon_id=salon_id).values('color').distinct()
         return Response(colors)
 
 

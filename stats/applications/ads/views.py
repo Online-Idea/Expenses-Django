@@ -1,10 +1,10 @@
 import json
+from pprint import pprint
 
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from django.views.generic import ListView, DetailView
-from .models import Ad, Salon
 from .forms import SortForm
 
 from typing import Any, Dict, List
@@ -12,7 +12,7 @@ from django.http import HttpRequest, HttpResponse
 from django.views import View
 from lxml import etree
 import json
-from .models import Ad
+from .models import Ad, Salon
 
 from .utils.filter import AdFilter
 from .utils.search import AdSearcher
@@ -30,78 +30,46 @@ class AdListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # context['sort_form'] = self.sort_form
-        context['sort_fields'] = ['Марка',
-                                  'Модель',
-                                  'Комплектация',
-                                  'Цена',
-                                  'Кузов',
-                                  'Год',
-                                  'Цвет',
-                                  'Цена c НДС',
-                                  'Объём двигателя',
-                                  'run',
-                                  'Мощность',
-                                  'drive',
-                                  'datetime_created',
-                                  ]
-        context['marks'] = Ad.objects.values_list('mark__id', 'mark__mark').distinct()
+
+        context['sort_form'] = self.sort_form
+        context['marks'] = Ad.objects.values_list('mark__id', 'mark__name').distinct()
         context['salons'] = Salon.objects.all()
+        salon_id = kwargs.get('pk')
+        if salon_id:
+            context['ads'] = context['ads'].filter(salon_id=salon_id)
+            context['salon'] = get_object_or_404(Salon, id=salon_id)
+        else:
+            context['salon'] = None
         return context
 
-    def get_queryset(self):
-        self.original_queryset = super().get_queryset()
-        self.sort_form.fields['fields'].choices = [
-            (field.name, field.verbose_name) for field in Ad._meta.get_fields() if field.name in ('mark',
-                                                                                                                 'model',
-                                                                                                                 'complectation',
-                                                                                                                 'price',
-                                                                                                                 'body_type',
-                                                                                                                 'year',
-                                                                                                                 'color',
-                                                                                                                 'price_nds',
-                                                                                                                 'engine_capacity',
-                                                                                                                 'run',
-                                                                                                                 'power',
-                                                                                                                 'drive',
-                                                                                                                 'datetime_created',
-                                                                                                                 'datetime_updated')
-        ]
-        return self.original_queryset
+    # def get_queryset(self):
+    #     self.original_queryset = super().get_queryset()
+    #     self.sort_form.fields['fields'].choices = [
+    #         ('mark', 'Марка'),
+    #         ('model', 'Модель',),
+    #         ('complectation', 'Комплектация',),
+    #         ('price', 'Цена',),
+    #         ('body_type', 'Кузов',),
+    #         ('year', 'Год',),
+    #         ('color', 'Цвет',),
+    #         ('price_nds', 'Цена c НДС'),
+    #         ('engine_capacity', 'Объём двигателя',),
+    #         ('run', 'Пробег',),
+    #         ('engine_capacity', 'Мощность',),
+    #         ('drive', 'Привод',),
+    #         ('datetime_created', 'Дата создания',)
+    #     ]
+    #     return self.original_queryset
 
-    def get(self, request, *args, **kwargs):
-        fields = [('Марка', 'mark'),
-                  ('Модель', 'model'),
-                  ('Комплектация', 'complectation'),
-                  ('Цена', 'price'),
-                  ('Кузов', 'body_type'),
-                  ('Год', 'year'),
-                  ('Цвет', 'color'),
-                  ('Цена c НДС', 'price_nds'),
-                  ('Объём двигателя', 'engine_capacity'),
-                  ('Пробег', 'run'),
-                  ('Мощность', 'engine_capacity'),
-                  ('Привод', 'drive'),
-                  ('Дата создания', 'datetime_created')
-                  ]
-        salon_id = kwargs.get('pk')
-        self.get_queryset()
-        # Пытаемся получить salon_id из POST-запроса
-        if salon_id:
-            self.original_queryset = self.original_queryset.filter(salon_id=salon_id)
-            salon = get_object_or_404(Salon, id=salon_id)
-            # ads = Ad.objects.filter(salon=salon)
-        return render(request, 'ads/ad_list.html', {'ads': self.original_queryset, 'fields': fields, 'salon': salon})
-        # return self.get_ajax_response(self.original_queryset)
 
     def post(self, request, *args, **kwargs):
         body_unicode = request.body.decode('utf-8')
         body_data = json.loads(body_unicode)
-
-        print(body_data)
+        self.original_queryset = super().get_queryset()
+        print(f'{body_data=}')
         self.get_queryset()
         salon_id = body_data.get('salon_id')  # Пытаемся получить salon_id из POST-запроса
-        print(salon_id)
+        print(f'{salon_id=}')
         if salon_id:
             self.original_queryset = self.original_queryset.filter(salon_id=salon_id)
         # Фильтруем объявления по выбранному салону

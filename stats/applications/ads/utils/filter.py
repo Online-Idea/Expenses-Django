@@ -42,7 +42,7 @@ class AdFilter:
                     # Если параметр имеет одно значение
                     filters[field_name] = values[0]
 
-        print(filters)
+        print(f'{filters=}')
         # Применяем фильтры к объявлениям
         filtered_ads = self.queryset.filter(**filters)
         # print(filtered_ads)

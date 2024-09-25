@@ -601,6 +601,29 @@ body {
     display: none;
 }
 
+#toggle-sort, #toggle-filter {
+    position: relative; /* Устанавливаем относительное позиционирование для кнопки */
+    overflow: hidden; /* Скрываем все, что выходит за пределы кнопки */
+    transition: border-color 0.3s ease-in-out; /* Переход для изменения цвета рамки */
+}
+
+#toggle-sort::before, #toggle-filter::before {
+    content: ""; /* Пустое содержание для псевдоэлемента */
+    position: absolute; /* Абсолютное позиционирование */
+    top: 0; /* Верхняя граница */
+    left: 0; /* Левая граница */
+    width: 100%; /* Полная ширина */
+    height: 100%; /* Полная высота */
+    border: 2px solid transparent; /* Прозрачная рамка */
+    box-sizing: border-box; /* Включаем рамку в общую ширину и высоту */
+    transition: border-color 0.3s ease-in-out; /* Переход для изменения цвета рамки */
+    border-radius: 10px;
+}
+
+#toggle-sort:hover::before , #toggle-filter:hover::before {
+    border-color: #38393b; /* Цвет рамки при наведении */
+}
+
 #id_vin_search {
     width: 50%;
     margin-bottom: 15px;

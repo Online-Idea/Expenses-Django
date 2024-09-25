@@ -120,6 +120,7 @@ venv.bak/
 venv-linux/
 *.env
 *.djcache
+venv/
 
 # Rope project settings
 .ropeproject

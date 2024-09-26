@@ -1,4 +1,3 @@
-from django.contrib.admin.models import LogEntry
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AbstractUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.contrib.auth.validators import UnicodeUsernameValidator
@@ -51,7 +50,7 @@ class Account(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['username']
 
     def __str__(self):
-        return self.name
+        return self.email
 
     class Meta:
         verbose_name = 'Аккаунт'

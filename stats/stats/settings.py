@@ -14,6 +14,8 @@ import os
 import environ
 from pathlib import Path
 
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stats.settings')
+
 
 # Быстрые переключатель настроек для живого либо локального сервера
 live_deploy = False

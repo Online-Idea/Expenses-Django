@@ -10,7 +10,7 @@ from django.views.generic import TemplateView, CreateView
 from django.conf import settings
 
 from applications.accounts.forms import ApplicationForm
-from applications.accounts.models import Application
+from applications.accounts.models import Registration
 
 EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
 
@@ -20,7 +20,7 @@ class ProfileView(LoginRequiredMixin, TemplateView):
 
 
 class RegisterView(CreateView):
-    model = Application
+    model = Registration
     form_class = ApplicationForm
     success_url = reverse_lazy('accounts_app:login')
 

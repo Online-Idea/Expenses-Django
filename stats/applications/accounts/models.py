@@ -1,13 +1,13 @@
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AbstractUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.db import models
 from django.db.models import Q
+from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from slugify import slugify
 
-from libs.services.models import BaseModel
+from applications.mainapp.models import BaseModel
 
 
 class ClientManager(BaseUserManager):
@@ -108,7 +108,7 @@ class AccountClient(BaseModel):
         verbose_name_plural = 'Аккаунты-Клиенты'
 
 
-class Application(models.Model):
+class Registration(models.Model):
     class Status(models.TextChoices):
         NEW = 'new', 'Новая'
         ACCEPTED = 'accepted', 'Принята'

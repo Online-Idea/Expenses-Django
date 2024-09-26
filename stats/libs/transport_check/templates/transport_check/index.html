@@ -1,0 +1,75 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="page-title">Проверка пропусков для грузового транспорта</h1>
+    К025МУ761
+
+    <!-- Форма ввода номеров -->
+    <form method="post" class="form-check mt-4">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="id_numbers" class="form-label">Введите номера машин</label>
+            {{ form.numbers }}
+            <small class="form-text text-muted">Введите номера, разделенные запятыми. Например: A123BC77,
+                B456CD88.</small>
+        </div>
+        <button type="submit" class="btn btn-primary btn-submit">Проверить</button>
+    </form>
+
+    {% if results %}
+    <h2 class="mt-5">Результаты проверки</h2>
+    <div class="iq-card-body mt-4">
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th scope="col">Номер авто</th>
+                <th scope="col">Тип пропуска</th>
+                <th scope="col">Серия</th>
+                <th scope="col">Дата начала</th>
+                <th scope="col">Дата окончания</th>
+                <th scope="col">Статус</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for result in results %}
+            <tr class="{% if result.статус_цвет == 'Активен' %}table-success{% else %}table-danger{% endif %}">
+                <th scope="row">
+                    <span class="number-n">{{ result.номер|slice:":6" }}</span>
+                    <div class="reg-item">
+                        <span class="region-num">{{ result.номер|slice:"6:" }}</span>
+                        <span class="russia">RUS</span>
+                    </div>
+                </th>
+                <td>{{ result.тип_пропуска }}<br></td>
+                <td>{{ result.серия }} {{ result.номер_пропуска }}</td>
+                <td>{{ result.действителен_с }}</td>
+                <td>{{ result.действителен_по }}</td>
+                <td>{{ result.статус }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+<div class="flex-column-container main-border-area">
+    <div class="flex-column-container" style="margin-left:20px;margin-right:20px"><span id="sorry"
+                                                                                        class="main-text kaspersky-font">Нам очень жаль, но запросы, поступившие с вашего IP адреса, похожи на автоматические. Введите текст с картинки, это покажет, что вы не бот, и мы продолжим работу.</span><img
+            class="captcha-img" src="https://imagen.kdp.global/kdpc/DdKrwpbczDCquNljqYgn5g">
+        <div onclick="window.location.reload()"
+             style="display:flex;justify-content:space-evenly;align-items:center;margin-top:20px;cursor:pointer">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C12.3692 18 14.4969 16.9713 15.9632 15.3331C16.4407 14.7995 16.8475 14.2019 17.169 13.555C17.4464 12.9966 17.6605 12.4015 17.8018 11.7787C17.924 11.2401 18.4597 10.9026 18.9983 11.0248C19.5369 11.147 19.8744 11.6827 19.7522 12.2213C19.5752 13.0011 19.3072 13.7464 18.96 14.445C18.5578 15.2543 18.0495 16.001 17.4535 16.6669C15.6238 18.7111 12.9618 20 10 20C4.47715 20 0 15.5228 0 10C0 4.47715 4.47715 0 10 0C12.7261 0 15.197 1.09134 17 2.8587V2C17 1.44772 17.4477 1 18 1C18.5523 1 19 1.44772 19 2V6C19 6.55229 18.5523 7 18 7H14C13.4477 7 13 6.55228 13 6C13 5.44772 13.4477 5 14 5H16.2455C14.7781 3.16951 12.5255 2 10 2Z"
+                      fill="#0D0D15"></path>
+            </svg>
+            <span id="another_code" class="title-code-text kaspersky-font">другой код</span></div>
+        <input id="image_code" class="input" name="c" type="text" size="8" placeholder="код с картинки" autofocus=""
+               autocomplete="off"><span id="ignore" class="transparent-text kaspersky-font">Используйте строчные и прописные буквы. Знаки препинания и пробелы можно игнорировать</span>
+    </div>
+    <button class="button" type="submit"><span id="enter_code"
+                                               class="submit-text kaspersky-font">Отправить и продолжить</span></button>
+    <input name="x" type="hidden" value="DdKrwpbczDCquNljqYgn5g"> <input name="u" type="hidden"
+                                                                         value="L2dydXpvdmlraS9yZWVzdHI"> <input
+        name="q" type="hidden" value=""></div>

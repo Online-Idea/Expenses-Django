@@ -1,10 +1,22 @@
+from datetime import datetime
+from random import randint
+
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-from applications.ads.models import Ad
-from libs.services.models import Mark, Model
+
+
+from applications.accounts.models import Client
+from applications.ads.models import Ad, Salon
+from applications.mainapp.models import Mark, Model
 from django.db import transaction
 import pandas as pd
 import argparse
 from typing import Union
+from faker import Faker
+from django.utils import timezone
+fake = Faker()
+
+
 
 
 def replace_nan(value: Union[float, None]) -> Union[float, None]:
@@ -64,16 +76,18 @@ class Command(BaseCommand):
 
         # транзакция для атомарности
         with transaction.atomic():
+            self.create_fake_salons(3)
+            salons = Salon.objects.all()
             # Итерация по строкам DataFrame
             for _, row in df.iterrows():
                 # Получение или создание экземпляров Mark и Model
-                mark, created = Mark.objects.get_or_create(mark=row['Марка'])
-                model, created = Model.objects.get_or_create(model=row['Модель'], mark=mark)
-
+                mark_instance, created = Mark.objects.get_or_create(name=row['Марка'])
+                model_instance, created = Model.objects.get_or_create(name=row['Модель'], mark=mark_instance)
                 # Создание экземпляра Ad с данными из файла CSV
                 ad = Ad(
-                    mark=mark,
-                    model=model,
+                    salon=salons[randint(0, len(salons) - 1)],
+                    mark=mark_instance,
+                    model=model_instance,
                     complectation=row['Комплектация'],
                     price=row['Цена'],
                     body_type=capital_name(row['Кузов']),
@@ -96,6 +110,7 @@ class Command(BaseCommand):
                     condition=capital_name(row['Состояние']),
                     run=replace_nan(row['Пробег']),
                     modification_code=row['Код модификации'],
+                    complectation_code=row['Код комплектации'],
                     color_code=row['Код цвета'],
                     interior_code=row['Код интерьера'],
                     configuration_codes=row['Коды опций комплектации'],
@@ -122,6 +137,42 @@ class Command(BaseCommand):
         Очистка всех записей из каждой таблицы в базе данных.
         """
         Ad.objects.all().delete()
-        Model.objects.all().delete()
-        Mark.objects.all().delete()
-        self.stdout.write(self.style.NOTICE("Старые данные удаленны"))
+        Salon.objects.all().delete()
+        # Model.objects.all().delete()
+        # Mark.objects.all().delete()
+        self.stdout.write(self.style.NOTICE("Старые данные удалены"))
+
+    @staticmethod
+    def create_fake_salons(amount: int) -> list:
+        email = "work@test.ru"
+        User = get_user_model()
+        client = User.objects.get(email=email)
+        # client = Client.objects.create(
+        #     name=fake.first_name(),
+        #     email=fake.email(),
+        #     slug=fake.slug(),
+        #     manager=fake.first_name(),
+        #     charge_type=fake.random_element(),
+        #     commission_size=fake.random_element(),
+        #     teleph_id=fake.random_digit(),
+        #     autoru_id=fake.random_digit(),
+        #     avito_id=fake.random_digit(),
+        #     drom_id=fake.random_digit(),
+        #     is_staff=fake.boolean(),
+        #     is_active=fake.boolean(),
+        #     autoru_name=fake.random_element(),
+        #     username=fake.first_name(),
+        #     date_joined=fake.date(),
+        # )
+        for _ in range(amount):
+            Salon.objects.create(
+                client=client,
+                name=fake.first_name(),
+                price_url=fake.url(),
+                datetime_updated=timezone.now(),
+                working_hours=fake.date(),
+                city=fake.city(),
+                address=fake.address(),
+                telephone=fake.phone_number(),
+            )
+

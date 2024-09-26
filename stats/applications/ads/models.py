@@ -6,7 +6,7 @@ from typing import Union, List, Tuple, Any
 from django.db import models
 from django.urls import reverse
 
-from libs.services.models import BaseModel, Model, Mark, BodyTypes, Colors
+from applications.mainapp.models import BaseModel, Model, Mark, BodyTypes, Colors
 from applications.accounts.models import Client
 
 
@@ -16,6 +16,7 @@ class Salon(BaseModel):
     name = models.CharField(max_length=255, verbose_name='Название')
     price_url = models.CharField(max_length=2000, verbose_name='Ссылка на прайс')
     datetime_updated = models.DateTimeField(verbose_name='Время последнего обновления')
+    working_hours = models.CharField(verbose_name='Время работы', max_length=255, null=True, blank=True)
     city = models.CharField(max_length=255, verbose_name='Город салона', default='')
     address = models.CharField(max_length=255, verbose_name='Адрес', default='')
     telephone = models.CharField(max_length=255, verbose_name='Телефон', default='')
@@ -25,49 +26,86 @@ class Ad(BaseModel):
     """
     Модель объявления.
     """
-    mark = models.ForeignKey(Mark, on_delete=models.PROTECT, related_name='ads', verbose_name='Марка')
-    model = models.ForeignKey(Model, on_delete=models.PROTECT, related_name='ads', verbose_name='Модель')
+    salon = models.ForeignKey(Salon, on_delete=models.CASCADE, null=True, blank=True,
+                              related_name='ads', verbose_name='Салон, которому принадлежит объявление')
+    mark = models.ForeignKey(Mark, on_delete=models.PROTECT,
+                             related_name='ads', verbose_name='Марка')
+    model = models.ForeignKey(Model, on_delete=models.PROTECT,
+                              related_name='ads', verbose_name='Модель')
     complectation = models.CharField(max_length=255, verbose_name='Комплектация')
     price = models.IntegerField(verbose_name='Цена')
-    body_type = models.CharField(max_length=64, choices=BodyTypes.choices, verbose_name='Кузов')
+    body_type = models.CharField(max_length=64, choices=BodyTypes.choices,
+                                 verbose_name='Кузов')
     year = models.IntegerField(verbose_name='Год выпуска')
-    color = models.CharField(max_length=64, choices=Colors.choices, verbose_name='Цвет')
-    description = models.TextField(blank=True, verbose_name='Описание')
-    original_vin = models.CharField(max_length=17, null=True, blank=True, verbose_name='Исходный VIN')
-    vin = models.CharField(max_length=17, null=True, blank=True, verbose_name='VIN')
-    photo = models.CharField(max_length=10500, blank=True, verbose_name='Ссылка на фото')
-    price_nds = models.CharField(max_length=8, null=True, blank=True, verbose_name='Цена c НДС')
-    engine_capacity = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True,
-                                          verbose_name='Объём двигателя')
+    color = models.CharField(max_length=64, choices=Colors.choices,
+                             verbose_name='Цвет')
+    description = models.TextField(blank=True,
+                                   verbose_name='Описание')
+    original_vin = models.CharField(max_length=17, null=True, blank=True,
+                                    verbose_name='Исходный VIN')
+    vin = models.CharField(max_length=17, null=True, blank=True,
+                           verbose_name='VIN')
+    photo = models.CharField(max_length=10500, blank=True,
+                             verbose_name='Ссылка на фото')
+    price_nds = models.CharField(max_length=8, null=True, blank=True,
+                                 verbose_name='Цена c НДС')
+    engine_capacity = models.DecimalField(max_digits=3, decimal_places=1,
+                                          null=True, blank=True, verbose_name='Объём двигателя')
     power = models.IntegerField(blank=True, verbose_name='Мощность')
-    engine_type = models.CharField(max_length=32, blank=True, verbose_name='Тип двигателя')
-    transmission = models.CharField(max_length=16, blank=True, verbose_name='Коробка передач')
-    drive = models.CharField(max_length=32, blank=True, verbose_name='Привод')
-    modification = models.CharField(max_length=128, blank=True, verbose_name='Модификация')
-    trade_in = models.IntegerField(null=True, blank=True, verbose_name='Трейд-ин')
-    credit = models.IntegerField(null=True, blank=True, verbose_name='Кредит')
-    insurance = models.IntegerField(null=True, blank=True, verbose_name='Страховка')
-    max_discount = models.IntegerField(null=True, blank=True, verbose_name='Максимальная скидка')
-    condition = models.CharField(max_length=16, null=True, blank=True, verbose_name='Состояние машины')
-    run = models.IntegerField(null=True, blank=True, default=0, verbose_name='Пробег')
-    modification_code = models.CharField(max_length=32, null=True, blank=True, verbose_name='Код модификации')
-    color_code = models.CharField(max_length=16, null=True, blank=True, verbose_name='Код цвета')
-    interior_code = models.CharField(max_length=16, null=True, blank=True, verbose_name='Код интерьера')
+    engine_type = models.CharField(max_length=32, blank=True,
+                                   verbose_name='Тип двигателя')
+    transmission = models.CharField(max_length=16, blank=True,
+                                    verbose_name='Коробка передач')
+    drive = models.CharField(max_length=32, blank=True,
+                             verbose_name='Привод')
+    modification = models.CharField(max_length=128, blank=True,
+                                    verbose_name='Модификация')
+    trade_in = models.IntegerField(null=True, blank=True,
+                                   verbose_name='Трейд-ин')
+    credit = models.IntegerField(null=True, blank=True,
+                                 verbose_name='Кредит')
+    insurance = models.IntegerField(null=True, blank=True,
+                                    verbose_name='Страховка')
+    max_discount = models.IntegerField(null=True, blank=True,
+                                       verbose_name='Максимальная скидка')
+    condition = models.CharField(max_length=16, null=True, blank=True,
+                                 verbose_name='Состояние машины')
+    run = models.IntegerField(null=True, blank=True, default=0,
+                              verbose_name='Пробег')
+    modification_code = models.CharField(max_length=32, null=True, blank=True,
+                                         verbose_name='Код модификации')
+    color_code = models.CharField(max_length=16, null=True, blank=True,
+                                  verbose_name='Код цвета')
+    interior_code = models.CharField(max_length=16, null=True, blank=True,
+                                     verbose_name='Код интерьера')
+    complectation_code = models.CharField(max_length=1024, null=True, blank=True,
+                                           verbose_name='Код комплектации')
     configuration_codes = models.CharField(max_length=1024, null=True, blank=True,
                                            verbose_name='Коды опций комплектации')
-    stickers_autoru = models.CharField(max_length=128, null=True, blank=True, verbose_name='Стикеры авто.ру')
-    video = models.CharField(max_length=128, null=True, blank=True, verbose_name='Ссылка на видео')
-    telephone = models.CharField(max_length=16, null=True, blank=True, verbose_name='Номер телефона')
-    availability = models.CharField(max_length=32, null=True, blank=True, verbose_name='Наличие')
-    id_model_autoru = models.IntegerField(null=True, blank=True, verbose_name='ID модели на авто.ру')
-    id_modification_autoru = models.IntegerField(null=True, blank=True, verbose_name='ID модификации на авто.ру')
-    modification_autoru = models.CharField(max_length=64, null=True, blank=True, verbose_name='Модификация авто.ру')
-    configuration_autoru = models.CharField(max_length=255, null=True, blank=True, verbose_name='Комплектация авто.ру')
-    status = models.CharField(max_length=16, null=True, blank=True, verbose_name='Статус продажи')
-    id_client = models.CharField(max_length=32, null=True, blank=True, verbose_name='ID от клиента')
+    stickers_autoru = models.CharField(max_length=128, null=True, blank=True,
+                                       verbose_name='Стикеры авто.ру')
+    video = models.CharField(max_length=128, null=True, blank=True,
+                             verbose_name='Ссылка на видео')
+    telephone = models.CharField(max_length=16, null=True, blank=True,
+                                 verbose_name='Номер телефона')
+    availability = models.CharField(max_length=32, null=True, blank=True,
+                                    verbose_name='Наличие')
+    id_model_autoru = models.IntegerField(null=True, blank=True,
+                                          verbose_name='ID модели на авто.ру')
+    id_modification_autoru = models.IntegerField(null=True, blank=True,
+                                                 verbose_name='ID модификации на авто.ру')
+    modification_autoru = models.CharField(max_length=64, null=True, blank=True,
+                                           verbose_name='Модификация авто.ру')
+    configuration_autoru = models.CharField(max_length=255, null=True, blank=True,
+                                            verbose_name='Комплектация авто.ру')
+    status = models.CharField(max_length=16, null=True, blank=True,
+                              verbose_name='Статус продажи')
+    id_client = models.CharField(max_length=32, null=True, blank=True,
+                                 verbose_name='ID от клиента')
     datetime_created = models.DateTimeField(auto_now_add=True, editable=False,
                                             verbose_name="Дата создания и размещения")
-    datetime_updated = models.DateTimeField(auto_now=True, editable=False, verbose_name="Дата обновления")
+    datetime_updated = models.DateTimeField(auto_now=True, editable=False,
+                                            verbose_name="Дата обновления")
 
     def __str__(self) -> str:
         return f'{self.mark} | {self.model} | {self.price} | {self.vin}'
@@ -213,6 +251,14 @@ class Ad(BaseModel):
         return self.availability or 'В наличии'
 
     def get_preview_video(self):
+        """
+        Возвращает URL превью-видео из ссылки на YouTube.
+
+        Ищет идентификатор видео в URL, сохраняет его и формирует URL для превью-видео.
+        Если идентификатор не найден, возвращает None.
+
+        :return: URL превью-видео или None.
+        """
         pattern = (
             r'(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})'
         )
@@ -223,6 +269,14 @@ class Ad(BaseModel):
         return None
 
     def get_sum_discount_display(self) -> int:
+        """
+        Возвращает сумму всех скидок.
+
+        Если `max_discount` содержит значение, оно возвращается.
+        В противном случае возвращается сумма значений `trade_in`, `credit` и `insurance`, если они присутствуют.
+
+        :return: Сумма всех скидок.
+        """
         return self.max_discount or sum(
             [num for num in
              [self.trade_in, self.credit, self.insurance]
@@ -230,10 +284,24 @@ class Ad(BaseModel):
         )
 
     def get_good_price(self) -> str:
+        """
+        Возвращает итоговую цену после вычета всех скидок.
+
+        Рассчитывается новая цена, исходя из оригинальной цены (`price`) и суммы всех скидок, форматируется и возвращается.
+
+        :return: Итоговая цена после вычета всех скидок.
+        """
         new_price = self.price - self.get_sum_discount_display()
         return Ad.get_formatted_price(new_price)
 
     def get_modification_display(self) -> str:
+        """
+        Возвращает описание модификации автомобиля.
+
+        Формирует строку, содержащую отформатированные значения объема двигателя, мощности, типа двигателя, трансмиссии и привода.
+
+        :return: Описание модификации автомобиля.
+        """
         return (
             f"{self.get_engine_display()} / {self.get_power_display()} / "
             f"{self.engine_type} / {self.transmission} / {self.drive}"

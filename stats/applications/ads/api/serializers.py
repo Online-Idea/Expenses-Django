@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from applications.ads.models import Ad, Mark, Model
+from applications.ads.models import Ad
+from applications.mainapp.models import Mark, Model
 
 
 class AdSerializer(serializers.ModelSerializer):
@@ -59,13 +60,13 @@ class AdSerializer(serializers.ModelSerializer):
 class MarkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Mark
-        fields = ['id', 'mark']
+        fields = ['id', 'name']
 
 
 class ModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Model
-        fields = ['id', 'model']
+        fields = ['id', 'name']
 
 
 class ModificationSerializer(serializers.ModelSerializer):

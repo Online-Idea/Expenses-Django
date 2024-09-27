@@ -257,6 +257,7 @@ class AutoruLogic:
             ad_id = offer['offer']['id']
             vin = get_nested_value(offer, 'offer.documents.vin')
             client_id = int(offer['offer']['user_ref'].split(':')[1])
+            client = Client.objects.get(autoru_id=client_id)
 
             for stat in offer['stats']:
                 if stat['sum'] == 0:
@@ -278,7 +279,7 @@ class AutoruLogic:
                 record_exists = AutoruProduct.objects.filter(ad_id=ad_id, date=date, product=product).exists()
                 if not record_exists:
                     new_records.append(AutoruProduct(
-                        ad_id=ad_id, vin=vin, client_id=client_id, date=date, mark=mark, model=model, product=product,
+                        ad_id=ad_id, vin=vin, client_id=client, date=date, mark=mark, model=model, product=product,
                         sum=sum_, count=count
                     ))
 
@@ -293,7 +294,7 @@ class AutoruLogic:
         :param autoru_id: id кабинета авто.ру
         :return:
         """
-        AutoruProduct.objects.filter(date__gte=datefrom, date__lte=dateto, client_id=autoru_id).delete()
+        AutoruProduct.objects.filter(date__gte=datefrom, date__lte=dateto, client__autoru_id=autoru_id).delete()
 
     def get_and_add_calls(self, datefrom: Union[datetime, str], dateto: Union[datetime, str], autoru_id: str) -> None:
         """
@@ -365,6 +366,7 @@ class AutoruLogic:
             finally:
                 return dt.replace(tzinfo=timezone.utc)
 
+        client = Client.objects.get(autoru_id=autoru_id)
         new_calls = []
         for call in data['calls']:
             ad_id = get_nested_value(call, 'offer.id')
@@ -383,7 +385,7 @@ class AutoruLogic:
 
             record_exists = AutoruCall.objects.filter(num_from=num_from, num_to=num_to, datetime=datetime_).exists()
             if not record_exists:
-                new_calls.append(AutoruCall(ad_id=ad_id, vin=vin, client_id=autoru_id, num_from=num_from, num_to=num_to,
+                new_calls.append(AutoruCall(ad_id=ad_id, vin=vin, client_id=client, num_from=num_from, num_to=num_to,
                                             datetime=datetime_, duration=duration, mark=mark, model=model,
                                             billing_state=billing_state, billing_cost=billing_cost))
         if new_calls:
@@ -397,7 +399,7 @@ class AutoruLogic:
         :param autoru_id: id кабинета авто.ру
         :return:
         """
-        AutoruCall.objects.filter(datetime__gte=datefrom, datetime__lte=dateto, client_id=autoru_id).delete()
+        AutoruCall.objects.filter(datetime__gte=datefrom, datetime__lte=dateto, client__autoru_id=autoru_id).delete()
 
     def get_auction_history(self, client: Client) -> Union[None, dict]:
         """
@@ -408,7 +410,7 @@ class AutoruLogic:
         """
         url = '/dealer/auction/current-state'
         response = self.request_api(url, 'GET', str(client.autoru_id)).json()
-        if not response:
+        if not response or 'states' not in response:
             return None
 
         for state in response['states']:

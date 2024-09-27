@@ -27,11 +27,6 @@ class ConverterTaskAdmin(admin.ModelAdmin):
     list_editable = ('active',)
     search_fields = ('name',)
     list_filter = ('client', 'active')
-    # fields = ('id', 'client', 'name', 'stock_source', 'stock_url', 'stock_post_host', 'stock_post_login',
-    #           'stock_post_password', 'active', 'photos_folder', 'front', 'back', 'interior', 'salon_only', 'template',
-    #           'stock_fields', 'configuration', 'price', 'notifications_email', 'import_to_onllline',
-    #           'onllline_salon_to_import', 'onllline_import_mode', 'onllline_import_options',
-    #           'onllline_import_multiply_price', 'export_to_onllline', 'export_to_websites')
     fieldsets = [
         (
             None,
@@ -57,7 +52,7 @@ class ConverterTaskAdmin(admin.ModelAdmin):
             {
                 'fields': ['import_to_onllline', 'onllline_salon_to_import', 'onllline_import_mode',
                            'onllline_import_options', 'onllline_import_multiply_price', 'export_to_onllline',
-                           'export_to_websites']
+                           'export_to_websites', 'autoru_xml']
             }
         )
     ]

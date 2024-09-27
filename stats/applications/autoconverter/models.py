@@ -121,6 +121,8 @@ class ConverterTask(BaseModel):
         max_length=255, choices=EXPORT_WEBSITES_CHOICES, blank=True, null=True, default=list),
         blank=True, null=True, help_text=HELP_TEXTS['export_to_websites'], verbose_name='Экспорт на площадки'
     )
+    # TODO настроить чтобы это поле заполнялось автоматически после экспорта на площадки
+    autoru_xml = models.URLField(null=True, blank=True, verbose_name='Авто.ру xml')
 
     def __str__(self):
         return self.name

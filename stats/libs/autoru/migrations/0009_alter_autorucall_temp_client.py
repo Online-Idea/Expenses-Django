@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='autorucall',
             name='temp_client',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.PROTECT, to='accounts.client', verbose_name='Временный id клиента'),
+            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.PROTECT, to='accounts.client', verbose_name='id клиента'),
             preserve_default=False,
         ),
     ]

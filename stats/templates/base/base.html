@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!-- Bootstrap -->
@@ -64,38 +64,44 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
     <script src="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.js"></script>
     <script src="https://cdn.datatables.net/plug-ins/1.10.15/sorting/datetime-moment.js"></script>
-  <!-- Choices -->
-  <link rel="stylesheet" href="{% static 'css/choices.min.css' %}">
-  <script src="{% static 'js/choices.min.js' %}"></script>
+    <!-- Choices -->
+    <link rel="stylesheet" href="{% static 'css/choices.min.css' %}">
+    <script src="{% static 'js/choices.min.js' %}"></script>
 
-  <link rel="stylesheet" href="{% static 'css/slider.css' %}">
-  <!-- Custom styles -->
-  <link href="{% static 'css/styles.css' %}" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-          integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
-          crossorigin="anonymous"></script>
-  <!-- JQuery -->
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
-  <!-- Custom JavaScript -->
-  <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
-  <!-- django-ajax-datatable JavaScript -->
-  <script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
-  <!-- DataTables.net JavaScript -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-  <script
-    src="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.js"></script>
-  <script src="https://cdn.datatables.net/plug-ins/1.10.15/sorting/datetime-moment.js"></script>
+    <link rel="stylesheet" href="{% static 'css/slider.css' %}">
+    <!-- Custom styles -->
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+            crossorigin="anonymous"></script>
+    <!-- JQuery -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
+    <!-- django-ajax-datatable JavaScript -->
+    <script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
+    <!-- DataTables.net JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script
+            src="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.js"></script>
+    <script src="https://cdn.datatables.net/plug-ins/1.10.15/sorting/datetime-moment.js"></script>
 
-  {% block headcontent %}
-  {% endblock %}
+    {% block headcontent %}
+    {% endblock %}
 
 </head>
 <body class="">
 <!-- loader Start -->
-{#<div id="loading">#}
-{#    <div id="loading-center">#}
-{#    </div>#}
-{#</div>#}
+<!--{#-->
+<!--<div id="loading">#}-->
+<!--    {#-->
+<!--    <div id="loading-center">#}-->
+<!--        {#-->
+<!--    </div>-->
+<!--    #}-->
+<!--    {#-->
+<!--</div>-->
+<!--#}-->
 <!-- loader END -->
 <!-- Wrapper Start -->
 
@@ -105,7 +111,7 @@
         <div class="iq-sidebar-logo d-flex justify-content-between">
             <a href="index.html">
                 <div class="iq-light-logo">
-                    <img src="{% static 'vito/images/gif-logo-mirror.gif' %}" class="img-fluid" alt="">
+                    <img src="{% static 'vito/images/logo-online-3.png' %}" class="img-fluid" alt="">
                 </div>
                 <div class="iq-dark-logo">
                     <img src="{% static 'vito/images/logo-dark.gif' %}" class="img-fluid" alt="">
@@ -143,7 +149,7 @@
                     <li>
                         <a href="#menu-level-salons" class="iq-waves-effect collapsed" data-toggle="collapse"
                            aria-expanded="false"><span class="ripple rippleEffect"
-                                                      style="width: 205px; height: 205px; top: -84.5px; left: 97.5px;"></span><i
+                                                       style="width: 205px; height: 205px; top: -84.5px; left: 97.5px;"></span><i
                                 class="ri-roadster-line"></i><span>Объявления</span><i
                                 class="ri-arrow-right-s-line iq-arrow-right"></i></a>
 
@@ -151,8 +157,8 @@
                             <li class="iq-menu-title"><i class="ri-subtract-line"></i><span>Салоны</span></li>
 
                             {% for salon in salons %}
-                                <li><a href="{% url  'ads_app:ads' salon.id %}"><i
-                                        class="fa-solid fa-file-import"></i>{{ salon.name }}</a></li>
+                            <li><a href="{% url  'ads_app:ads' salon.id %}"><i
+                                    class="fa-solid fa-file-import"></i>{{ salon.name }}</a></li>
                             {% endfor %}
 
                         </ul>
@@ -168,6 +174,19 @@
                             <li><a href="{% url 'parsed_ads' %}"><i class="fa-solid fa-file-import"></i>Выдача</a></li>
                         </ul>
                     </li>
+                    <li>
+                        <a href="#menu-level-calls" class="iq-waves-effect collapsed" data-toggle="collapse"
+                           aria-expanded="false"><i class="fa-solid fa-phone"></i><span>Звонки</span><i
+                                class="ri-arrow-right-s-line iq-arrow-right"></i></a>
+                        <ul id="menu-level-calls" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
+                            <li><a href="{% url 'calls' %}"><i class="ri-bar-chart-2-line"></i>Детально</a>
+                            </li>
+                            <li><a href="{% url 'calls_pivot' %}"><i class="fa-solid fa-file-import"></i>Сводная</a>
+                            </li>
+                            <li><a href="{% url 'calls_pivot_custom' %}"><i class="fa-solid fa-file-import"></i>Сводная-->
+                                настраиваемая</a></li>
+                        </ul>
+                    </li>
                 </ul>
             </nav>
             <div class="p-3"></div>
@@ -176,19 +195,6 @@
     <!-- TOP Nav Bar -->
     <div class="iq-top-navbar">
         <div class="iq-navbar-custom">
-            <div class="iq-sidebar-logo">
-                <div class="top-logo">
-                    <a href="index.html" class="logo">
-                        <div class="iq-light-logo">
-                            <img src="{% static 'vito/images/logo.gif' %}" class="img-fluid" alt="">
-                        </div>
-                        <div class="iq-dark-logo">
-                            <img src="{% static 'vito/images/logo-dark.gif' %}" class="img-fluid" alt="">
-                        </div>
-                        <span>vito</span>
-                    </a>
-                </div>
-            </div>
             <nav class="navbar navbar-expand-lg navbar-light p-0">
                 <div class="navbar-left">
                 </div>
@@ -206,158 +212,104 @@
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 </div>
                 {% if request.user.is_authenticated %}
-                    <ul class="navbar-list">
-                        <li>
-                            <a href="#"
-                               class="search-toggle iq-waves-effect d-flex align-items-center bg-primary rounded">
-                                <img src="{% static 'vito/images/user/1.jpg' %}" class="img-fluid rounded mr-3"
-                                     alt="user">
-                                <div class="caption">
-                                    <h6 class="mb-0 line-height text-white">{{ user.username }}</h6>
-                                    <span class="font-size-12 text-white"> {% if  user.is_active %}
+                <ul class="navbar-list">
+                    <li>
+                        <a href="#"
+                           class="search-toggle iq-waves-effect d-flex align-items-center bg-primary rounded">
+                            <img src="{% static 'vito/images/user/1.jpg' %}" class="img-fluid rounded mr-3"
+                                 alt="user">
+                            <div class="caption">
+                                <h6 class="mb-0 line-height text-white">{{ user.username }}</h6>
+                                <span class="font-size-12 text-white"> {% if  user.is_active %}
                                         online {% endif %}</span>
-                                </div>
-                            </a>
-                            <div class="iq-sub-dropdown iq-user-dropdown">
-                                <div class="iq-card shadow-none m-0">
-                                    <div class="iq-card-body p-0 ">
-                                        <div class="bg-primary p-3">
-                                            <h5 class="mb-0 text-white line-height">Hello {{ user.username }}</h5>
+                            </div>
+                        </a>
+                        <div class="iq-sub-dropdown iq-user-dropdown">
+                            <div class="iq-card shadow-none m-0">
+                                <div class="iq-card-body p-0 ">
+                                    <div class="bg-primary p-3">
+                                        <h5 class="mb-0 text-white line-height">Hello {{ user.username }}</h5>
+                                    </div>
+                                    <a href="profile.html" class="iq-sub-card iq-bg-primary-hover">
+                                        <div class="media align-items-center">
+                                            <div class="rounded iq-card-icon iq-bg-primary">
+                                                <i class="ri-file-user-line"></i>
+                                            </div>
+                                            <div class="media-body ml-3">
+                                                <h6 class="mb-0 ">Мой профиль</h6>
+                                                <p class="mb-0 font-size-12">Посмотреть детали профиля.</p>
+                                            </div>
                                         </div>
-                                        <a href="profile.html" class="iq-sub-card iq-bg-primary-hover">
-                                            <div class="media align-items-center">
-                                                <div class="rounded iq-card-icon iq-bg-primary">
-                                                    <i class="ri-file-user-line"></i>
-                                                </div>
-                                                <div class="media-body ml-3">
-                                                    <h6 class="mb-0 ">Мой профиль</h6>
-                                                    <p class="mb-0 font-size-12">Посмотреть детали профиля.</p>
-                                                </div>
+                                    </a>
+                                    <a href="profile-edit.html" class="iq-sub-card iq-bg-primary-hover">
+                                        <div class="media align-items-center">
+                                            <div class="rounded iq-card-icon iq-bg-primary">
+                                                <i class="ri-profile-line"></i>
                                             </div>
-                                        </a>
-                                        <a href="profile-edit.html" class="iq-sub-card iq-bg-primary-hover">
-                                            <div class="media align-items-center">
-                                                <div class="rounded iq-card-icon iq-bg-primary">
-                                                    <i class="ri-profile-line"></i>
-                                                </div>
-                                                <div class="media-body ml-3">
-                                                    <h6 class="mb-0 ">Настройки профиля</h6>
-                                                    <p class="mb-0 font-size-12">Изменить личные данные.</p>
-                                                </div>
+                                            <div class="media-body ml-3">
+                                                <h6 class="mb-0 ">Настройки профиля</h6>
+                                                <p class="mb-0 font-size-12">Изменить личные данные.</p>
                                             </div>
-                                        </a>
-                                        <a href="account-setting.html" class="iq-sub-card iq-bg-primary-hover">
-                                            <div class="media align-items-center">
-                                                <div class="rounded iq-card-icon iq-bg-primary">
-                                                    <i class="ri-account-box-line"></i>
-                                                </div>
-                                                <div class="media-body ml-3">
-                                                    <h6 class="mb-0 ">Настройки аккаунта</h6>
-                                                    <p class="mb-0 font-size-12">Управление параметрами учётной
-                                                        записи.</p>
-                                                </div>
-                                            </div>
-                                        </a>
-                                        <a href="privacy-setting.html" class="iq-sub-card iq-bg-primary-hover">
-                                            <div class="media align-items-center">
-                                                <div class="rounded iq-card-icon iq-bg-primary">
-                                                    <i class="ri-lock-line"></i>
-                                                </div>
-                                                <div class="media-body ml-3">
-                                                    <h6 class="mb-0 ">Настройки приватности</h6>
-                                                    <p class="mb-0 font-size-12">Контроль параметров
-                                                        конфиденциальности.</p>
-                                                </div>
-                                            </div>
-                                        </a>
-                                        <div class="d-inline-block w-100 text-center p-3">
-                                            <a class="btn btn-primary dark-btn-primary"
-                                               href="{% url 'accounts_app:logout' %}" role="button">Выйти<i
-                                                    class="ri-login-box-line ml-2"></i></a>
                                         </div>
+                                    </a>
+                                    <a href="account-setting.html" class="iq-sub-card iq-bg-primary-hover">
+                                        <div class="media align-items-center">
+                                            <div class="rounded iq-card-icon iq-bg-primary">
+                                                <i class="ri-account-box-line"></i>
+                                            </div>
+                                            <div class="media-body ml-3">
+                                                <h6 class="mb-0 ">Настройки аккаунта</h6>
+                                                <p class="mb-0 font-size-12">Управление параметрами учётной
+                                                    записи.</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <a href="privacy-setting.html" class="iq-sub-card iq-bg-primary-hover">
+                                        <div class="media align-items-center">
+                                            <div class="rounded iq-card-icon iq-bg-primary">
+                                                <i class="ri-lock-line"></i>
+                                            </div>
+                                            <div class="media-body ml-3">
+                                                <h6 class="mb-0 ">Настройки приватности</h6>
+                                                <p class="mb-0 font-size-12">Контроль параметров
+                                                    конфиденциальности.</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <div class="d-inline-block w-100 text-center p-3">
+                                        <a class="btn btn-primary dark-btn-primary"
+                                           href="{% url 'accounts_app:logout' %}" role="button">Выйти<i
+                                                class="ri-login-box-line ml-2"></i></a>
                                     </div>
                                 </div>
                             </div>
-                        </li>
-                    </ul>
+                        </div>
+                    </li>
+                </ul>
                 {% endif %}
             </nav>
         </div>
     </div>
-    <!-- TOP Nav Bar END -->
     <div id="content-page" class="content-page">
-<!--Navbar-->
-<div class="container">
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
-            aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-      <div class="navbar-nav">
-
-        {% if request.user|has_group:"admin" %}
-          <a class="nav-item nav-link" href="{% url 'home' %}">Себестоимость</a>
-          <a class="nav-item nav-link" href="{% url 'converter_manual' %}">Автоконвертер</a>
-          <a class="nav-item nav-link" href="{% url 'auction' %}">Аукцион</a>
-          <a class="nav-item nav-link" href="{% url 'ads_app:ads' %}">Объявления</a>
-          <div class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-               aria-expanded="false">
-              Конкуренты
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{% url 'comparison' %}">Сравнительная</a></li>
-              <li><a class="dropdown-item" href="{% url 'parsed_ads' %}">Выдача</a></li>
-            </ul>
-          </div>
-        {% endif %}
-
-        {% if request.user|has_group:"admin,listener,client" %}
-          <div class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-               aria-expanded="false">
-              Звонки
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{% url 'calls' %}">Детально</a></li>
-              <li><a class="dropdown-item" href="{% url 'calls_pivot' %}">Сводная</a></li>
-              <li><a class="dropdown-item" href="{% url 'calls_pivot_custom' %}">Сводная настраиваемая</a></li>
-            </ul>
-          </div>
-        {% endif %}
-
-      </div>
-      <div class="navbar-nav ms-auto">
-        {% if request.user.is_authenticated %}
-          <a class="nav-item nav-link" href="{% url 'accounts_app:profile' %}">{{ user.username }}</a>
-          <a class="nav-item nav-link" href="{% url 'accounts_app:logout' %}">Выйти</a>
-        {% endif %}
-      </div>
+        <div class="container-fluid">
+            {% block content %}
+            {% endblock %}
+        </div>
     </div>
-  </nav>
-</div>
-<!--Navbar Конец-->
 
-
-        {% block content %}
-        {% endblock %}
-    </div>
 </div>
-{% block content %}
-{% endblock %}
 
 <footer class="p-3"></footer>
 
-<script>
-  <!-- Navbar, выделяет текущую страницу активной -->
-  document.querySelectorAll(".nav-link").forEach((link) => {
-    if (link.href === window.location.href) {
-      link.classList.add("active");
-      link.setAttribute("aria-current", "page");
-    }
-  });
-</script>
+<!--    <script>-->
+<!--        &lt;!&ndash; Navbar, выделяет текущую страницу активной &ndash;&gt;-->
+<!--        document.querySelectorAll(".nav-link").forEach((link) => {-->
+<!--            if (link.href === window.location.href) {-->
+<!--                link.classList.add("active");-->
+<!--                link.setAttribute("aria-current", "page");-->
+<!--            }-->
+<!--        });-->
+<!--    </script>-->
 <!-- Optional JavaScript -->
 <!-- jQuery first, then Popper.js, then Bootstrap JS -->
 

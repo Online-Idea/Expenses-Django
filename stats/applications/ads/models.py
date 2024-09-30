@@ -7,20 +7,10 @@ from django.db import models
 from django.urls import reverse
 
 from applications.mainapp.models import BaseModel, Model, Mark, BodyTypes, Colors
-from applications.accounts.models import Client
+from applications.accounts.models import Client, Salon
 
 
 # TODO доделать эту если придут мысли что ещё добавить
-class Salon(BaseModel):
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='salons')
-    name = models.CharField(max_length=255, verbose_name='Название')
-    price_url = models.CharField(max_length=2000, verbose_name='Ссылка на прайс')
-    datetime_updated = models.DateTimeField(verbose_name='Время последнего обновления')
-    working_hours = models.CharField(verbose_name='Время работы', max_length=255, null=True, blank=True)
-    city = models.CharField(max_length=255, verbose_name='Город салона', default='')
-    address = models.CharField(max_length=255, verbose_name='Адрес', default='')
-    telephone = models.CharField(max_length=255, verbose_name='Телефон', default='')
-
 
 class Ad(BaseModel):
     """

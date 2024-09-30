@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
 
-from applications.accounts.models import Client
+from applications.accounts.models import Client, AccountClient
 from applications.ads.models import Ad, Salon
 from applications.mainapp.models import Mark, Model
 from django.db import transaction
@@ -144,9 +144,12 @@ class Command(BaseCommand):
 
     @staticmethod
     def create_fake_salons(amount: int) -> list:
-        email = "work@test.ru"
+        email = "admin@test.ru"
         User = get_user_model()
-        client = User.objects.get(email=email)
+        account = User.objects.get(email=email)
+        client = Client.objects.get(slug='admin')
+        account_client = AccountClient.objects.create(account=account, client=client)
+
         # client = Client.objects.create(
         #     name=fake.first_name(),
         #     email=fake.email(),
@@ -164,6 +167,7 @@ class Command(BaseCommand):
         #     username=fake.first_name(),
         #     date_joined=fake.date(),
         # )
+
         for _ in range(amount):
             Salon.objects.create(
                 client=client,

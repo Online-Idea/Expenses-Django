@@ -544,7 +544,7 @@ def update_autoru_catalog() -> None:
         mark_name = mark.get('name')
         already_in_new_marks = any(obj.autoru == mark_name for obj in new_marks)
         if not my_marks.filter(autoru=mark_name).exists() and not already_in_new_marks:
-            new_marks.append(Mark(mark=mark_name, teleph=mark_name, autoru=mark_name, avito=mark_name,
+            new_marks.append(Mark(name=mark_name, teleph=mark_name, autoru=mark_name, avito=mark_name,
                                   drom=mark_name, human_name=mark_name))
     Mark.objects.bulk_create(new_marks)
     my_marks = Mark.objects.all()
@@ -558,7 +558,7 @@ def update_autoru_catalog() -> None:
             already_in_new_models = any(obj.autoru == model_name and obj.mark.autoru == mark_name
                                         for obj in new_models)
             if not my_models.filter(mark__autoru=mark_name, autoru=model_name).exists() and not already_in_new_models:
-                new_models.append(Model(mark=my_marks.filter(autoru=mark_name)[0], model=model_name, teleph=model_name,
+                new_models.append(Model(mark=my_marks.filter(autoru=mark_name)[0], name=model_name, teleph=model_name,
                                         autoru=model_name, avito=model_name, drom=model_name, human_name=model_name))
     Model.objects.bulk_create(new_models)
     my_models = Model.objects.all()

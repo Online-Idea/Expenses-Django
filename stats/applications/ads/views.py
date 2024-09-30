@@ -61,7 +61,6 @@ class AdListView(ListView):
     #     ]
     #     return self.original_queryset
 
-
     def post(self, request, *args, **kwargs):
         body_unicode = request.body.decode('utf-8')
         body_data = json.loads(body_unicode)

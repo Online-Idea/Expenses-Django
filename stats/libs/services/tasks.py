@@ -7,6 +7,7 @@ from applications.accounts.models import Client
 from applications.auction.auction import get_and_add_auction_history
 from applications.autoconverter.converter import get_converter_tasks, get_price, avilon_custom_task, \
     get_price_without_converter
+from applications.autoconverter.models import ConverterTask
 from applications.calls.calltouch import CalltouchLogic
 from applications.calls.models import Call
 from applications.calls.primatel import PrimatelLogic
@@ -109,10 +110,18 @@ def auction_history(client_ids=None):
 
 
 @shared_task
-def post_autoru_xml(client_id: int, section: str, price_url: str,
-                    delete_sale: bool = True, leave_services: bool = True,
+def post_autoru_xml(task_id: int, section: str, delete_sale: bool = True, leave_services: bool = True,
                     leave_added_images: bool = False, is_active: bool = True):
-    response = post_feeds_task(client_id, section, price_url, delete_sale, leave_services, leave_added_images, is_active)
+    # response = post_feeds_task(client_id, section, price_url, delete_sale, leave_services, leave_added_images, is_active)
+    task = ConverterTask.objects.get(id=task_id)
+    autoru_id = str(task.client.autoru_id)
+    price_url = task.autoru_xml
+    logic = AutoruLogic()
+    response = logic.post_feeds_task(autoru_id=autoru_id, section=section, price_url=price_url, delete_sale=delete_sale,
+                                     leave_services=leave_services, leave_added_images=leave_added_images,
+                                     is_active=is_active)
+    print(response)
+    return response
 
 
 @shared_task

@@ -6,7 +6,7 @@ import urllib3
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import *
+from libs.teleph.models import *
 
 TELEPH_ENDPOINT = 'https://151.248.121.33:9000/api/calls'
 TELEPH_TOKEN = {

@@ -69,11 +69,11 @@ def calculate_netcost(datefrom: datetime, dateto: datetime, clients: List[str]) 
                               .filter(id__in=clients)
                               .values('id', 'name', 'charge_type', 'commission_size', 'autoru_id', 'teleph_id'))
     autoru_calls_df = pd.DataFrame(AutoruCall.objects
-                                   .values('client_id')
+                                   .values('client__autoru_id')
                                    .filter(datetime__gte=datefrom, datetime__lte=dateto)
                                    .annotate(calls_sum=Sum('billing_cost')))
     autoru_products_df = pd.DataFrame(AutoruProduct.objects
-                                      .values('client_id')
+                                      .values('client__autoru_id')
                                       .filter(date__gte=datefrom, date__lte=dateto)
                                       .annotate(products_sum=Sum('sum')))
     teleph_calls_df = pd.DataFrame(TelephCall.objects
@@ -84,8 +84,8 @@ def calculate_netcost(datefrom: datetime, dateto: datetime, clients: List[str]) 
                                    .annotate(teleph_calls_sum=Sum('call_price'), teleph_target=Count('target')))
 
     # Объединяю все датафреймы в один
-    merged_df = pd.merge(clients_df, autoru_calls_df, left_on='autoru_id', right_on='client_id', how='left', suffixes=('', '_autoru_calls'))
-    merged_df = pd.merge(merged_df, autoru_products_df, left_on='autoru_id', right_on='client_id', how='left', suffixes=('', '_autoru_products'))
+    merged_df = pd.merge(clients_df, autoru_calls_df, left_on='autoru_id', right_on='client__autoru_id', how='left', suffixes=('', '_autoru_calls'))
+    merged_df = pd.merge(merged_df, autoru_products_df, left_on='autoru_id', right_on='client__autoru_id', how='left', suffixes=('', '_autoru_products'))
     merged_df = pd.merge(merged_df, teleph_calls_df, left_on='id', right_on='client_id', how='left', suffixes=('', '_teleph_calls'))
 
     merged_df = merged_df.fillna(0)

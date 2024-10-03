@@ -46,7 +46,8 @@ Variable
   --iq-light-danger: #FF292940;   
   --iq-light-warning: #FAD02E40;  
   --iq-light-info: #00CFDE40;    
-  --iq-light-dark: #f0efef;   /* pending  not give*/
+  --iq-light-dark: #f0efef;
+  --iq-blue-light: #1e9bcb; /* pending  not give*/
   --iq-cobalt-blue: #3f79f1; 
   --iq-spring-green: #1be1b3; 
   --iq-amber: #f4b72a;   

@@ -11,8 +11,10 @@
                     </div>
                     <div class="col-md-8">
                         <div class="card-body">
-                            <div class="card-title"><a href="{{ ad.get_absolute_url }}" target="_blank"
-                                                       rel="noopener">{{ ad.mark }} {{ ad.model }}</a>
+                            <div class="card-title">
+                                <a href="{{ ad.get_absolute_url }}" target="_blank"
+                                   rel="noopener">{{ ad.mark }} {{ ad.model }}
+                                </a>
                                 <div class="price-container">
                                     <div class="card-price">
                                         <span class="detail-price">{{ ad.get_price_display }}</span>
@@ -51,7 +53,8 @@
                                                checked="">
                                         <label class="custom-control-label" for="customCheck-drom-{{ ad.id }}"><i>
                                             <img class="checkbox-logo" src="{% static 'img/icon-drom-3.jpg' %}">
-                                        </i>drom.ru</label>
+                                            </i>drom.ru
+                                        </label>
                                     </div>
                                     <div class="custom-control custom-checkbox checkbox-icon custom-control-inline">
                                         <input type="checkbox" class="custom-control-input"
@@ -59,18 +62,19 @@
                                                checked="">
                                         <label class="custom-control-label" for="customCheck-autoru-{{ ad.id }}"><i>
                                             <img class="checkbox-logo" src="{% static 'img/icon-autoru-3.jpg' %}">
-                                        </i>auto.ru</label>
+                                            </i>auto.ru
+                                        </label>
                                     </div>
-                                                                        <div class="custom-control custom-checkbox checkbox-icon custom-control-inline">
+                                    <div class="custom-control custom-checkbox checkbox-icon custom-control-inline">
                                         <input type="checkbox" class="custom-control-input" id="customCheck-avito-{{ ad.id }}"
                                                checked="">
                                         <label class="custom-control-label" for="customCheck-avito-{{ ad.id }}"><i>
                                             <img class="checkbox-logo" src="{% static 'img/icon-avito-3.jpg' %}">
-                                        </i>avito.ru</label>
+                                            </i>avito.ru
+                                        </label>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </div>

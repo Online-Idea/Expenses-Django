@@ -4,9 +4,20 @@ from .models import Salon
 
 @admin.register(Salon)
 class SalonAdmin(admin.ModelAdmin):
-    list_display = ('name', 'client', 'city', 'address', 'telephone', 'datetime_updated',
-                    'price_url')  # поля, которые будут отображаться в списке
-    list_filter = ('city',)  # поля, по которым можно фильтровать в списке
-    search_fields = ('name', 'city', 'address', 'telephone')  # поля, по которым можно искать в списке
-    date_hierarchy = 'datetime_updated'  # позволяет фильтровать по дате
-    ordering = ('datetime_updated',)  # порядок сортировки
+    """
+    Конфигурация административной панели для модели Salon.
+    """
+    # Поля, которые будут отображаться в списке объектов в админке
+    list_display = ('name', 'client', 'city', 'address', 'telephone', 'datetime_updated', 'price_url')
+
+    # Поля, по которым можно фильтровать список объектов
+    list_filter = ('city',)
+
+    # Поля, по которым можно осуществлять поиск в админке
+    search_fields = ('name', 'city', 'address', 'telephone')
+
+    # Позволяет фильтровать записи по дате
+    date_hierarchy = 'datetime_updated'
+
+    # Поля, по которым будет происходить сортировка по умолчанию
+    ordering = ('datetime_updated',)

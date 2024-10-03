@@ -14,23 +14,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+    <link rel="stylesheet" href="{% static 'css/slider.css' %}">
+
+    <!-- Choices plugin CSS-->
+    <link rel="stylesheet" href="{% static 'css/choices.min.css' %}">
+
     <!-- Favicon -->
     <link rel="shortcut icon" href="{% static 'img/table-icon.png' %}">
+
     <!-- DataTables.net -->
     <!-- Downloader options: DataTables, FixedColumns, FixedHeader, Responsive, RowGroup, Select, Minify, Concatenate -->
-
     <!-- django-ajax-datatable CSS -->
     <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet"/>
-
     <!-- DataTables.net CSS -->
     <link href="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.css"
           rel="stylesheet">
 
-    <!-- django-ajax-datatable CSS -->
-    <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet"/>
-
-    <link rel="stylesheet" href="{% static 'css/choices.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/slider.css' %}">
 
     <!-- VITO -->
     <!-- Favicon -->
@@ -50,6 +49,7 @@
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
     <link href="{% static 'css/transport_check.css' %}" rel="stylesheet">
 
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
             crossorigin="anonymous"></script>
@@ -58,33 +58,19 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
     <!-- Custom JavaScript -->
     <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
+    <!-- Choices plugin JS -->
+    <script src="{% static 'js/choices.min.js' %}"></script>
     <!-- django-ajax-datatable JavaScript -->
     <script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
     <!-- DataTables.net JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
     <script src="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.js"></script>
     <script src="https://cdn.datatables.net/plug-ins/1.10.15/sorting/datetime-moment.js"></script>
-    <!-- Choices -->
-    <link rel="stylesheet" href="{% static 'css/choices.min.css' %}">
-    <script src="{% static 'js/choices.min.js' %}"></script>
 
-    <link rel="stylesheet" href="{% static 'css/slider.css' %}">
-    <!-- Custom styles -->
-    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
             crossorigin="anonymous"></script>
-    <!-- JQuery -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
-    <!-- Custom JavaScript -->
-    <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
-    <!-- django-ajax-datatable JavaScript -->
-    <script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
-    <!-- DataTables.net JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-    <script
-            src="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.js"></script>
-    <script src="https://cdn.datatables.net/plug-ins/1.10.15/sorting/datetime-moment.js"></script>
 
     {% block headcontent %}
     {% endblock %}
@@ -134,31 +120,36 @@
             <nav class="iq-sidebar-menu">
                 <ul id="iq-sidebar-toggle" class="iq-menu">
                     <li class="iq-menu-title"><i class="ri-subtract-line"></i><span>Дом</span></li>
+
                     <li class="active">
                         <a href="{% static 'vito/index.html' %}" class="iq-waves-effect"><i
                                 class="ri-home-4-line"></i><span>Шаблон</span></a>
                     </li>
+
                     <li class="iq-menu-title"><i class="ri-subtract-line"></i><span>Доступные Сервисы</span></li>
 
                     <li><a href="{% url 'home' %}" class="iq-waves-effect" aria-expanded="false"><i
                             class="ri-exchange-dollar-line"></i><span>Себестоимость</span></a></li>
+
                     <li><a href="{% url 'converter_manual' %}" class="iq-waves-effect" aria-expanded="false"><i
                             class="ri-file-excel-2-line"></i><span>Автоконвертер</span></a></li>
+
                     <li><a href="{% url 'auction' %}" class="iq-waves-effect" aria-expanded="false"><i
                             class="ri-funds-line"></i><span>Аукцион</span></a></li>
-                    <li>
-                        <a href="#menu-level-salons" class="iq-waves-effect collapsed" data-toggle="collapse"
-                           aria-expanded="false"><span class="ripple rippleEffect"
-                                                       style="width: 205px; height: 205px; top: -84.5px; left: 97.5px;"></span><i
-                                class="ri-roadster-line"></i><span>Объявления</span><i
-                                class="ri-arrow-right-s-line iq-arrow-right"></i></a>
 
+                    <li><a href="#menu-level-salons" class="iq-waves-effect collapsed" data-toggle="collapse"
+                           aria-expanded="false">
+                        <i class="ri-roadster-line"></i><span>Объявления</span>
+                        <i class="ri-arrow-right-s-line iq-arrow-right"></i>
+                    </a>
                         <ul id="menu-level-salons" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
                             <li class="iq-menu-title"><i class="ri-subtract-line"></i><span>Салоны</span></li>
 
                             {% for salon in salons %}
-                            <li><a href="{% url  'ads_app:ads' salon.id %}"><i
-                                    class="fa-solid fa-file-import"></i>{{ salon.name }}</a></li>
+                            <li>
+                                <a href="{% url  'ads_app:ads' salon.id %}"><i
+                                        class="fa-solid fa-file-import"></i>{{ salon.name }}</a>
+                            </li>
                             {% endfor %}
 
                         </ul>
@@ -167,24 +158,32 @@
                     <li>
                         <a href="#menu-level" class="iq-waves-effect collapsed" data-toggle="collapse"
                            aria-expanded="false"><i class="fa-regular fa-handshake"></i><span>Конкуренты</span><i
-                                class="ri-arrow-right-s-line iq-arrow-right"></i></a>
+                                class="ri-arrow-right-s-line iq-arrow-right"></i>
+                        </a>
                         <ul id="menu-level" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
-                            <li><a href="{% url 'comparison' %}"><i class="ri-bar-chart-2-line"></i>Сравнительная</a>
+                            <li>
+                                <a href="{% url 'comparison' %}"><i class="ri-bar-chart-2-line"></i>Сравнительная</a>
                             </li>
-                            <li><a href="{% url 'parsed_ads' %}"><i class="fa-solid fa-file-import"></i>Выдача</a></li>
+                            <li>
+                                <a href="{% url 'parsed_ads' %}"><i class="fa-solid fa-file-import"></i>Выдача</a>
+                            </li>
                         </ul>
                     </li>
                     <li>
                         <a href="#menu-level-calls" class="iq-waves-effect collapsed" data-toggle="collapse"
                            aria-expanded="false"><i class="fa-solid fa-phone"></i><span>Звонки</span><i
-                                class="ri-arrow-right-s-line iq-arrow-right"></i></a>
+                                class="ri-arrow-right-s-line iq-arrow-right"></i>
+                        </a>
                         <ul id="menu-level-calls" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
-                            <li><a href="{% url 'calls' %}"><i class="ri-bar-chart-2-line"></i>Детально</a>
+                            <li>
+                                <a href="{% url 'calls' %}"><i class="ri-bar-chart-2-line"></i>Детально</a>
                             </li>
-                            <li><a href="{% url 'calls_pivot' %}"><i class="fa-solid fa-file-import"></i>Сводная</a>
+                            <li>
+                                <a href="{% url 'calls_pivot' %}"><i class="fa-solid fa-file-import"></i>Сводная</a>
                             </li>
-                            <li><a href="{% url 'calls_pivot_custom' %}"><i class="fa-solid fa-file-import"></i>Сводная-->
-                                настраиваемая</a></li>
+                            <li>
+                                <a href="{% url 'calls_pivot_custom' %}"><i class="fa-solid fa-file-import"></i>Сводная-->
+                                    настраиваемая</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -230,56 +229,21 @@
                                     <div class="bg-primary p-3">
                                         <h5 class="mb-0 text-white line-height">Hello {{ user.username }}</h5>
                                     </div>
-                                    <a href="profile.html" class="iq-sub-card iq-bg-primary-hover">
-                                        <div class="media align-items-center">
-                                            <div class="rounded iq-card-icon iq-bg-primary">
-                                                <i class="ri-file-user-line"></i>
-                                            </div>
-                                            <div class="media-body ml-3">
-                                                <h6 class="mb-0 ">Мой профиль</h6>
-                                                <p class="mb-0 font-size-12">Посмотреть детали профиля.</p>
-                                            </div>
-                                        </div>
-                                    </a>
-                                    <a href="profile-edit.html" class="iq-sub-card iq-bg-primary-hover">
-                                        <div class="media align-items-center">
-                                            <div class="rounded iq-card-icon iq-bg-primary">
-                                                <i class="ri-profile-line"></i>
-                                            </div>
-                                            <div class="media-body ml-3">
-                                                <h6 class="mb-0 ">Настройки профиля</h6>
-                                                <p class="mb-0 font-size-12">Изменить личные данные.</p>
-                                            </div>
-                                        </div>
-                                    </a>
-                                    <a href="account-setting.html" class="iq-sub-card iq-bg-primary-hover">
-                                        <div class="media align-items-center">
-                                            <div class="rounded iq-card-icon iq-bg-primary">
-                                                <i class="ri-account-box-line"></i>
-                                            </div>
-                                            <div class="media-body ml-3">
-                                                <h6 class="mb-0 ">Настройки аккаунта</h6>
-                                                <p class="mb-0 font-size-12">Управление параметрами учётной
-                                                    записи.</p>
-                                            </div>
-                                        </div>
-                                    </a>
-                                    <a href="privacy-setting.html" class="iq-sub-card iq-bg-primary-hover">
-                                        <div class="media align-items-center">
-                                            <div class="rounded iq-card-icon iq-bg-primary">
-                                                <i class="ri-lock-line"></i>
-                                            </div>
-                                            <div class="media-body ml-3">
-                                                <h6 class="mb-0 ">Настройки приватности</h6>
-                                                <p class="mb-0 font-size-12">Контроль параметров
-                                                    конфиденциальности.</p>
-                                            </div>
-                                        </div>
-                                    </a>
                                     <div class="d-inline-block w-100 text-center p-3">
+                                        <a href="{% url  'accounts_app:profile' %}" class="iq-sub-card iq-bg-primary-hover">
+                                            <div class="media align-items-center">
+                                               <div class="rounded iq-card-icon iq-bg-primary">
+                                                  <i class="ri-file-user-line"></i>
+                                               </div>
+                                               <div class="media-body ml-3">
+                                                  <h6 class="mb-0 ">Мой профиль</h6>
+                                               </div>
+                                            </div>
+                                        </a>
                                         <a class="btn btn-primary dark-btn-primary"
                                            href="{% url 'accounts_app:logout' %}" role="button">Выйти<i
-                                                class="ri-login-box-line ml-2"></i></a>
+                                                class="ri-login-box-line ml-2"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -301,17 +265,6 @@
 
 <footer class="p-3"></footer>
 
-<!--    <script>-->
-<!--        &lt;!&ndash; Navbar, выделяет текущую страницу активной &ndash;&gt;-->
-<!--        document.querySelectorAll(".nav-link").forEach((link) => {-->
-<!--            if (link.href === window.location.href) {-->
-<!--                link.classList.add("active");-->
-<!--                link.setAttribute("aria-current", "page");-->
-<!--            }-->
-<!--        });-->
-<!--    </script>-->
-<!-- Optional JavaScript -->
-<!-- jQuery first, then Popper.js, then Bootstrap JS -->
 
 <script src="{% static 'vito/js/popper.min.js' %}"></script>
 <script src="{% static 'vito/js/bootstrap.min.js' %}"></script>

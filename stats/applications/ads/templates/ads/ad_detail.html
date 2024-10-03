@@ -2,175 +2,171 @@
 {% load static %}
 
 {% block content %}
-    <div class="container mt-5">
-        <div class="container">
-            <div class="detail-page">
-                <!-- Левая часть - галерея -->
-                <div class="left-container">
-                    <div class="card-slider">
-                        <!-- Вертикальный слайдер для превью -->
-                        <div class="slider-nav card-slider__nav swiper-container">
-                            <div class="swiper-wrapper">
-                                <!-- слайды -->
-                                {% if ad.video %}
-                                <div class="swiper-slide slider__item">
-                                    
-                                    <a class="video-container"
-                                       href="{{ ad.video }}" target="_blank">
-                                        <img class="rounded" src="{{ ad.get_preview_video }}"
-                                             alt="youtube preview video">
-                                        <img class="youtube-logo" src="{% static 'img/youtube_logo.svg' %}"
-                                             alt="youtube logo">
-                                    </a>
-                                   
-                                </div>
-                            {% endif %}
-                                {% for photo in ad.get_photos %}
-                                    <div class="swiper-slide slider__item">
-                                        <img class="rounded" src="{{ photo }}" alt="">
-                                    </div>
-                                {% endfor %}
-                            </div>
-                           <!-- вертикальный скролл -->
-                            <div class="swiper-scrollbar"></div>
-                        </div>
+<div class="detail-page">
+    <!-- Левая часть - галерея -->
+    <div class="left-container">
+        <div class="card-slider">
+            <!-- Вертикальный слайдер для превью -->
+            <div class="slider-nav card-slider__nav swiper-container">
+                <div class="swiper-wrapper">
+                    <!-- слайды -->
+                    {% if ad.video %}
+                    <div class="swiper-slide slider__item">
 
-                        <!-- Горизонтальный слайдер для дополнительных фото -->
-                        <div class="slider-block swiper-container">
-                            <div class="swiper-wrapper">
-                                {% for index, photo in photos_enum %}
-                                    <div class="swiper-slide">
-                                        <a href="{{ photo }}" data-lightbox="photos"
-                                           data-title="{{ ad.mark }} {{ ad.model }}">
-                                            <img class="rounded" src="{{ photo }}" alt="{{ ad }}">
-                                        </a>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ad-info left-line">
-                        <div class="ad-info__fields line_vert">
-                            <span class="field-name">Дата размещения</span>
-                            <span>{{ ad.datetime_created|date:"d M Y" }}</span>
-                            <span class="field-name">Дата обновления</span>
-                            <span>{{ ad.datetime_updated|date:"d M H:i" }}</span>
-                            <span class="field-name">Номер телефона</span> <span>{{ ad.telephone }}</span>
-                            <span class="field-name indent">ID от клиента</span> <span>{{ ad.id_client }}</span>
+                        <a class="video-container"
+                           href="{{ ad.video }}" target="_blank">
+                            <img class="rounded" src="{{ ad.get_preview_video }}"
+                                 alt="youtube preview video">
+                            <img class="youtube-logo" src="{% static 'img/youtube_logo.svg' %}"
+                                 alt="youtube logo">
+                        </a>
 
-                        </div>
-                        <div class="ad-info__fields">
-                            <span class="field-name">Трейд-ИН</span> <span>{{ ad.get_trade_in_display }}</span>
-                            <span class="field-name">Кредит</span> <span>{{ ad.get_credit_display }}</span>
-                            <span class="field-name">Страховка</span> <span>{{ ad.get_insurance_display }}</span>
-                            <span class="field-name indent">Максималка</span>
-                            <span>{{ ad.get_max_discount_display }}</span>
-                        </div>
                     </div>
-                    <hr class="bg-primary" style="height: 2px;">
-                    <div class="description">
-                        <span class="field-name" style="opacity: 0.7;">Описание:</span>
-                        <textarea readonly class="form-control">{{ ad.description }}</textarea>
+                    {% endif %}
+                    {% for photo in ad.get_photos %}
+                    <div class="swiper-slide slider__item">
+                        <img class="rounded" src="{{ photo }}" alt="">
                     </div>
+                    {% endfor %}
                 </div>
+                <!-- вертикальный скролл -->
+                <div class="swiper-scrollbar"></div>
+            </div>
 
-                <!-- Правая часть - подробная информация об авто -->
-                <div class="ad-info">
-{#                    <span class="detail-datetime-updated">{{ ad.datetime_updated|date:"Y-m-d H:i" }}</span>#}
-                    <div class="title-container">
-                        <h1 class="detail-title">{{ ad.mark }} <br> {{ ad.model }}</h1>
-                        <div class="price-container">
-                            <div class="card-price">
-                                <span class="detail-price">{{ ad.get_price_display }}</span>
-                                {% if ad.get_price_nds_display == "Да" %}
-                                    <span class="sticker nds-yes">с НДС</span>
-                                {% elif ad.get_price_nds_display == "Нет" %}
-                                    <span class="sticker nds-no">без НДС</span>
-                                {% endif %}
-                            </div>
-                            <div class="good">
-                                <span class="good-price">{{ ad.get_good_price }}</span>
-                                <span class="sticker discount">минимальная</span>
-                            </div>
-                        </div>
+            <!-- Горизонтальный слайдер для дополнительных фото -->
+            <div class="slider-block swiper-container">
+                <div class="swiper-wrapper">
+                    {% for index, photo in photos_enum %}
+                    <div class="swiper-slide">
+                        <a href="{{ photo }}" data-lightbox="photos"
+                           data-title="{{ ad.mark }} {{ ad.model }}">
+                            <img class="rounded" src="{{ photo }}" alt="{{ ad }}">
+                        </a>
                     </div>
-                    <div class="ad-info__fields">
-                        <div class="field-name">
-                            <div>VIN</div>
-                            <div>Исходный VIN</div>
-                            <hr>
-                            <div>Комплектация</div>
-                            <div>Комплектации (авто.ру)</div>
-                            <div>Стикеры (авто.ру)</div>
-                            <hr>
-                            <div>Кузов</div>
-                            <div>Год выпуска</div>
-                            <hr>
-                            <div class="expand-trigger collapsed">Модификация</div>
-                            <div class="modification-field hidden">Объём двигателя</div>
-                            <div class="modification-field hidden">Мощность</div>
-                            <div class="modification-field hidden">Тип двигателя</div>
-                            <div class="modification-field hidden">Коробка передач</div>
-                            <div class="modification-field hidden">Привод</div>
-                            <hr>
-                            <div>Цвет</div>
-                            <hr>
-                            <div>Наличие</div>
-                            <div>Состояние</div>
-                            <div>Пробег</div>
-                            <hr>
-                            <div>Код модификации</div>
-                            <div>Код цвета</div>
-                            <div>Код интерьера</div>
-                        </div>
-                        <div class="field-value">
-                            <div>{{ ad.vin }}</div>
-                            <div>{{ ad.original_vin }}</div>
-                            <hr>
-                            <div>{{ ad.complectation }}</div>
-                            <div>{{ ad.configuration_autoru }}</div>
-                            <div>{{ ad.stickers_autoru }}</div>
-                            <hr>
-                            <div>{{ ad.body_type }}</div>
-                            <div>{{ ad.year }}</div>
-                            <hr>
-                            <div class="modification-preview">{{ ad.get_modification_display }}</div>
-                            <div class="modification-field hidden">{{ ad.get_engine_display }}</div>
-                            <div class="modification-field hidden">{{ ad.get_power_display }}</div>
-                            <div class="modification-field hidden">{{ ad.engine_type }}</div>
-                            <div class="modification-field hidden">{{ ad.transmission }}</div>
-                            <div class="modification-field hidden">{{ ad.drive }}</div>
-                            <hr>
-                            <div>{{ ad.color }}</div>
-                            <hr>
-                            <div>{{ ad.get_availability_display }}</div>
-                            <div>{{ ad.condition }}</div>
-                            <div>{{ ad.run }} км</div>
-                            <hr>
-                            <div>{{ ad.modification_code }}</div>
-                            <div>{{ ad.color_code }}</div>
-                            <div>{{ ad.interior_code }}</div>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="references-trigger collapsed" style="opacity: 0.7;">Ссылки на фото</div>
-                    <div class="references-photos hidden">
-                        <textarea class="form-control" readonly>{{ ad.photo }}</textarea>
-                    </div>
-                    <hr>
-                    <div class="codes-trigger" style="opacity: 0.7;">Коды опций комплектации</div>
-                    <div class="description-codes hidden">
-                        <textarea class="form-control" readonly>{{ ad.configuration_codes }}</textarea>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
+        <div class="ad-info left-line">
+            <div class="ad-info__fields line_vert">
+                <span class="field-name">Дата размещения</span>
+                <span>{{ ad.datetime_created|date:"d M Y" }}</span>
+                <span class="field-name">Дата обновления</span>
+                <span>{{ ad.datetime_updated|date:"d M H:i" }}</span>
+                <span class="field-name">Номер телефона</span> <span>{{ ad.telephone }}</span>
+                <span class="field-name indent">ID от клиента</span> <span>{{ ad.id_client }}</span>
+
+            </div>
+            <div class="ad-info__fields">
+                <span class="field-name">Трейд-ИН</span> <span>{{ ad.get_trade_in_display }}</span>
+                <span class="field-name">Кредит</span> <span>{{ ad.get_credit_display }}</span>
+                <span class="field-name">Страховка</span> <span>{{ ad.get_insurance_display }}</span>
+                <span class="field-name indent">Максималка</span>
+                <span>{{ ad.get_max_discount_display }}</span>
+            </div>
+        </div>
+        <hr class="bg-primary" style="height: 2px;">
+        <div class="description">
+            <span class="field-name" style="opacity: 0.7;">Описание:</span>
+            <textarea readonly class="form-control">{{ ad.description }}</textarea>
+        </div>
     </div>
+
+    <!-- Правая часть - подробная информация об авто -->
+    <div class="ad-info">
+        {# <span class="detail-datetime-updated">{{ ad.datetime_updated|date:"Y-m-d H:i" }}</span>#}
+        <div class="title-container">
+            <h1 class="detail-title">{{ ad.mark }} <br> {{ ad.model }}</h1>
+            <div class="price-container">
+                <div class="card-price">
+                    <span class="detail-price">{{ ad.get_price_display }}</span>
+                    {% if ad.get_price_nds_display == "Да" %}
+                    <span class="sticker nds-yes">с НДС</span>
+                    {% elif ad.get_price_nds_display == "Нет" %}
+                    <span class="sticker nds-no">без НДС</span>
+                    {% endif %}
+                </div>
+                <div class="good">
+                    <span class="good-price">{{ ad.get_good_price }}</span>
+                    <span class="sticker discount">минимальная</span>
+                </div>
+            </div>
+        </div>
+        <div class="ad-info__fields">
+            <div class="field-name">
+                <div>VIN</div>
+                <div>Исходный VIN</div>
+                <hr>
+                <div>Комплектация</div>
+                <div>Комплектации (авто.ру)</div>
+                <div>Стикеры (авто.ру)</div>
+                <hr>
+                <div>Кузов</div>
+                <div>Год выпуска</div>
+                <hr>
+                <div class="expand-trigger collapsed">Модификация</div>
+                <div class="modification-field hidden">Объём двигателя</div>
+                <div class="modification-field hidden">Мощность</div>
+                <div class="modification-field hidden">Тип двигателя</div>
+                <div class="modification-field hidden">Коробка передач</div>
+                <div class="modification-field hidden">Привод</div>
+                <hr>
+                <div>Цвет</div>
+                <hr>
+                <div>Наличие</div>
+                <div>Состояние</div>
+                <div>Пробег</div>
+                <hr>
+                <div>Код модификации</div>
+                <div>Код цвета</div>
+                <div>Код интерьера</div>
+            </div>
+            <div class="field-value">
+                <div>{{ ad.vin }}</div>
+                <div>{{ ad.original_vin }}</div>
+                <hr>
+                <div>{{ ad.complectation }}</div>
+                <div>{{ ad.configuration_autoru }}</div>
+                <div>{{ ad.stickers_autoru }}</div>
+                <hr>
+                <div>{{ ad.body_type }}</div>
+                <div>{{ ad.year }}</div>
+                <hr>
+                <div class="modification-preview">{{ ad.get_modification_display }}</div>
+                <div class="modification-field hidden">{{ ad.get_engine_display }}</div>
+                <div class="modification-field hidden">{{ ad.get_power_display }}</div>
+                <div class="modification-field hidden">{{ ad.engine_type }}</div>
+                <div class="modification-field hidden">{{ ad.transmission }}</div>
+                <div class="modification-field hidden">{{ ad.drive }}</div>
+                <hr>
+                <div>{{ ad.color }}</div>
+                <hr>
+                <div>{{ ad.get_availability_display }}</div>
+                <div>{{ ad.condition }}</div>
+                <div>{{ ad.run }} км</div>
+                <hr>
+                <div>{{ ad.modification_code }}</div>
+                <div>{{ ad.color_code }}</div>
+                <div>{{ ad.interior_code }}</div>
+            </div>
+        </div>
+        <hr>
+        <div class="references-trigger collapsed" style="opacity: 0.7;">Ссылки на фото</div>
+        <div class="references-photos hidden">
+            <textarea class="form-control" readonly>{{ ad.photo }}</textarea>
+        </div>
+        <hr>
+        <div class="codes-trigger" style="opacity: 0.7;">Коды опций комплектации</div>
+        <div class="description-codes hidden">
+            <textarea class="form-control" readonly>{{ ad.configuration_codes }}</textarea>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block js_scripts %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
-    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-    <script src="{% static 'js/slider.js' %}"></script>
-    <script src="{% static 'js/detail.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+<script src="{% static 'js/slider.js' %}"></script>
+<script src="{% static 'js/detail.js' %}"></script>
 
 {% endblock %}

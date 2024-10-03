@@ -10,168 +10,189 @@
 {% include 'base/daterange_picker.html' %}
 
 <script>
-  $(document).ready(function() {
+    $(document).ready(function () {
 
-    <!-- Чекбоксы Выбрать все для марок и регионов-->
-    $('#id_select_all_marks').click(function() {
-      $('input[type=checkbox][name=mark_checkbox]').prop('checked', $(this).prop('checked'));
+        <!-- Чекбоксы Выбрать все для марок и регионов-->
+        $('#id_select_all_marks').click(function () {
+            $('input[type=checkbox][name=mark_checkbox]').prop('checked', $(this).prop('checked'));
+        });
+
+        $('#id_select_all_regions').click(function () {
+            $('input[type=checkbox][name=region_checkbox]').prop('checked', $(this).prop('checked'));
+        });
+
     });
-
-    $('#id_select_all_regions').click(function() {
-      $('input[type=checkbox][name=region_checkbox]').prop('checked', $(this).prop('checked'));
-    });
-
-  });
 </script>
 
 {% endblock %}
 
 {% block content %}
-<div class="container">
-  <div class="row">
+<div class="row">
     <div class="col-xl-12 center">
-      <h3 class="logo"><a href="{% url 'auction' %}">Аукцион</a></h3>
+        <h3 class="logo"><a href="{% url 'auction' %}">Аукцион</a></h3>
 
-      <!--Выбор периода-->
-      <form method="POST" class="period">
-        {% csrf_token %}
-        {{ form.daterange }}
-        <button type="submit" class="btn btn-primary">Показать</button>
-        <button type="submit" class="btn btn-outline-primary" formaction="{% url 'download_auction' %}">Скачать</button>
+        <!--Выбор периода-->
+        <form method="POST" class="period">
+            {% csrf_token %}
+            {{ form.daterange }}
+            <button type="submit" class="btn btn-primary">Показать</button>
+            <button type="submit" class="btn btn-outline-primary" formaction="{% url 'download_auction' %}">Скачать
+            </button>
 
-        <!-- Список марок -->
-        <details>
-          <summary>Марки</summary>
-          <div class="content">
-            <label for="id_select_all_marks">
-              {{ form.select_all_marks }}
-              Выбрать все
-            </label>
-            {{ form.mark_checkbox }}
-          </div>
+            <!-- Список марок -->
+            <details>
+                <summary>Марки</summary>
+                <div class="content">
+                    <label for="id_select_all_marks">
+                        {{ form.select_all_marks }}
+                        Выбрать все
+                    </label>
+                    {{ form.mark_checkbox }}
+                </div>
+            </details>
+
+            <!-- Список регионов -->
+            <details>
+                <summary>Регионы</summary>
+                <div class="content">
+                    <label for="id_select_all_regions">
+                        {{ form.select_all_regions }}
+                        Выбрать все
+                    </label>
+                    {{ form.region_checkbox }}
+                </div>
+            </details>
+
+            <!--Дополнительные фильтры-->
+            <div class="checkbox-padding">
+                {{ form.only_first }}
+                {{ form.only_first.label_tag }}
+                <br>
+                {{ form.all_dealers_filled }}
+                {{ form.all_dealers_filled.label_tag }}
+            </div>
+
+        </form>
+
+        <!-- График -->
+        {% if plot_html %}
+        <details class="graph" open>
+            <summary>График</summary>
+            <div class="content">{{ plot_html|safe }}</div>
         </details>
-
-        <!-- Список регионов -->
-        <details>
-          <summary>Регионы</summary>
-          <div class="content">
-            <label for="id_select_all_regions">
-              {{ form.select_all_regions }}
-              Выбрать все
-            </label>
-            {{ form.region_checkbox }}
-          </div>
+        {% else %}
+        <details class="graph">
+            <summary>График</summary>
+            <div class="content"><strong>Чтобы увидеть график выбери одну Марку и один Регион</strong></div>
         </details>
+        {% endif %}
 
-        <!--Дополнительные фильтры-->
-        <div class="checkbox-padding">
-          {{ form.only_first }}
-          {{ form.only_first.label_tag }}
-          <br>
-          {{ form.all_dealers_filled }}
-          {{ form.all_dealers_filled.label_tag }}
+        <!-- Таблица Аукциона -->
+        <div class="table-responsive">
+            <table
+                    id="datatable_auction"
+                    width="100%"
+                    class="table table-striped table-bordered dt-responsive hover"
+            >
+                <thead class="table-dark"></thead>
+            </table>
         </div>
 
-      </form>
+        {% if request.method == 'POST' %}
+        <script language="javascript">
+            $(document).ready(function () {
+                $.getJSON('{% static "js/datatables-ru.json" %}', function (data) {
+                    let language_json = data;
 
-      <!-- График -->
-      {% if plot_html %}
-        <details class="graph" open>
-          <summary>График</summary>
-          <div class="content">{{ plot_html|safe }}</div>
-        </details>
-      {% else %}
-        <details class="graph">
-          <summary>График</summary>
-          <div class="content"><strong>Чтобы увидеть график выбери одну Марку и один Регион</strong></div>
-        </details>
-      {% endif %}
+                    AjaxDatatableViewUtils.initialize_table(
+                        $("#datatable_auction"),
+                        "{% url 'ajax_datatable_auction' %}",
+                        {
+                            // extra_options
+                            rowGroup: {
+                                dataSrc: [
+                                    "datetime",
+                                    "autoru_region",
+                                ],
+                            },
 
-      <!-- Таблица Аукциона -->
-      <div class="table-responsive">
-        <table
-          id="datatable_auction"
-          width="100%"
-          class="table table-striped table-bordered dt-responsive hover"
-        >
-          <thead class="table-dark"></thead>
-        </table>
-      </div>
+                            fixedHeader: {
+                                header: true,
+                                footer: true
+                            },
+                            responsive: false,
+                            processing: true,
+                            autoWidth: true,
+                            scrollX: true,
+                            language: language_json,
+                            pageLength: 50,
 
-      {% if request.method == 'POST' %}
-      <script language="javascript">
-      $(document).ready(function () {
-        $.getJSON('{% static "js/datatables-ru.json" %}', function(data) {
-          let language_json = data;
+                            drawCallback: function (settings) {
+                                // Добавляю границы над уникальными автомобилями
+                                let prev_car = '';
+                                let curr_car, mark, model;
 
-          AjaxDatatableViewUtils.initialize_table(
-            $("#datatable_auction"),
-            "{% url 'ajax_datatable_auction' %}",
-            {
-              // extra_options
-              rowGroup: {
-                dataSrc: [
-                  "datetime",
-                  "autoru_region",
-                ],
-              },
+                                $("#datatable_auction tr").each(function () {
+                                    const $tr = $(this);
+                                    mark = $tr.find('td:eq(1)').text();
+                                    model = $tr.find('td:eq(2)').text();
 
-              fixedHeader: {
-                header: true,
-                footer: true
-              },
-              responsive: false,
-              processing: true,
-              autoWidth: true,
-              scrollX: true,
-              language: language_json,
-              pageLength: 50,
+                                    curr_car = [mark, model].join();
 
-              drawCallback: function(settings) {
-                // Добавляю границы над уникальными автомобилями
-                let prev_car = '';
-                let curr_car, mark, model;
+                                    if (prev_car !== curr_car) {
+                                        $tr.addClass('thick-border');
+                                    }
 
-                $("#datatable_auction tr").each(function () {
-                  const $tr = $(this);
-                  mark = $tr.find('td:eq(1)').text();
-                  model = $tr.find('td:eq(2)').text();
-
-                  curr_car = [mark, model].join();
-
-                  if (prev_car !== curr_car) {
-                      $tr.addClass('thick-border');
-                  }
-
-                  prev_car = curr_car;
+                                    prev_car = curr_car;
+                                });
+                            }
+                        },
+                        {
+                            // extra_data
+                            filter_params: '{{ filter_params }}',
+                        },
+                    );
                 });
-              }
-            },
-            {
-              // extra_data
-              filter_params: '{{ filter_params }}',
-            },
-          );
-        });
 
-      });
-      </script>
-      {% endif %}
+            });
+        </script>
+        {% endif %}
 
     </div>
-  </div>
 </div>
 
 
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    {% if marks_checked %}
-      selected_checkboxes({{ marks_checked|safe }}, 'mark_checkbox', 'select_all_marks');
-    {% endif %}
+    document.addEventListener("DOMContentLoaded", function () {
+        {%
+            if marks_checked %
+        }
+        selected_checkboxes({
+        {
+            marks_checked | safe
+        }
+    },
+        'mark_checkbox', 'select_all_marks'
+    )
+        ;
+        {%
+            endif %
+        }
 
-    {% if regions_checked %}
-      selected_checkboxes({{ regions_checked|safe }}, 'region_checkbox', 'select_all_regions');
-    {% endif %}
-  });
+        {%
+            if regions_checked %
+        }
+        selected_checkboxes({
+        {
+            regions_checked | safe
+        }
+    },
+        'region_checkbox', 'select_all_regions'
+    )
+        ;
+        {%
+            endif %
+        }
+    });
 </script>
 {% endblock %}

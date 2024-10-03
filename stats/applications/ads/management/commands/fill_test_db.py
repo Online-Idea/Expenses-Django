@@ -148,7 +148,7 @@ class Command(BaseCommand):
         User = get_user_model()
         account = User.objects.get(email=email)
         client = Client.objects.get(slug='admin')
-        account_client = AccountClient.objects.create(account=account, client=client)
+        AccountClient.objects.create(account=account, client=client)
 
         # client = Client.objects.create(
         #     name=fake.first_name(),

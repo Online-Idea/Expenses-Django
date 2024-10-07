@@ -3,123 +3,312 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
-  <!-- Custom slider and gallery styles for ads_app-->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
-  <!-- Favicon -->
-  <link rel="shortcut icon" href="{% static 'img/table-icon.png' %}">
-  <!-- DataTables.net -->
-  <!-- Downloader options: DataTables, FixedColumns, FixedHeader, Responsive, RowGroup, Select, Minify, Concatenate -->
-  <!-- django-ajax-datatable CSS -->
-  <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet"/>
-  <!-- DataTables.net CSS -->
-  <link href="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.css"
-        rel="stylesheet">
-  <!-- django-ajax-datatable CSS -->
-  <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet"/>
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
 
-  <!-- Choices -->
-  <link rel="stylesheet" href="{% static 'css/choices.min.css' %}">
-  <script src="{% static 'js/choices.min.js' %}"></script>
+    <!-- Custom slider and gallery styles for ads_app-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+    <link rel="stylesheet" href="{% static 'css/slider.css' %}">
 
-  <link rel="stylesheet" href="{% static 'css/slider.css' %}">
-  <!-- Custom styles -->
-  <link href="{% static 'css/styles.css' %}" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-          integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
-          crossorigin="anonymous"></script>
-  <!-- JQuery -->
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
-  <!-- Custom JavaScript -->
-  <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
-  <!-- django-ajax-datatable JavaScript -->
-  <script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
-  <!-- DataTables.net JavaScript -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-  <script
-    src="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.js"></script>
-  <script src="https://cdn.datatables.net/plug-ins/1.10.15/sorting/datetime-moment.js"></script>
+    <!-- Choices plugin CSS-->
+    <link rel="stylesheet" href="{% static 'css/choices.min.css' %}">
 
-  {% block headcontent %}
-  {% endblock %}
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'img/table-icon.png' %}">
+
+    <!-- DataTables.net -->
+    <!-- Downloader options: DataTables, FixedColumns, FixedHeader, Responsive, RowGroup, Select, Minify, Concatenate -->
+    <!-- django-ajax-datatable CSS -->
+    <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet"/>
+    <!-- DataTables.net CSS -->
+    <link href="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.css"
+          rel="stylesheet">
+
+
+    <!-- VITO -->
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'vito/images/favicon.ico' %}"/>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'vito/css/bootstrap.min.css' %}">
+    <!-- Typography CSS -->
+    <link rel="stylesheet" href="{% static 'vito/css/typography.css' %}">
+    <!-- Style CSS -->
+    <link rel="stylesheet" href="{% static 'vito/css/style.css' %}">
+    <!-- Responsive CSS -->
+    <link rel="stylesheet" href="{% static 'vito/css/responsive.css' %}">
+
+    <!-- Custom styles -->
+    <link href="{% static 'css/MultiSelect.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/login.css' %}" rel="stylesheet">
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <link href="{% static 'css/transport_check.css' %}" rel="stylesheet">
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+            crossorigin="anonymous"></script>
+    <script src="{% static 'vito/js/jquery.min.js' %}"></script>
+    <!-- JQuery -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
+    <!-- Choices plugin JS -->
+    <script src="{% static 'js/choices.min.js' %}"></script>
+    <!-- django-ajax-datatable JavaScript -->
+    <script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
+    <!-- DataTables.net JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="https://cdn.datatables.net/v/dt/dt-1.13.8/fc-4.3.0/fh-3.4.0/r-2.5.0/rg-1.4.1/sl-1.7.0/datatables.min.js"></script>
+    <script src="https://cdn.datatables.net/plug-ins/1.10.15/sorting/datetime-moment.js"></script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+            crossorigin="anonymous"></script>
+
+    {% block headcontent %}
+    {% endblock %}
 
 </head>
-<body>
+<body class="">
+<!-- loader Start -->
+<!--{#-->
+<!--<div id="loading">#}-->
+<!--    {#-->
+<!--    <div id="loading-center">#}-->
+<!--        {#-->
+<!--    </div>-->
+<!--    #}-->
+<!--    {#-->
+<!--</div>-->
+<!--#}-->
+<!-- loader END -->
+<!-- Wrapper Start -->
 
-<!--Navbar-->
-<div class="container">
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
-            aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-      <div class="navbar-nav">
-
-        {% if request.user|has_group:"admin" %}
-          <a class="nav-item nav-link" href="{% url 'home' %}">Себестоимость</a>
-          <a class="nav-item nav-link" href="{% url 'converter_manual' %}">Автоконвертер</a>
-          <a class="nav-item nav-link" href="{% url 'auction' %}">Аукцион</a>
-          <a class="nav-item nav-link" href="{% url 'ads_app:ads' %}">Объявления</a>
-          <div class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-               aria-expanded="false">
-              Конкуренты
+<div class="wrapper">
+    <!-- Sidebar  -->
+    <div class="iq-sidebar">
+        <div class="iq-sidebar-logo d-flex justify-content-between">
+            <a href="index.html">
+                <div class="iq-light-logo">
+                    <img src="{% static 'vito/images/logo-online-3.png' %}" class="img-fluid" alt="">
+                </div>
+                <div class="iq-dark-logo">
+                    <img src="{% static 'vito/images/logo-dark.gif' %}" class="img-fluid" alt="">
+                </div>
+                <span>Online</span>
             </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{% url 'comparison' %}">Сравнительная</a></li>
-              <li><a class="dropdown-item" href="{% url 'parsed_ads' %}">Выдача</a></li>
-            </ul>
-          </div>
-        {% endif %}
+            <div class="iq-menu-bt-sidebar">
+                <div class="iq-menu-bt align-self-center">
+                    <div class="custom-control custom-switch custom-control-inline">
+                        <input type="checkbox" class="custom-control-input wrapper-menu" checked="" id="customSwitch3">
+                        <label class="custom-control-label" for="customSwitch3"></label>
+                        <i class="las la-thumbtack align-self-center"></i>
+                    </div>
+                </div>
+            </div>
 
-        {% if request.user|has_group:"admin,listener,client" %}
-          <div class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-               aria-expanded="false">
-              Звонки
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{% url 'calls' %}">Детально</a></li>
-              <li><a class="dropdown-item" href="{% url 'calls_pivot' %}">Сводная</a></li>
-              <li><a class="dropdown-item" href="{% url 'calls_pivot_custom' %}">Сводная настраиваемая</a></li>
-            </ul>
-          </div>
-        {% endif %}
 
-      </div>
-      <div class="navbar-nav ms-auto">
-        {% if request.user.is_authenticated %}
-          <a class="nav-item nav-link" href="{% url 'accounts_app:profile' %}">{{ user.username }}</a>
-          <a class="nav-item nav-link" href="{% url 'accounts_app:logout' %}">Выйти</a>
-        {% endif %}
-      </div>
+        </div>
+        <div id="sidebar-scrollbar">
+            <nav class="iq-sidebar-menu">
+                <ul id="iq-sidebar-toggle" class="iq-menu">
+                    <li class="iq-menu-title"><i class="ri-subtract-line"></i><span>Дом</span></li>
+
+                    <li class="active">
+                        <a href="{% static 'vito/index.html' %}" class="iq-waves-effect"><i
+                                class="ri-home-4-line"></i><span>Шаблон</span></a>
+                    </li>
+
+                    <li class="iq-menu-title"><i class="ri-subtract-line"></i><span>Доступные Сервисы</span></li>
+
+                    <li><a href="{% url 'home' %}" class="iq-waves-effect" aria-expanded="false"><i
+                            class="ri-exchange-dollar-line"></i><span>Себестоимость</span></a></li>
+
+                    <li><a href="{% url 'converter_manual' %}" class="iq-waves-effect" aria-expanded="false"><i
+                            class="ri-file-excel-2-line"></i><span>Автоконвертер</span></a></li>
+
+                    <li><a href="{% url 'auction' %}" class="iq-waves-effect" aria-expanded="false"><i
+                            class="ri-funds-line"></i><span>Аукцион</span></a></li>
+
+                    <li><a href="#menu-level-salons" class="iq-waves-effect collapsed" data-toggle="collapse"
+                           aria-expanded="false">
+                        <i class="ri-roadster-line"></i><span>Объявления</span>
+                        <i class="ri-arrow-right-s-line iq-arrow-right"></i>
+                    </a>
+                        <ul id="menu-level-salons" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
+                            <li class="iq-menu-title"><i class="ri-subtract-line"></i><span>Салоны</span></li>
+
+                            {% for salon in salons %}
+                            <li>
+                                <a href="{% url  'ads_app:ads' salon.id %}"><i
+                                        class="fa-solid fa-file-import"></i>{{ salon.name }}</a>
+                            </li>
+                            {% endfor %}
+
+                        </ul>
+                    </li>
+
+                    <li>
+                        <a href="#menu-level" class="iq-waves-effect collapsed" data-toggle="collapse"
+                           aria-expanded="false"><i class="fa-regular fa-handshake"></i><span>Конкуренты</span><i
+                                class="ri-arrow-right-s-line iq-arrow-right"></i>
+                        </a>
+                        <ul id="menu-level" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
+                            <li>
+                                <a href="{% url 'comparison' %}"><i class="ri-bar-chart-2-line"></i>Сравнительная</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'parsed_ads' %}"><i class="fa-solid fa-file-import"></i>Выдача</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#menu-level-calls" class="iq-waves-effect collapsed" data-toggle="collapse"
+                           aria-expanded="false"><i class="fa-solid fa-phone"></i><span>Звонки</span><i
+                                class="ri-arrow-right-s-line iq-arrow-right"></i>
+                        </a>
+                        <ul id="menu-level-calls" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
+                            <li>
+                                <a href="{% url 'calls' %}"><i class="ri-bar-chart-2-line"></i>Детально</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'calls_pivot' %}"><i class="fa-solid fa-file-import"></i>Сводная</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'calls_pivot_custom' %}"><i class="fa-solid fa-file-import"></i>Сводная-->
+                                    настраиваемая</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+            <div class="p-3"></div>
+        </div>
     </div>
-  </nav>
+    <!-- TOP Nav Bar -->
+    <div class="iq-top-navbar">
+        <div class="iq-navbar-custom">
+            <nav class="navbar navbar-expand-lg navbar-light p-0">
+                <div class="navbar-left">
+                </div>
+                <button class="navbar-toggler" type="button" data-toggle="collapse"
+                        data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                        aria-label="Toggle navigation">
+                    <i class="ri-menu-3-line"></i>
+                </button>
+                <div class="iq-menu-bt align-self-center">
+                    <div class="wrapper-menu">
+                        <div class="main-circle"><i class="ri-arrow-left-s-line"></i></div>
+                        <div class="hover-circle"><i class="ri-arrow-right-s-line"></i></div>
+                    </div>
+                </div>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                </div>
+                {% if request.user.is_authenticated %}
+                <ul class="navbar-list">
+                    <li>
+                        <a href="#"
+                           class="search-toggle iq-waves-effect d-flex align-items-center bg-primary rounded">
+                            <img src="{% static 'vito/images/user/1.jpg' %}" class="img-fluid rounded mr-3"
+                                 alt="user">
+                            <div class="caption">
+                                <h6 class="mb-0 line-height text-white">{{ user.username }}</h6>
+                                <span class="font-size-12 text-white"> {% if  user.is_active %}
+                                        online {% endif %}</span>
+                            </div>
+                        </a>
+                        <div class="iq-sub-dropdown iq-user-dropdown">
+                            <div class="iq-card shadow-none m-0">
+                                <div class="iq-card-body p-0 ">
+                                    <div class="bg-primary p-3">
+                                        <h5 class="mb-0 text-white line-height">Hello {{ user.username }}</h5>
+                                    </div>
+                                    <div class="d-inline-block w-100 text-center p-3">
+                                        <a href="{% url  'accounts_app:profile' %}" class="iq-sub-card iq-bg-primary-hover">
+                                            <div class="media align-items-center">
+                                               <div class="rounded iq-card-icon iq-bg-primary">
+                                                  <i class="ri-file-user-line"></i>
+                                               </div>
+                                               <div class="media-body ml-3">
+                                                  <h6 class="mb-0 ">Мой профиль</h6>
+                                               </div>
+                                            </div>
+                                        </a>
+                                        <a class="btn btn-primary dark-btn-primary"
+                                           href="{% url 'accounts_app:logout' %}" role="button">Выйти<i
+                                                class="ri-login-box-line ml-2"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+    <div id="content-page" class="content-page">
+        <div class="container-fluid">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+
 </div>
-<!--Navbar Конец-->
-
-
-{% block content %}
-{% endblock %}
 
 <footer class="p-3"></footer>
 
-<script>
-  <!-- Navbar, выделяет текущую страницу активной -->
-  document.querySelectorAll(".nav-link").forEach((link) => {
-    if (link.href === window.location.href) {
-      link.classList.add("active");
-      link.setAttribute("aria-current", "page");
-    }
-  });
-</script>
+
+<script src="{% static 'vito/js/popper.min.js' %}"></script>
+<script src="{% static 'vito/js/bootstrap.min.js' %}"></script>
+<!-- Appear JavaScript -->
+<script src="{% static 'vito/js/jquery.appear.js' %}"></script>
+<!-- Countdown JavaScript -->
+<script src="{% static 'vito/js/countdown.min.js' %}"></script>
+<!-- Counterup JavaScript -->
+<script src="{% static 'vito/js/waypoints.min.js' %}"></script>
+<script src="{% static 'vito/js/jquery.counterup.min.js' %}"></script>
+<!-- Wow JavaScript -->
+<script src="{% static 'vito/js/wow.min.js' %}"></script>
+<!-- Apexcharts JavaScript -->
+<script src="{% static 'vito/js/apexcharts.js' %}"></script>
+<!-- Slick JavaScript -->
+<script src="{% static 'vito/js/slick.min.js' %}"></script>
+<!-- Select2 JavaScript -->
+<script src="{% static 'vito/js/select2.min.js' %}"></script>
+<!-- Magnific Popup JavaScript -->
+<script src="{% static 'vito/js/jquery.magnific-popup.min.js' %}"></script>
+<!-- Smooth Scrollbar JavaScript -->
+<script src="{% static 'vito/js/smooth-scrollbar.js' %}"></script>
+<!-- lottie JavaScript -->
+<script src="{% static 'vito/js/lottie.js' %}"></script>
+<!-- am core JavaScript -->
+<script src="{% static 'vito/js/core.js' %}"></script>
+<!-- am charts JavaScript -->
+<script src="{% static 'vito/js/charts.js' %}"></script>
+<!-- am animated JavaScript -->
+<script src="{% static 'vito/js/animated.js' %}"></script>
+<!-- am kelly JavaScript -->
+<script src="{% static 'vito/js/kelly.js' %}"></script>
+<!-- Morris JavaScript -->
+<script src="{% static 'vito/js/morris.js' %}"></script>
+<!-- am maps JavaScript -->
+<script src="{% static 'vito/js/maps.js' %}"></script>
+<!-- am worldLow JavaScript -->
+<script src="{% static 'vito/js/worldLow.js' %}"></script>
+<!-- ChartList Js -->
+<script src="{% static 'vito/js/chartist/chartist.min.js' %}"></script>
+<!-- Chart Custom JavaScript -->
+<script async src="{% static 'vito/js/chart-custom.js' %}"></script>
+<!-- Custom JavaScript -->
+<script src="{% static 'vito/js/custom.js' %}"></script>
 {% block js_scripts %} {% endblock %}
 </body>
 </html>

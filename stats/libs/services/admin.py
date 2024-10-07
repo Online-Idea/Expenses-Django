@@ -2,22 +2,6 @@ from django.contrib import admin
 
 from libs.services.admin_helpers import *
 from libs.services.models import *
-from applications.accounts.models import Client
-
-# class ClientAdmin(admin.ModelAdmin):
-#     list_display = (
-#         'id', 'name', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id', 'autoru_name',
-#         'avito_id', 'drom_id')
-#     list_display_links = ('id', 'name')
-#     search_fields = ('name', 'manager', 'teleph_id', 'autoru_id', 'autoru_name', 'avito_id', 'drom_id')
-#     list_editable = ('active',)
-#     list_filter = ('manager', 'active', 'charge_type')
-#     fields = (
-#         'id', 'name', 'slug', 'manager', 'active', 'charge_type', 'commission_size', 'teleph_id', 'autoru_id',
-#         'autoru_name', 'avito_id', 'drom_id')
-#     readonly_fields = ('id',)
-#     save_on_top = True
-
 
 class MarkAdmin(admin.ModelAdmin):
     list_display = ('id', 'mark', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
@@ -38,7 +22,7 @@ class ModelAdmin(admin.ModelAdmin):
 
 
 class GenerationAdmin(admin.ModelAdmin):
-    list_display = ('id', marks_mark, models_model, 'generation', 'teleph', 'autoru', 'avito', 'drom', 'human_name')
+    list_display = ('id', marks_mark, models_model, 'generation', 'autoru', 'avito', 'drom', 'human_name')
     list_display_links = ('id', 'generation')
     search_fields = ('mark__mark', 'model__model', 'generation', 'human_name')
     fields = ('id', 'mark', 'model', 'generation', 'teleph', 'autoru', 'avito', 'drom', 'human_name')

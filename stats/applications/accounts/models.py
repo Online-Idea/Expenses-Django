@@ -1,14 +1,13 @@
-from django.contrib.admin.models import LogEntry
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AbstractUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.db import models
 from django.db.models import Q
+from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from slugify import slugify
 
-from libs.services.models import BaseModel
+from applications.mainapp.models import BaseModel
 
 
 class ClientManager(BaseUserManager):
@@ -51,7 +50,7 @@ class Account(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['username']
 
     def __str__(self):
-        return self.name
+        return self.email
 
     class Meta:
         verbose_name = 'Аккаунт'
@@ -109,7 +108,18 @@ class AccountClient(BaseModel):
         verbose_name_plural = 'Аккаунты-Клиенты'
 
 
-class Application(models.Model):
+class Salon(BaseModel):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='salons')
+    name = models.CharField(max_length=255, verbose_name='Название')
+    price_url = models.CharField(max_length=2000, verbose_name='Ссылка на прайс')
+    datetime_updated = models.DateTimeField(verbose_name='Время последнего обновления')
+    working_hours = models.CharField(verbose_name='Время работы', max_length=255, null=True, blank=True)
+    city = models.CharField(max_length=255, verbose_name='Город салона', default='')
+    address = models.CharField(max_length=255, verbose_name='Адрес', default='')
+    telephone = models.CharField(max_length=255, verbose_name='Телефон', default='')
+
+
+class Registration(models.Model):
     class Status(models.TextChoices):
         NEW = 'new', 'Новая'
         ACCEPTED = 'accepted', 'Принята'

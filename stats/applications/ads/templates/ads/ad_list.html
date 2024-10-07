@@ -2,113 +2,106 @@
 {% load static %}
 
 {% block content %}
-    <div class="container mt-5">
-        <h1>Список объявлений</h1>
-        <div class="mb-2 flex-container">
-            <!-- Форма сортировки -->
-            <div class="sort-container">
-                <button id="toggle-sort" type="button" class="btn btn-secondary btn-sm">Сортировка ▶</button>
-                <span id="sort-label" class="ml-2"></span>
-                <span id="reset-sort-label" class="reset-label">&#10006;</span>
-                <form id="sort-form" method="post" class="d-none form-container">
-                    {% csrf_token %}
-                    {{ sort_form.as_p }}
-                    <div id="sort-fields-container"></div>
-                    <button id="apply-sort" type="button" class="btn btn-primary">Применить</button>
-                </form>
-            </div>
-            <div class="search-container">
-                <div class="search-input-container" data-tip="Можно ввести несколько фрагментов VIN через запятую">
-                    <input type="text" placeholder="Поиск по VIN" name="vin_search" class="form-control"
-                           id="id_vin_search"/>
-                    <span id="reset-search-label" class="reset-label">&#10006;</span>
-                </div>
-                <button id="apply-search" type="button" class="btn btn-primary">Искать</button>
-            </div>
-        </div>
-        <!-- Панель с фильтрами -->
-        <div class="filter-block">
-            <button id="toggle-filter" type="button" class="btn btn-secondary btn-sm">Фильтр ▶</button>
-            <div class="filter-container">
-                <div class="filter-row">
-                    <select class="mark-select" multiple>
-                        <option value="">Марка</option>
-                    </select>
-                    <select class="model-select" multiple>
-                        <option value="">Модель</option>
-                    </select>
-                    <select class="modification-select" multiple>
-                        <option value="">Модификация</option>
-                    </select>
-                </div>
-                <div class="filter-row">
-                    <select class="body-select" multiple>
-                        <option value="">Кузов</option>
-                    </select>
-                    <select class="complectation-select" multiple>
-                        <option value="">Комплектация</option>
-                    </select>
-                    <select class="color-select" multiple>
-                        <option value="">Цвет</option>
-                    </select>
-                </div>
-                <div class="filter-row">
-                    <div class="block-select">
-                        <div class="container__input">
-                            <input class="price-input input-from" type="number" min="0">
-                            <span class="placeholder_custom">Цена от</span>
-                            <span class="focus-border">
-                <i></i>
-              </span>
-                        </div>
-                        <div class="container__input">
-                            <input class="price-input input-to" type="number" min="0">
-                            <span class="placeholder_custom">до</span>
-                            <span class="focus-border">
-                <i></i>
-              </span>
-                        </div>
-                    </div>
-                    <div class="block-select">
-                        <div class="container__input">
-                            <input class="year-input input-from" type="number">
-                            <span class="placeholder_custom">Год от</span>
-                            <span class="focus-border">
-                <i></i>
-              </span>
-                        </div>
-                        <div class="container__input">
-                            <input class="year-input input-to" type="number">
-                            <span class="placeholder_custom">до</span>
-                            <span class="focus-border">
-                <i></i>
-              </span>
-                        </div>
-                    </div>
-                    <div class="block-select">
-                        <div class="container__input">
-                            <input class="run-input input-from" type="number">
-                            <span class="placeholder_custom">Пробег от</span>
-                            <span class="focus-border">
-                <i></i>
-              </span>
-                        </div>
-                        <div class="container__input">
-                            <input class="run-input input-to" type="number">
-                            <span class="placeholder_custom">до</span>
-                            <span class="focus-border">
-                <i></i>
-              </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% include 'ads/ads_block.html' %}
+<h1>Салон {{ salon.name }}</h1>
+<a href="{% url 'ads_app:export-ads-xml' %}">
+    <button id="export-xml-button"> Экспорт в XML всё</button>
+</a>
+<div class="col-lg-8 flex-container">
+    <!-- Форма сортировки -->
+    <div class="sort-container">
+        <button id="toggle-sort" type="button" class="btn">Сортировка ▶</button>
+        <span id="sort-label" class="ml-2 hide">Применена</span>
+        <span id="reset-sort-label" class="reset-label hide">&#10006;</span>
+        <form id="sort-form" method="post" class="d-none form-container">
+            {% csrf_token %}
+            {{ sort_form.as_p }}
+            <div id="sort-fields-container"></div>
+            <button id="apply-sort" type="button" class="btn btn-primary">Применить</button>
+        </form>
     </div>
+    <div class="search-container">
+        <div class="search-input-container"
+             data-tip="Можно ввести несколько фрагментов VIN через запятую">
+            <div class="iq-search-bar d-none d-md-block searchbox">
+                <input type="text" class="text search-input" name="vin_search" id="id_vin_search"
+                       placeholder="VIN поиск">
+                <a id="apply-search" class="search-link" href="#"><i class="ri-search-line"></i></a>
+                <i id="reset-search-label" class="ri-close-line reset-label d-none show-data"></i>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Панель с фильтрами -->
+<div class="filter-block col-lg-6">
+    <button id="toggle-filter" type="button" class="btn">Фильтр ▶</button>
+    <div class="filter-container">
+        <div class="filter-row">
+            <select class="mark-select" multiple>
+                <option value="">Марка</option>
+            </select>
+            <select class="model-select" multiple>
+                <option value="">Модель</option>
+            </select>
+            <select class="modification-select" multiple>
+                <option value="">Модификация</option>
+            </select>
+        </div>
+        <div class="filter-row">
+            <select class="body-select" multiple>
+                <option value="">Кузов</option>
+            </select>
+            <select class="complectation-select" multiple>
+                <option value="">Комплектация</option>
+            </select>
+            <select class="color-select" multiple>
+                <option value="">Цвет</option>
+            </select>
+        </div>
+        <div class="filter-row">
+            <div class="block-select">
+                <div class="container__input">
+                    <input class="price-input input-from" type="number" min="0">
+                    <span class="placeholder_custom">Цена от</span>
+                    <span class="focus-border"> <i></i></span>
+                </div>
+                <div class="container__input">
+                    <input class="price-input input-to" type="number" min="0">
+                    <span class="placeholder_custom">до</span>
+                    <span class="focus-border"><i></i></span>
+                </div>
+            </div>
+            <div class="block-select">
+                <div class="container__input">
+                    <input class="year-input input-from" type="number">
+                    <span class="placeholder_custom">Год от</span>
+                    <span class="focus-border"><i></i></span>
+                </div>
+                <div class="container__input">
+                    <input class="year-input input-to" type="number">
+                    <span class="placeholder_custom">до</span>
+                    <span class="focus-border"><i></i></span>
+                </div>
+            </div>
+            <div class="block-select">
+                <div class="container__input">
+                    <input class="run-input input-from" type="number">
+                    <span class="placeholder_custom">Пробег от</span>
+                    <span class="focus-border"><i></i></span>
+                </div>
+                <div class="container__input">
+                    <input class="run-input input-to" type="number">
+                    <span class="placeholder_custom">до</span>
+                    <span class="focus-border"><i></i> </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% include 'ads/ads_block.html' %}
+
 {% endblock %}
 {% block js_scripts %}
-    <script src="{% static 'js/choices.min.js' %}"></script>
-    <script src="{% static 'js/data-handler.js' %}"></script>
+<script src="{% static 'js/choices.min.js' %}"></script>
+<script src="{% static 'js/data-handler.js' %}"></script>
+<script src="{% static 'js/MultiSelect.js' %} "></script>
 {% endblock %}
-

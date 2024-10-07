@@ -378,7 +378,7 @@ def update_autoru_catalog():
         mark_name = mark.get('name')
         already_in_new_marks = any(obj.autoru == mark_name for obj in new_marks)
         if not my_marks.filter(autoru=mark_name).exists() and not already_in_new_marks:
-            new_marks.append(Mark(mark=mark_name, teleph=mark_name, autoru=mark_name, avito=mark_name,
+            new_marks.append(Mark(name=mark_name, teleph=mark_name, autoru=mark_name, avito=mark_name,
                                   drom=mark_name, human_name=mark_name))
     Mark.objects.bulk_create(new_marks)
     my_marks = Mark.objects.all()
@@ -392,7 +392,7 @@ def update_autoru_catalog():
             already_in_new_models = any(obj.autoru == model_name and obj.mark.autoru == mark_name
                                         for obj in new_models)
             if not my_models.filter(mark__autoru=mark_name, autoru=model_name).exists() and not already_in_new_models:
-                new_models.append(Model(mark=my_marks.filter(autoru=mark_name)[0], model=model_name, teleph=model_name,
+                new_models.append(Model(mark=my_marks.filter(autoru=mark_name)[0], name=model_name, teleph=model_name,
                                         autoru=model_name, avito=model_name, drom=model_name, human_name=model_name))
     Model.objects.bulk_create(new_models)
     my_models = Model.objects.all()
@@ -582,7 +582,7 @@ def update_marks_and_models():
             # Если марки нет, добавляем её
             if mark_name not in my_marks:
                 new_marks.append(Mark(
-                    mark=mark_name, teleph=mark_name, autoru=mark_name, avito=mark_name,
+                    name=mark_name, teleph=mark_name, autoru=mark_name, avito=mark_name,
                     drom=mark_name, human_name=mark_name))
 
             # Работаем с моделями
@@ -592,7 +592,7 @@ def update_marks_and_models():
 
                 if (mark_name, model_name) not in my_models:
                     new_models.append(Model(
-                        mark=my_marks.get(mark_name), model=model_name, teleph=model_name,
+                        mark=my_marks.get(mark_name), name=model_name, teleph=model_name,
                         autoru=model_name, avito=model_name, drom=model_name, human_name=model_name))
 
             root.clear()  # Clear memory for already processed elements
@@ -752,7 +752,7 @@ def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame,
 
     # Марки как объекты из базы
     unique_marks_names = new_df['context.mark_name'].unique()
-    marks = Mark.objects.filter(mark__in=unique_marks_names)
+    marks = Mark.objects.filter(name__in=unique_marks_names)
 
     # Добавляю марки которых нет в базе
     if len(unique_marks_names) != len(marks):
@@ -761,9 +761,9 @@ def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame,
 
         for mark in unique_marks_names:
             if mark not in marks_str:
-                new_marks.append(Mark(mark=mark, teleph=mark, autoru=mark, avito=mark, drom=mark, human_name=mark))
+                new_marks.append(Mark(name=mark, teleph=mark, autoru=mark, avito=mark, drom=mark, human_name=mark))
         Mark.objects.bulk_create(new_marks)
-        marks = Mark.objects.filter(mark__in=unique_marks_names)
+        marks = Mark.objects.filter(name__in=unique_marks_names)
 
     # Подставляю
     unique_marks_objs = {}
@@ -773,25 +773,33 @@ def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame,
 
     # Модели как объекты из базы
     unique_marks_models_names = new_df[['context.mark_name', 'context.model_name']].drop_duplicates()
-    models = Model.objects.filter(mark__mark__in=unique_marks_names)
+    models = Model.objects.filter(mark__name__in=unique_marks_names)
 
     # Добавляю модели которых нет в базе
     new_models = []
     for _, row in unique_marks_models_names.iterrows():
         curr_mark = row['context.mark_name']
         curr_model = row['context.model_name']
-        if not models.filter(mark__mark=curr_mark, model=curr_model):
-            new_models.append(Model(mark=marks.filter(mark=curr_mark)[0], model=curr_model, teleph=curr_model,
-                                    autoru=curr_model, avito=curr_model, drom=curr_model, human_name=curr_model))
+        if not models.filter(mark__name=curr_mark, model=curr_model):
+            new_models.append(
+                Model(
+                    mark=marks.filter(
+                        name=curr_mark
+                    )[0],
+                    name=curr_model, teleph=curr_model,
+                    autoru=curr_model, avito=curr_model,
+                    drom=curr_model, human_name=curr_model
+                )
+            )
     Model.objects.bulk_create(new_models)
 
     # Подставляю
-    models = Model.objects.filter(mark__mark__in=unique_marks_names)
+    models = Model.objects.filter(mark__name__in=unique_marks_names)
     models_objs = []
     for _, row in new_df.iterrows():
         models_objs.append(models.filter(
-            mark__mark=row['context.mark_name'],
-            model=row['context.model_name'])[0])
+            mark__name=row['context.mark_name'],
+            name=row['context.model_name'])[0])
 
     new_df['model_obj'] = models_objs
 

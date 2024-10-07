@@ -19,15 +19,16 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', RedirectView.as_view(url='/accounts/login/')),
+    path('', RedirectView.as_view(url='accounts/login/', permanent=False)),
     path('', include('libs.services.urls')),
     path('', include('applications.auction.urls')),
     path('', include('applications.autoconverter.urls')),
     path('', include('applications.calls.urls')),
     path('', include('applications.srav.urls')),
     path('', include('applications.netcost.urls')),
-    path('stock/', include('applications.ads.urls', namespace='ads_app')),
+    path('ads/', include('applications.ads.urls', namespace='ads_app')),
     path('accounts/', include('applications.accounts.urls', namespace='accounts_app')),
+    path('', include('libs.transport_check.urls')),
     path('', include('libs.autoru.urls')),
     path("__debug__/", include("debug_toolbar.urls")),
 ]

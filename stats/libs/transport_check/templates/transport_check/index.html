@@ -1,0 +1,54 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<h1 class="page-title">Проверка пропусков для грузового транспорта</h1>
+К025МУ761
+
+<!-- Форма ввода номеров -->
+<form method="post" class="form-check mt-4">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="id_numbers" class="form-label">Введите номера машин</label>
+        {{ form.numbers }}
+        <small class="form-text text-muted">Введите номера, разделенные запятыми. Например: A123BC77,
+            B456CD88.</small>
+    </div>
+    <button type="submit" class="btn btn-primary btn-submit">Проверить</button>
+</form>
+
+{% if results %}
+<h2 class="mt-5">Результаты проверки</h2>
+<div class="iq-card-body mt-4">
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th scope="col">Номер авто</th>
+            <th scope="col">Тип пропуска</th>
+            <th scope="col">Серия</th>
+            <th scope="col">Дата начала</th>
+            <th scope="col">Дата окончания</th>
+            <th scope="col">Статус</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for result in results %}
+        <tr class="{% if result.статус_цвет == 'Активен' %}table-success{% else %}table-danger{% endif %}">
+            <th scope="row">
+                <span class="number-n">{{ result.номер|slice:":6" }}</span>
+                <div class="reg-item">
+                    <span class="region-num">{{ result.номер|slice:"6:" }}</span>
+                    <span class="russia">RUS</span>
+                </div>
+            </th>
+            <td>{{ result.тип_пропуска }}<br></td>
+            <td>{{ result.серия }} {{ result.номер_пропуска }}</td>
+            <td>{{ result.действителен_с }}</td>
+            <td>{{ result.действителен_по }}</td>
+            <td>{{ result.статус }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,25 +1,23 @@
 from django.contrib import admin
+from .models import Salon
 
-# # Register your models here.
-# from django.contrib import admin
-# from django.contrib.accounts.admin import UserAdmin
-# from .models import Client
-#
-# class ClientAdmin(UserAdmin):
-#     model = Client
-#     list_display = ['email', 'name', 'is_active', 'is_staff']
-#     fieldsets = (
-#         (None, {'fields': ('email', 'password', 'name', 'is_active', 'is_staff')}),
-#         ('Permissions', {'fields': ('is_superuser', 'groups', 'user_permissions')}),
-#         ('Important dates', {'fields': ('last_login',)}),
-#     )
-#     add_fieldsets = (
-#         (None, {
-#             'classes': ('wide',),
-#             'fields': ('email', 'name', 'password1', 'password2', 'is_active', 'is_staff'),
-#         }),
-#     )
-#     search_fields = ('email', 'name')
-#     ordering = ('email',)
-#
-# admin.site.register(Client, ClientAdmin)
+
+@admin.register(Salon)
+class SalonAdmin(admin.ModelAdmin):
+    """
+    Конфигурация административной панели для модели Salon.
+    """
+    # Поля, которые будут отображаться в списке объектов в админке
+    list_display = ('name', 'client', 'city', 'address', 'telephone', 'datetime_updated', 'price_url')
+
+    # Поля, по которым можно фильтровать список объектов
+    list_filter = ('city',)
+
+    # Поля, по которым можно осуществлять поиск в админке
+    search_fields = ('name', 'city', 'address', 'telephone')
+
+    # Позволяет фильтровать записи по дате
+    date_hierarchy = 'datetime_updated'
+
+    # Поля, по которым будет происходить сортировка по умолчанию
+    ordering = ('datetime_updated',)

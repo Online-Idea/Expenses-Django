@@ -16,6 +16,8 @@ from libs.autoru.autoru import update_autoru_catalog, update_marks_and_models, u
 from libs.teleph.teleph import get_teleph_clients, get_teleph_calls
 from .exkavator import modify_exkavator_xml
 from .export import export_calls_to_file, export_calls_for_callback
+from applications.accounts.models import Client
+from libs.teleph.teleph import get_teleph_clients, get_teleph_calls
 from .utils import last_30_days
 from ..autoru.refactor_autoru import AutoruLogic, get_autoru_clients
 

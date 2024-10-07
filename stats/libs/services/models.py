@@ -242,7 +242,6 @@ class ModificationCode(BaseModel):
         verbose_name_plural = 'Коды модификации'
 
 
-
 class Colors(models.TextChoices):
     BEIGE = 'бежевый', 'бежевый'
     WHITE = 'белый', 'белый'
@@ -262,7 +261,8 @@ class Colors(models.TextChoices):
     BLUE = 'синий', 'синий'
     VIOLET = 'фиолетовый', 'фиолетовый'
     BLACK = 'чёрный', 'чёрный'
-    
+
+
 class _TypedMultipleChoiceField(forms.TypedMultipleChoiceField):
     def __init__(self, *args, **kwargs):
         kwargs.pop('base_field', None)
@@ -274,6 +274,7 @@ class ChoiceArrayField(ArrayField):
     """
     Кастомное поле для множественного выбора
     """
+
     def formfield(self, **kwargs):
         defaults = {
             'form_class': _TypedMultipleChoiceField,

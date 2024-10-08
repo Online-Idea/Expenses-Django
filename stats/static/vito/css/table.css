@@ -11,10 +11,10 @@
     background: var(--iq-light-border);
 }
 .table th{
-    text-transform: uppercase;
-    font-weight: 400;
+    /*text-transform: uppercase;*/
+    /*font-weight: 400;*/
     letter-spacing: .2px;
-    color:#212529;
+    /*color:#212529;*/
     white-space: nowrap;
 }
 .table-borderless td{

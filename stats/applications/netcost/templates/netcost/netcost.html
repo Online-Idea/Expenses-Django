@@ -2,152 +2,141 @@
 {% load static %}
 
 {% block headcontent %}
-<title>Себестоимость звонков</title>
+  <title>Себестоимость звонков</title>
 
-<script src="{% static 'netcost/js/netcost.js' %}"></script>
+  <script src="{% static 'netcost/js/netcost.js' %}"></script>
 
-{% include 'base/daterange_picker.html' %}
+  {% include 'base/daterange_picker.html' %}
 
-<script>
+  <script>
     $(document).ready(function () {
-        $('#tableOne').DataTable({
-            fixedHeader: {
-                header: true,
-                footer: true
-            },
-            select: {
-                toggleable: true,
-                info: false
-            },
-            responsive: true,
-            language: {
-                url: '{% static 'js / datatables - ru.json' %}'
+      $('#tableOne').DataTable({
+        fixedHeader: {
+          header: true,
+          footer: true
+        },
+        select: {
+          toggleable: true,
+          info: false
+        },
+        {#responsive: true,#}
+        language: {
+          url: '{% static 'js/datatables-ru.json' %}'
         }
-    } )
-        ;
+      })
+      ;
 
-        <!--Чекбокс Выбрать все для клиентов-->
-        $('#id_select_all_clients').click(function () {
-            $('input[type=checkbox][name=client_checkbox]').prop('checked', $(this).prop('checked'));
-        });
+      <!--Чекбокс Выбрать все для клиентов-->
+      $('#id_select_all_clients').click(function () {
+        $('input[type=checkbox][name=client_checkbox]').prop('checked', $(this).prop('checked'));
+      });
     });
-</script>
+  </script>
 
 {% endblock %}
 
 {% block content %}
 
-<div class="row">
+  <div class="row">
     <div class="col-xl-12">
-        <h3 class="logo"><a href="{% url 'home' %}">Себестоимость звонков</a></h3>
-        <p class="small-note"><em>сейчас только авто.ру</em></p>
+      <h3 class="logo"><a href="{% url 'home' %}">Себестоимость звонков</a></h3>
+      <p class="small-note"><em>сейчас только авто.ру</em></p>
 
-        <!--Выбор периода-->
-        <form method="POST" class="period">
-            {% csrf_token %}
-            {{ form.daterange }}
-            <button type="submit" class="btn btn-primary">Показать</button>
-            <!--Список клиентов-->
-            <details>
-                <summary>Клиенты</summary>
-                <div class="content">
-                    <label for="id_select_all_clients">
-                        {{ form.select_all_clients }}
-                        Выбрать все
-                    </label>
-                    {{ form.client_checkbox }}
-                </div>
-            </details>
-        </form>
+      <!--Выбор периода-->
+      <form method="POST" class="period">
+        {% csrf_token %}
+        {{ form.daterange }}
+        <button type="submit" class="btn btn-primary">Показать</button>
+        <!--Список клиентов-->
+        <details>
+          <summary>Клиенты</summary>
+          <div class="content">
+            <label for="id_select_all_clients">
+              {{ form.select_all_clients }}
+              Выбрать все
+            </label>
+            {{ form.client_checkbox }}
+          </div>
+        </details>
+      </form>
 
-        <!--Таблица себестоимости-->
-        {% if stats %}
+      <!--Таблица себестоимости-->
+      {% if stats %}
         <table id="tableOne" class="row-border hover order-column stripe compact">
-            <thead class="thead-dark">
+          <thead class="thead-dark">
+          <tr>
+            <th>Клиент</th>
+            <th>Приход с площадки</th>
+            <th>Траты на площадку</th>
+            <th>Траты на звонки</th>
+            <th>Траты на услуги</th>
+            <th>Звонки с площадки</th>
+            <th>Цена звонка</th>
+            <th>Цена клиента</th>
+            <th>Маржа</th>
+            <th>Заработок</th>
+          </tr>
+          </thead>
+          <tbody>
+          {% for stat in stats %}
             <tr>
-                <th>Клиент</th>
-                <th>Приход с площадки</th>
-                <th>Траты на площадку</th>
-                <th>Траты на звонки</th>
-                <th>Траты на услуги</th>
-                <th>Звонки с площадки</th>
-                <th>Цена звонка</th>
-                <th>Цена клиента</th>
-                <th>Маржа</th>
-                <th>Заработок</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for stat in stats %}
-            <tr>
-                <td class="client-name">{{ stat.name }}</td>
-                <td>{{ stat.teleph_calls_sum|floatformat:"0" }}</td>
-                <td>{{ stat.platform|floatformat:"0" }}</td>
-                <td>{{ stat.calls_sum|floatformat:"0" }}</td>
-                <td>{{ stat.products_sum|floatformat:"0" }}</td>
-                <td>{{ stat.teleph_target|floatformat:"0" }}</td>
-                <td>{{ stat.call_cost|floatformat:"0" }}</td>
-                <td>{{ stat.client_cost|floatformat:"0" }}</td>
-                {% if stat.margin < 0 %}
+              <td class="client-name">{{ stat.name }}</td>
+              <td>{{ stat.teleph_calls_sum|floatformat:"0" }}</td>
+              <td>{{ stat.platform|floatformat:"0" }}</td>
+              <td>{{ stat.calls_sum|floatformat:"0" }}</td>
+              <td>{{ stat.products_sum|floatformat:"0" }}</td>
+              <td>{{ stat.teleph_target|floatformat:"0" }}</td>
+              <td>{{ stat.call_cost|floatformat:"0" }}</td>
+              <td>{{ stat.client_cost|floatformat:"0" }}</td>
+              {% if stat.margin < 0 %}
                 <td class="negative">{{ stat.margin|floatformat:"0" }}</td>
-                {% else %}
+              {% else %}
                 <td>{{ stat.margin|floatformat:"0" }}</td>
-                {% endif %}
-                {% if stat.profit < 0 %}
+              {% endif %}
+              {% if stat.profit < 0 %}
                 <td class="negative">{{ stat.profit|floatformat:"0" }}</td>
-                {% else %}
+              {% else %}
                 <td>{{ stat.profit|floatformat:"0" }}</td>
-                {% endif %}
+              {% endif %}
             </tr>
-            {% endfor %}
-            </tbody>
-            <tfoot class="tfoot-dark">
-            <tr>
-                <td>Всего</td>
-                <td>{{ totals.teleph_calls_sum|floatformat:"0" }}</td>
-                <td>{{ totals.platform|floatformat:"0" }}</td>
-                <td>{{ totals.calls_sum|floatformat:"0" }}</td>
-                <td>{{ totals.products_sum|floatformat:"0" }}</td>
-                <td>{{ totals.teleph_target|floatformat:"0" }}</td>
-                <td>{{ totals.call_cost|floatformat:"0" }}</td>
-                <td>{{ totals.client_cost|floatformat:"0" }}</td>
-                {% if totals.margin < 0 %}
-                <td class="negative">{{ totals.margin|floatformat:"0" }}</td>
-                {% else %}
-                <td>{{ totals.margin|floatformat:"0" }}</td>
-                {% endif %}
+          {% endfor %}
+          </tbody>
+          <tfoot class="tfoot-dark">
+          <tr>
+            <td>Всего</td>
+            <td>{{ totals.teleph_calls_sum|floatformat:"0" }}</td>
+            <td>{{ totals.platform|floatformat:"0" }}</td>
+            <td>{{ totals.calls_sum|floatformat:"0" }}</td>
+            <td>{{ totals.products_sum|floatformat:"0" }}</td>
+            <td>{{ totals.teleph_target|floatformat:"0" }}</td>
+            <td>{{ totals.call_cost|floatformat:"0" }}</td>
+            <td>{{ totals.client_cost|floatformat:"0" }}</td>
+            {% if totals.margin < 0 %}
+              <td class="negative">{{ totals.margin|floatformat:"0" }}</td>
+            {% else %}
+              <td>{{ totals.margin|floatformat:"0" }}</td>
+            {% endif %}
 
-                {% if totals.profit < 0 %}
-                <td class="negative">{{ totals.profit|floatformat:"0" }}</td>
-                {% else %}
-                <td>{{ totals.profit|floatformat:"0" }}</td>
-                {% endif %}
-            </tr>
-            </tfoot>
+            {% if totals.profit < 0 %}
+              <td class="negative">{{ totals.profit|floatformat:"0" }}</td>
+            {% else %}
+              <td>{{ totals.profit|floatformat:"0" }}</td>
+            {% endif %}
+          </tr>
+          </tfoot>
 
         </table>
-        {% endif %}
+      {% endif %}
     </div>
-</div>
+  </div>
 
 
-<script>
+  <script>
     document.addEventListener("DOMContentLoaded", function () {
-        {%
-            if clients_checked %
-        }
-        selected_checkboxes({
-        {
-            clients_checked | safe
-        }
-    },
-        'client_checkbox', 'select_all_clients'
-    )
-        ;
-        {%
-            endif %
-        }
+      {% if clients_checked %}
+        selected_checkboxes({{ clients_checked | safe }}, 'client_checkbox', 'select_all_clients');
+      {% endif %}
     });
-</script>
+  </script>
 
 {% endblock %}

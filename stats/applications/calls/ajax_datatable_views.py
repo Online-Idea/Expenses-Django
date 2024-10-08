@@ -157,7 +157,9 @@ class CallDatatableView(AjaxDatatableView):
         }
 
         record = self.model.objects.get(pk=pk)
-        field_verbose_names = {field.name: field.verbose_name for field in record._meta.get_fields()}
+        field_verbose_names = {
+            field.name: field.verbose_name for field in record._meta.get_fields() if field.name in fields
+        }
 
         rows = []
         current_row = []

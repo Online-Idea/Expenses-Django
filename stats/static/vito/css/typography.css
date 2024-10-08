@@ -58,7 +58,7 @@ import Css
 @import url("Ecommerce.css");
 @import url("EcommerceResponsive.css");
 @import url('spacer.css');
-@import url('table.css');
+/*@import url('table.css');*/
 
 /*---------------------------------------------------------------------
 General
@@ -274,7 +274,7 @@ Buttons
 ------------------------------------------------*/
 .btn { font-size: 14px; font-family: 'Muli', sans-serif;text-transform: capitalize; }
 .btn.focus, .btn:focus { box-shadow: none !important; }
-.btn i { padding-right: 8px; }
+.btn i { padding-right: 1px; }
 .iq-sign-btn { display: inline-block; text-align: center; border: 1px solid transparent; padding: .375rem 1rem; border-radius: 8px; }
 .iq-sign-btn:hover { color: var(--iq-white); background: var(--iq-danger); }
 

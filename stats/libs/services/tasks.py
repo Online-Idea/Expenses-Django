@@ -120,7 +120,6 @@ def post_autoru_xml(task_id: int, section: str, delete_sale: bool = True, leave_
     response = logic.post_feeds_task(autoru_id=autoru_id, section=section, price_url=price_url, delete_sale=delete_sale,
                                      leave_services=leave_services, leave_added_images=leave_added_images,
                                      is_active=is_active)
-    print(response)
     return response
 
 

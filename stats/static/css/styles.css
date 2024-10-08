@@ -164,12 +164,12 @@ ul {
 }
 
 .thick-border td {
-    border-top: medium solid black;
+    border-top: medium solid black !important;
 }
 
 th {
     white-space: normal !important;
-    vertical-align: middle;
+    vertical-align: middle !important;
 }
 
 table.dataTable td,
@@ -220,7 +220,7 @@ body {
 /*    width: 100%;*/
 /*}*/
 
-.card {
+.card-ads {
     box-shadow: rgba(42, 53, 64, 0.1) 10px 12px 12px;
     transition: box-shadow 250ms ease-in-out 0s, background-color 250ms ease-in-out 0s, border-color 250ms ease-in-out 0s;
     border-radius: 15px;
@@ -231,7 +231,7 @@ body {
     height: 70%;
 }
 
-.card:hover {
+.card-ads:hover {
     box-shadow: 15px 18px 15px rgba(27, 37, 47, 0.1);
     border: 1px solid #d9d8d8;
 
@@ -1247,6 +1247,12 @@ input[type="number"]::-webkit-outer-spin-button {
     margin-bottom: 20px;
 }
 
+/* Карточки звонков детально */
+.card-phone-detail {
+    box-shadow: rgba(42, 53, 64, 0.1) 10px 12px 12px;
+    transition: box-shadow 250ms ease-in-out 0s, background-color 250ms ease-in-out 0s, border-color 250ms ease-in-out 0s;
+    border-radius: 15px;
+}
 
 /*----------------------Звонки настраиваемая--------------*/
 .rotate-135 {
@@ -1360,114 +1366,3 @@ input[type="number"]::-webkit-outer-spin-button {
     margin: 0 5px !important; !* Add margin to prevent overlap *!
 }
 */
-/*----------------------Лого--------------*/
-.logo {
-    margin-top: 20px;
-}
-.logo a {
-    color: #000;
-}
-/*----------------------Период--------------*/
-.period {
-    margin: 20px 0;
-}
-/*---------------------------------------------------*/
-
-
-/*----------------------Список клиентов--------------*/
-summary {
-  background: #fff;
-  padding: 5px;
-  border: 2px solid transparent;
-  outline: none;
-  &:focus {
-    border-color: black;
-  }
-}
-
-details {
-  max-width: 500px;
-  box-sizing: border-box;
-  margin-top: 5px;
-}
-.content {
-  border-top: none;
-  padding: 10px;
-  border: 1px solid grey;
-  border-top: none;
-}
-
-#checkboxes ul {
-  margin: 0;
-  list-style: none;
-  float: left;
-}
-
-ul {
-    list-style-type: none;
-}
-
-/*---------------------------------------------------*/
-
-
-
-/*----------------Таблица себестоимости--------------*/
-
-.table-responsive-stack tr {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: horizontal;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: row;
-          flex-direction: row;
-}
-
-
-.table-responsive-stack td,
-.table-responsive-stack th {
-   display:block;
-/*
-   flex-grow | flex-shrink | flex-basis   */
-   -ms-flex: 1 1 auto;
-    flex: 1 1 auto;
-}
-
-.table-responsive-stack .table-responsive-stack-thead {
-   font-weight: bold;
-}
-
-@media screen and (max-width: 768px) {
-   .table-responsive-stack tr {
-      -webkit-box-orient: vertical;
-      -webkit-box-direction: normal;
-          -ms-flex-direction: column;
-              flex-direction: column;
-      border-bottom: 3px solid #ccc;
-      display:block;
-
-   }
-   /*  IE9 FIX   */
-   .table-responsive-stack td {
-      float: left\9;
-      width:100%;
-   }
-}
-
-.thead-dark, .tfoot-dark {
-    color: #fff;
-    background-color: #212529;
-    border-color: #32383e;
-    font-weight: bold;
-}
-
-.client-name {
-    word-break: break-word;
-}
-
-.negative {
-    color: red;
-}
-
-/*---------------------------------------------------*/
-

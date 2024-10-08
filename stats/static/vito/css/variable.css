@@ -16,7 +16,8 @@ Variable
   --iq-dropdown-border: #fff;
   --iq-bg-dark-bg: #6d73f6;  /* pending  not give dark mode */ 
   --iq-bg-light-color: #FDFAFF; /* pending  not give*/
-  --iq-primary: hsl(253deg 61% 55%);
+  /*--iq-primary: hsl(253deg 61% 55%);*/
+  --iq-primary: #1e9bcb;
   --iq-primary-light: hsl(253deg 61% 85%);
   --iq-primary-dark: hsl(253deg 61% 45%);
   --iq-secondary: #FF7A29;

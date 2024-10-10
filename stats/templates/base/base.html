@@ -76,54 +76,33 @@
     {% endblock %}
 
 </head>
-<body class="">
-<!-- loader Start -->
-<!--{#-->
-<!--<div id="loading">#}-->
-<!--    {#-->
-<!--    <div id="loading-center">#}-->
-<!--        {#-->
-<!--    </div>-->
-<!--    #}-->
-<!--    {#-->
-<!--</div>-->
-<!--#}-->
-<!-- loader END -->
-<!-- Wrapper Start -->
-
+<body>
 <div class="wrapper">
     <!-- Sidebar  -->
     <div class="iq-sidebar">
         <div class="iq-sidebar-logo d-flex justify-content-between">
-            <a href="index.html">
+            <a href="{% url 'home' %}">
                 <div class="iq-light-logo">
                     <img src="{% static 'vito/images/logo-online-3.png' %}" class="img-fluid" alt="">
                 </div>
-                <div class="iq-dark-logo">
-                    <img src="{% static 'vito/images/logo-dark.gif' %}" class="img-fluid" alt="">
-                </div>
                 <span>Online</span>
             </a>
-            <div class="iq-menu-bt-sidebar">
-                <div class="iq-menu-bt align-self-center">
-                    <div class="custom-control custom-switch custom-control-inline">
-                        <input type="checkbox" class="custom-control-input wrapper-menu" checked="" id="customSwitch3">
-                        <label class="custom-control-label" for="customSwitch3"></label>
-                        <i class="las la-thumbtack align-self-center"></i>
-                    </div>
-                </div>
-            </div>
-
-
+<!--            <div class="iq-menu-bt-sidebar">-->
+<!--                <div class="iq-menu-bt align-self-center">-->
+<!--                    <div class="custom-control custom-switch custom-control-inline">-->
+<!--                        <input type="checkbox" class="custom-control-input wrapper-menu" checked="" id="customSwitch3">-->
+<!--                        <label class="custom-control-label" for="customSwitch3"></label>-->
+<!--                        <i class="las la-thumbtack align-self-center"></i>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
         </div>
         <div id="sidebar-scrollbar">
             <nav class="iq-sidebar-menu">
                 <ul id="iq-sidebar-toggle" class="iq-menu">
-                    <li class="iq-menu-title"><i class="ri-subtract-line"></i><span>Дом</span></li>
-
                     <li class="active">
                         <a href="{% static 'vito/index.html' %}" class="iq-waves-effect"><i
-                                class="ri-home-4-line"></i><span>Шаблон</span></a>
+                                class="ri-home-4-line"></i><span>Шаблон VITO</span></a>
                     </li>
 
                     <li class="iq-menu-title"><i class="ri-subtract-line"></i><span>Доступные Сервисы</span></li>
@@ -136,6 +115,9 @@
 
                     <li><a href="{% url 'auction' %}" class="iq-waves-effect" aria-expanded="false"><i
                             class="ri-funds-line"></i><span>Аукцион</span></a></li>
+
+<!--                    <li><a href="{% url 'transport_check' %}" class="iq-waves-effect" aria-expanded="false"><i-->
+<!--                            class="ri-survey-line"></i><span>Проверка номеров</span></a></li>-->
 
                     <li><a href="#menu-level-salons" class="iq-waves-effect collapsed" data-toggle="collapse"
                            aria-expanded="false">
@@ -186,9 +168,11 @@
                                     настраиваемая</a></li>
                         </ul>
                     </li>
+
                 </ul>
             </nav>
-            <div class="p-3"></div>
+            <div class="p-3">
+            </div>
         </div>
     </div>
     <!-- TOP Nav Bar -->
@@ -208,8 +192,10 @@
                         <div class="hover-circle"><i class="ri-arrow-right-s-line"></i></div>
                     </div>
                 </div>
+
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 </div>
+
                 {% if request.user.is_authenticated %}
                 <ul class="navbar-list">
                     <li>
@@ -230,14 +216,15 @@
                                         <h5 class="mb-0 text-white line-height">Hello {{ user.username }}</h5>
                                     </div>
                                     <div class="d-inline-block w-100 text-center p-3">
-                                        <a href="{% url  'accounts_app:profile' %}" class="iq-sub-card iq-bg-primary-hover">
-                                            <div class="media align-items-center">
-                                               <div class="rounded iq-card-icon iq-bg-primary">
-                                                  <i class="ri-file-user-line"></i>
-                                               </div>
-                                               <div class="media-body ml-3">
-                                                  <h6 class="mb-0 ">Мой профиль</h6>
-                                               </div>
+                                        <a href="{% url  'accounts_app:profile' %}"
+                                           class="iq-sub-card iq-bg-primary-hover">
+                                            <div class="media align-items-center" style="margin: 10px 0;">
+                                                <div class="rounded iq-card-icon iq-bg-primary">
+                                                    <i class="ri-file-user-line"></i>
+                                                </div>
+                                                <div class="media-body ml-3">
+                                                    <h6 class="mb-0 ">Мой профиль</h6>
+                                                </div>
                                             </div>
                                         </a>
                                         <a class="btn btn-primary dark-btn-primary"
@@ -309,6 +296,15 @@
 <script async src="{% static 'vito/js/chart-custom.js' %}"></script>
 <!-- Custom JavaScript -->
 <script src="{% static 'vito/js/custom.js' %}"></script>
+<script>
+    jQuery(document).ready(function () {
+        // Обрабатываем клик на кнопку для разворачивания/сворачивания меню
+        jQuery('.iq-menu-bt').on('click', function () {
+            jQuery('.iq-sidebar').toggleClass('expanded');
+            jQuery('.content-page').toggleClass('expanded');
+        });
+    });
+</script>
 {% block js_scripts %} {% endblock %}
 </body>
 </html>

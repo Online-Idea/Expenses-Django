@@ -36,15 +36,16 @@
     text-decoration: none;
     color: black;
 }
+
 .white-url {
     text-decoration: none;
     color: white;
 }
+
 .black-url:hover,
 .white-url:hover {
     text-decoration: underline;
 }
-
 
 
 /*----------------------Список клиентов--------------*/
@@ -207,6 +208,7 @@ table.dataTable tr {
 body {
     font-family: 'Montserrat', sans-serif;
 }
+
 .container {
     margin-top: 35px;
     padding-bottom: 30px;
@@ -220,7 +222,7 @@ body {
 /*    width: 100%;*/
 /*}*/
 
-.card {
+.card-ads {
     box-shadow: rgba(42, 53, 64, 0.1) 10px 12px 12px;
     transition: box-shadow 250ms ease-in-out 0s, background-color 250ms ease-in-out 0s, border-color 250ms ease-in-out 0s;
     border-radius: 15px;
@@ -231,7 +233,7 @@ body {
     height: 70%;
 }
 
-.card:hover {
+.card-ads:hover {
     box-shadow: 15px 18px 15px rgba(27, 37, 47, 0.1);
     border: 1px solid #d9d8d8;
 
@@ -286,6 +288,7 @@ body {
     font-size: 50%;
     font-weight: 600;
 }
+
 .text-light {
     background-color: grey;
 }
@@ -318,10 +321,12 @@ body {
     top: -4px;
     cursor: pointer;
 }
+
 .custom-control-label {
     font-size: 16px;
     font-weight: 500;
 }
+
 .block-checkboxer {
     display: flex;
     flex-direction: column;
@@ -329,6 +334,7 @@ body {
     margin-right: 20px;
     margin-top: 20px;
 }
+
 /*------------------------Детальная страница объявления---------------------------*/
 
 .detail-page {
@@ -661,7 +667,7 @@ body {
     border-radius: 10px;
 }
 
-#toggle-sort:hover::before , #toggle-filter:hover::before {
+#toggle-sort:hover::before, #toggle-filter:hover::before {
     border-color: #38393b; /* Цвет рамки при наведении */
 }
 
@@ -959,7 +965,8 @@ input[type="number"]::-webkit-outer-spin-button {
 
 
 .iq-sidebar {
-    border-radius: 15px;]
+    border-radius: 15px;
+]
 
 }
 
@@ -1155,6 +1162,7 @@ input[type="number"]::-webkit-outer-spin-button {
         font-size: 13px;
         padding-bottom: 8px;
     }
+
     .inner-container-form button {
         font-size: 10px;
         padding: 7px 33px;
@@ -1174,8 +1182,12 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Ключевые кадры для анимации появления */
 @keyframes fadeIn {
-    from {opacity: 0;}
-    to {opacity: 1;}
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .messages {
@@ -1187,6 +1199,7 @@ input[type="number"]::-webkit-outer-spin-button {
     height: 30%;
     z-index: 1000;
 }
+
 /* Стилизация отдельного сообщения */
 .alert {
     animation-name: fadeIn;
@@ -1282,6 +1295,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .hidden {
     display: none;
 }
+
 /*
 Попытки показывать русские надписи полностью, не получилось, но пока оставлю
 #wdr-toolbar-wrapper #wdr-toolbar a>span {
@@ -1364,43 +1378,48 @@ input[type="number"]::-webkit-outer-spin-button {
 .logo {
     margin-top: 20px;
 }
+
 .logo a {
     color: #000;
 }
+
 /*----------------------Период--------------*/
 .period {
     margin: 20px 0;
 }
+
 /*---------------------------------------------------*/
 
 
 /*----------------------Список клиентов--------------*/
 summary {
-  background: #fff;
-  padding: 5px;
-  border: 2px solid transparent;
-  outline: none;
-  &:focus {
-    border-color: black;
-  }
+    background: #fff;
+    padding: 5px;
+    border: 2px solid transparent;
+    outline: none;
+
+    &:focus {
+        border-color: black;
+    }
 }
 
 details {
-  max-width: 500px;
-  box-sizing: border-box;
-  margin-top: 5px;
+    max-width: 500px;
+    box-sizing: border-box;
+    margin-top: 5px;
 }
+
 .content {
-  border-top: none;
-  padding: 10px;
-  border: 1px solid grey;
-  border-top: none;
+    border-top: none;
+    padding: 10px;
+    border: 1px solid grey;
+    border-top: none;
 }
 
 #checkboxes ul {
-  margin: 0;
-  list-style: none;
-  float: left;
+    margin: 0;
+    list-style: none;
+    float: left;
 }
 
 ul {
@@ -1410,48 +1429,48 @@ ul {
 /*---------------------------------------------------*/
 
 
-
 /*----------------Таблица себестоимости--------------*/
 
 .table-responsive-stack tr {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: horizontal;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: row;
-          flex-direction: row;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: row;
+    flex-direction: row;
 }
 
 
 .table-responsive-stack td,
 .table-responsive-stack th {
-   display:block;
-/*
-   flex-grow | flex-shrink | flex-basis   */
-   -ms-flex: 1 1 auto;
+    display: block;
+    /*
+       flex-grow | flex-shrink | flex-basis   */
+    -ms-flex: 1 1 auto;
     flex: 1 1 auto;
 }
 
 .table-responsive-stack .table-responsive-stack-thead {
-   font-weight: bold;
+    font-weight: bold;
 }
 
 @media screen and (max-width: 768px) {
-   .table-responsive-stack tr {
-      -webkit-box-orient: vertical;
-      -webkit-box-direction: normal;
-          -ms-flex-direction: column;
-              flex-direction: column;
-      border-bottom: 3px solid #ccc;
-      display:block;
+    .table-responsive-stack tr {
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        border-bottom: 3px solid #ccc;
+        display: block;
 
-   }
-   /*  IE9 FIX   */
-   .table-responsive-stack td {
-      float: left\9;
-      width:100%;
-   }
+    }
+
+    /*  IE9 FIX   */
+    .table-responsive-stack td {
+        float: left \9;
+        width: 100%;
+    }
 }
 
 .thead-dark, .tfoot-dark {
@@ -1469,5 +1488,49 @@ ul {
     color: red;
 }
 
-/*---------------------------------------------------*/
+/*!*---------------------------------------------------*!*/
+/*!* Боковое меню в свернутом состоянии *!*/
+/*.iq-sidebar {*/
+/*    width: 80px;*/
+/*    transition: width 0.45s ease;*/
+/*}*/
 
+/*!* Боковое меню в раскрытом состоянии *!*/
+/*.iq-sidebar.expanded {*/
+/*    width: 260px;*/
+/*}*/
+
+/*!* Контент смещается при расширении бокового меню *!*/
+/*.content-page {*/
+/*    margin-left: 80px;*/
+/*    transition: all 0.45s ease;*/
+/*}*/
+
+/*.iq-sidebar.expanded + .content-page {*/
+/*    margin-left: 260px;*/
+/*}*/
+
+/*!* Скрывем текст и стрелки в свернутом состоянии *!*/
+/*.iq-sidebar .iq-sidebar-menu .iq-menu li a .iq-arrow-right,*/
+/*.iq-sidebar .iq-sidebar-menu .iq-menu li a span,*/
+/*.iq-sidebar .iq-sidebar-logo a span,*/
+/*.iq-sidebar .iq-menu-bt {*/
+/*    display: none;*/
+/*    opacity: 0;*/
+/*    transition: all 0.45s ease;*/
+/*}*/
+
+/*!* Показываем текст и стрелки в раскрытом состоянии *!*/
+/*.iq-sidebar.expanded .iq-sidebar-menu .iq-menu li a .iq-arrow-right,*/
+/*.iq-sidebar.expanded .iq-sidebar-menu .iq-menu li a span,*/
+/*.iq-sidebar.expanded .iq-sidebar-logo a span,*/
+/*.iq-sidebar.expanded .iq-menu-bt {*/
+/*    display: inline-block;*/
+/*    opacity: 1;*/
+/*    transition: all 0.45s ease;*/
+/*}*/
+
+/*!* Управляем стрелками в раскрытом состоянии *!*/
+/*.iq-sidebar.expanded .iq-sidebar-menu .iq-menu li a .iq-arrow-right {*/
+/*    margin-right: 0;*/
+/*}*/

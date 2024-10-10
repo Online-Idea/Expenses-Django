@@ -407,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
             adContainer.className = 'container mt-4';
             // Заполняем карточку данными из переданного объекта ad
             adContainer.innerHTML = `
-        <div class="card">
+        <div class="card-ads">
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">

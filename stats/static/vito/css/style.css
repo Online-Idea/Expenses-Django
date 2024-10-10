@@ -299,7 +299,7 @@ body.sidebar-main .iq-sidebar:hover .iq-sidebar-menu .iq-menu li ul.iq-submenu-d
                              Top Menu
 -----------------------------------------------------------------------*/
 .iq-top-navbar .iq-navbar-custom .iq-menu-bt { display: none; }
-.iq-top-navbar { padding: 0; min-height: 73px; position: fixed; top: 0; left: auto; right: 30px; width: calc(100% - 319px); display: inline-block; z-index: 99; background: var(--iq-body-bg); margin: 0; transition: all 0.45s ease 0s; border-radius: 0 0 15px 15px; }
+.iq-top-navbar { padding: 0; min-height: 73px; position: fixed; top: 0; left: auto; right: 30px; width: calc(100% - 319px); display: inline-block; z-index: 2; background: var(--iq-body-bg); margin: 0; transition: all 0.45s ease 0s; border-radius: 0 0 15px 15px; }
 .iq-navbar-custom { background: var(--iq-card-bg); border-radius: 8px; margin: 20px 0 0; -moz-box-shadow: 0px 2px 8px var(--iq-card-shadow-1), 0px 4px 16px var(--iq-card-shadow-2);} /*box-shadow: 0px 2px 8px var(--iq-card-shadow-1), 0px 4px 16px var(--iq-card-shadow-2);   -webkit-box-shadow: 0px 2px 8px var(--iq-card-shadow-1), 0px 4px 16px var(--iq-card-shadow-2);*/
 .iq-top-navbar.fixed-header { margin: 0; top: 20px; right: 0; width: calc(100% - 260px); border-radius: 0; transition: all 0.45s ease 0s; }
 .iq-top-navbar .iq-navbar-custom .navbar-breadcrumb { display: block; margin-left: 30px; padding: 10px 0; }
@@ -356,7 +356,7 @@ body.top-tab-horizontal .iq-show .search-box { padding: 0; }
 body.sidebar-main .iq-menu-bt-sidebar .iq-menu-bt { opacity: 1; }
 /*Удалили из iq-menu-bt свойство  background: var(--iq-body-bg); удалил padding: 12px 7px; добавил margin-bottom: 10px; изменил margin-right: 5px;*/
 .iq-menu-bt {margin-bottom: 10px; margin-right: 5px; -webkit-transition: all 0.3s ease-out 0s; -moz-transition: all 0.3s ease-out 0s; -ms-transition: all 0.3s ease-out 0s; -o-transition: all 0.3s ease-out 0s; transition: all 0.3s ease-out 0s; -webkit-border-radius: 8px; -moz-border-radius: 8px; border-radius: 8px; }
-.wrapper-menu { font-size: 30px; line-height: 15px; color: var(--iq-primary); position: relative; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 330ms ease-out; }
+.wrapper-menu { font-size: 15px; line-height: 15px; color: var(--iq-primary); position: relative; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 330ms ease-out; }
 .line-menu { background-color: var(--iq-primary); border-radius: 90px; width: 100%; height: 2px; }
 .line-menu.half { width: 50%; }
 .line-menu.start { transition: transform 330ms cubic-bezier(0.54, -0.81, 0.37, 0.37); transform-origin: right; }

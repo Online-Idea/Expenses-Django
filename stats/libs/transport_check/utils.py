@@ -48,7 +48,7 @@ def check_captcha_and_solve(driver: WebDriver) -> None:
         mask_selenium(driver)
         enhance_fingerprinting(driver)
         add_custom_headers(driver)
-        simulate_user_interaction(driver)
+        # simulate_user_interaction(driver)
         print('START CAPTCHA!')
         random_delay(3, 5)  # Увеличиваем задержку
         solve_start_captcha(driver)
@@ -91,19 +91,35 @@ def mask_selenium(driver):
         "source": """
             Object.defineProperty(navigator, 'webdriver', {
                 get: () => undefined
-            })
+            });
+
+            window.navigator.chrome = {
+                runtime: {},
+                loadTimes: () => null,
+                csi: () => null
+            };
+
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['ru-RU', 'ru', 'en-US', 'en']
+            });
+
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3]
+            });
         """
     })
 
-
 def enhance_fingerprinting(driver):
     """Эмуляция расширенного отпечатка браузера."""
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     driver.execute_cdp_cmd("Network.setUserAgentOverride", {
-        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "userAgent": user_agent
     })
     driver.execute_script("""
         Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
         Object.defineProperty(navigator, 'vendor', { get: () => 'Google Inc.' });
+        Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 });
+        Object.defineProperty(navigator, 'deviceMemory', { get: () => 16 });
     """)
 
 
@@ -130,14 +146,14 @@ def update_hidden_fields(driver):
 
 def solve_start_captcha(driver: WebDriver) -> None:
     """Решение стартовой капчи на входной странице с поэтапным вводом символов."""
-    simulate_user_interaction(driver)
+    # simulate_user_interaction(driver)
     solution = solve_captcha(driver, 'captcha-img')
     if solution['status success']:
         code_solve = solution['code']  # Получаем текст капчи
         print('Код для капчи получен:', code_solve)
         input_element = driver.find_element(By.ID, 'image_code')
         input_element.click()
-        simulate_user_interaction(driver)
+        # simulate_user_interaction(driver)
         # Вводим капчу по одному символу с паузами
         # actions = ActionChains(driver)
         # actions.move_to_element(input_element).click().perform()
@@ -152,7 +168,7 @@ def solve_start_captcha(driver: WebDriver) -> None:
         simulate_user_interaction(driver)
 
         # Обновляем скрытые поля перед отправкой формы
-        update_hidden_fields(driver)
+        # update_hidden_fields(driver)
         random_delay(2, 3)
         # Отправляем форму с использованием JS (чтобы не было явных кликов Selenium)
         driver.execute_script("document.querySelector('form').submit();")
@@ -188,7 +204,7 @@ def capture_captcha_screenshot(driver: WebDriver, captcha_element, save_path: st
     print(f"Скриншот капчи сохранен как {save_path}")
 
 
-def solve_captcha(driver: WebDriver, captcha_selector: str) -> dict[str, str | bool]:
+def solve_captcha(driver: WebDriver, captcha_selector: str, lang='ru') -> dict[str, str | bool]:
     """
     Решение капчи через внешний сервис 2Captcha.
     Возвращает словарь с полем `status success` и кодом капчи.
@@ -203,7 +219,7 @@ def solve_captcha(driver: WebDriver, captcha_selector: str) -> dict[str, str | b
 
     try:
         print('Ожидание ответа от 2Captcha...')
-        result = solver.normal(save_path)
+        result = solver.normal(save_path, lang=lang)
         if 'code' not in result or 'ERROR_CAPTCHA_UNSOLVABLE' in result:
             return {'status success': False}
         return {'status success': True, 'code': result['code']}
@@ -214,7 +230,7 @@ def solve_captcha(driver: WebDriver, captcha_selector: str) -> dict[str, str | b
 
 def solve_second_captcha(driver: WebDriver) -> None:
     """Решение второй капчи на форме поиска."""
-    solution = solve_captcha(driver, 'captcha_image')
+    solution = solve_captcha(driver, 'captcha_image', lang='en')
     if solution['status success']:
         code_solve = solution['code']
         input_element = driver.find_element(By.ID, 'gruzoviki_reestr_form_captcha')
@@ -342,7 +358,7 @@ def start_driver():
 
 
 def solve_and_parse(nomera: List[str]) -> List[Dict]:
-    # Сюда поместим логику для запуска драйвера, решения капчи и парсинга
+    # логика для запуска драйвера, решения капчи и парсинга
     global wait
     driver = start_driver()
     wait = WebDriverWait(driver, 20)

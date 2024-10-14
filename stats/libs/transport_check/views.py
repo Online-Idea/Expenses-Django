@@ -19,7 +19,7 @@ class TransportCheckView(View):
         form = TransportForm(request.POST)
         if form.is_valid():
             # Получаем список номеров из формы
-            nomera = form.cleaned_data['numbers'].split(',')
+            nomera = form.cleaned_data['numbers'].split('\n')
             nomera = [n.strip() for n in nomera]
 
             # Парсим данные для номеров

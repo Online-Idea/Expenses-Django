@@ -488,6 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 // Получаем данные с сервера и подготавливаем их к отображению
                 let response_data = await response.json();
+                console.log(response_data)
                 return this.data_preparation(response_data, field)
             } catch (error) {
                 console.error(`Произошла ошибка при запросе: ${error.message}`);

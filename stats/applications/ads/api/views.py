@@ -67,7 +67,7 @@ class MarkListView(ListAPIView):
     Вью для получения списка марок с возможной фильтрацией по salon_id.
     """
     serializer_class = serializers.MarkSerializer
-
+    pagination_class = None
     def get_queryset(self):
         """
         Возвращает уникальный список марок с фильтрацией по salon_id, если он указан.
@@ -81,6 +81,7 @@ class MarkListView(ListAPIView):
             # Фильтруем по salon_id, если он указан
             salon_id = int(salon_id[0])
             queryset = queryset.filter(ads__salon_id=salon_id)
+            print(f'{queryset=}')
         return queryset
 
 
@@ -89,6 +90,7 @@ class ModelsByMarkView(ListAPIView):
     Вью для получения списка моделей по выбранной марке с возможной фильтрацией по salon_id.
     """
     serializer_class = serializers.ModelSerializer
+    pagination_class = None
 
     def get_queryset(self):
         """
@@ -118,6 +120,7 @@ class ModificationsByModelView(ListAPIView):
     Вью для получения списка модификаций по выбранной модели с возможной фильтрацией по salon_id.
     """
     serializer_class = serializers.ModificationSerializer
+    pagination_class = None
 
     def get_queryset(self):
         """

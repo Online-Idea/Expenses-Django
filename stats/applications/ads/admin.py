@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import Salon
 
 
-@admin.register(Salon)
+# TODO убрал пока салоны не готовы. Вернуть потом
+# @admin.register(Salon)
 class SalonAdmin(admin.ModelAdmin):
     """
     Конфигурация административной панели для модели Salon.

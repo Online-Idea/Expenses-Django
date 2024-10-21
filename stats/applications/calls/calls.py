@@ -17,7 +17,7 @@ from django.utils.http import urlencode
 from applications.accounts.models import Client
 from applications.calls.models import CallPriceSetting, TargetChoice, ChargeTypeChoice, Call, Plan, ClientPrimatel
 from libs.services.forms import ClientChooseForm
-from libs.services.models import Mark, Model
+from applications.mainapp.models import Mark, Model
 from libs.services.utils import split_daterange, get_all_fields_verbose_names, extract_digits
 
 
@@ -154,7 +154,7 @@ def prepare_pivot_data(queryset: QuerySet[Call]):
     :return:
     """
     values = ['datetime', 'num_from', 'num_to', 'num_redirect', 'duration', 'client_primatel__client__name',
-              'mark__mark', 'model__model', 'target', 'moderation', 'call_price', 'status']
+              'mark__name', 'model__name', 'target', 'moderation', 'call_price', 'status']
 
     result = [{
         # 'datetime': obj['datetime'].isoformat(),  # Такой вид разбивает на отдельные столбцы: День, Месяц, Год
@@ -164,8 +164,8 @@ def prepare_pivot_data(queryset: QuerySet[Call]):
         # 'num_redirect': obj['num_redirect'],
         # 'duration': obj['duration'],
         'client_primatel__client__name': obj['client_primatel__client__name'],
-        'mark__mark': obj['mark__mark'],
-        'model__model': obj['model__model'],
+        'mark__name': obj['mark__name'],
+        'model__name': obj['model__name'],
         'target': obj['target'],
         'moderation': obj['moderation'],
         'call_price': int(obj['call_price']) if obj['call_price'] else 0,

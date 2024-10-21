@@ -77,7 +77,7 @@ function populateOptions(uniqueMarksWithModels, selectedMark, modelField) {
   uniqueMarksWithModels[selectedMark].forEach(model => {
     const option = document.createElement('option');
     option.value = model.id;
-    option.text = model.model;
+    option.text = model.name;
     modelField.add(option);
   });
 }

@@ -120,8 +120,8 @@ def calls(request):
 @allowed_users(allowed_groups=['admin', 'listener', 'client'])
 def download_calls(request):
     context = get_calls_data(request)
-    columns = ['client_primatel__client__name', 'datetime', 'num_from', 'num_to', 'duration', 'mark__mark',
-               'model__model', 'target', 'moderation', 'call_price', 'status', 'other_comments', 'client_name',
+    columns = ['client_primatel__client__name', 'datetime', 'num_from', 'num_to', 'duration', 'mark__name',
+               'model__name', 'target', 'moderation', 'call_price', 'status', 'other_comments', 'client_name',
                'manager_name', 'car_price', 'color', 'body', 'drive', 'engine', 'complectation', 'attention', 'city',
                'num_redirect']
     call_data = (

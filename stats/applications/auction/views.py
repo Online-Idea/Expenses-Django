@@ -22,7 +22,7 @@ def auction(request):
                 and len(json.loads(context['regions_checked'])) == 1 \
                 and context['auction_data']:
             auction_data_values = list(
-                context['auction_data'].values("datetime", "autoru_region", "mark__mark", "model__model", "position",
+                context['auction_data'].values("datetime", "autoru_region", "mark__name", "model__name", "position",
                                                "bid", "competitors", "client__name"))
             plot_html = plot_auction(auction_data_values)
             context['plot_html'] = plot_html
@@ -45,7 +45,7 @@ def auction(request):
 def download_auction(request):
     context = get_auction_data(request)
 
-    qs = context['auction_data'].values_list('id', 'datetime', 'autoru_region', 'mark__mark', 'model__model',
+    qs = context['auction_data'].values_list('id', 'datetime', 'autoru_region', 'mark__name', 'model__name',
                                              'position', 'bid', 'dealer', 'competitors')
     headers = ['id', 'Дата и время', 'Регион', 'Марка', 'Модель', 'Позиция', 'Ставка', 'Дилер',
                'Количество конкурентов']

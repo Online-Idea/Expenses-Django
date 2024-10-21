@@ -6,27 +6,28 @@
 
   <title>Звонки. Сводная</title>
 
+  <link rel="stylesheet" href="{% static 'calls/css/calls.css' %}">
   {% include 'base/daterange_picker.html' %}
 
 {% endblock %}
 
 {% block content %}
-    <div class="row">
-      <div class="col-xl-6 center">
-        <h3 class="logo"><a href="{% url 'calls_pivot' %}">Звонки. Сводная</a></h3>
-      </div>
-      <div class="col-xl-6 text-end">
-        <p class="small-note text-end">Обновлено: {{ last_updated }}</p>
-        {% if request.user|has_group:'admin' %}
-          <button class="btn btn-outline-primary btn-sm">
-            <a
-              href="https://docs.google.com/document/d/11rOTSOJTznCVxQYE8uGOF56DbufO0bBteBnd8EKDR6Y/edit?usp=sharing"
-              target="_blank"
-            >?</a>
-          </button>
-        {% endif %}
-      </div>
+  <div class="row">
+    <div class="col-xl-6 center">
+      <h3 class="logo"><a href="{% url 'calls_pivot' %}">Звонки. Сводная</a></h3>
     </div>
+    <div class="col-xl-6 text-end">
+      <p class="small-note text-end">Обновлено: {{ last_updated }}</p>
+      {% if request.user|has_group:'admin' %}
+        <button class="btn btn-outline-primary btn-sm">
+          <a
+            href="https://docs.google.com/document/d/11rOTSOJTznCVxQYE8uGOF56DbufO0bBteBnd8EKDR6Y/edit?usp=sharing"
+            target="_blank"
+          >?</a>
+        </button>
+      {% endif %}
+    </div>
+  </div>
 
   <div class="row">
     <!--Выбор периода-->

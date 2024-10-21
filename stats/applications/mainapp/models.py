@@ -93,7 +93,7 @@ class AbstractMark(BaseModel):
     """
     Абстрактная базовая модель для марок авто.
     """
-    name = models.CharField(max_length=64, unique=True, verbose_name='Название марки')
+    name = models.CharField(max_length=64, unique=True, verbose_name='Марка')
 
     class Meta:
         abstract = True
@@ -103,7 +103,7 @@ class AbstractModel(BaseModel):
     """
     Абстрактная базовая модель для моделей авто.
     """
-    name = models.CharField(max_length=64, verbose_name='Название модели')
+    name = models.CharField(max_length=64, verbose_name='Модель')
 
     class Meta:
         abstract = True
@@ -113,7 +113,7 @@ class AbstractGeneration(BaseModel):
     """
     Абстрактная базовая модель для поколений авто.
     """
-    name = models.CharField(max_length=64, verbose_name='Название поколения')
+    name = models.CharField(max_length=64, verbose_name='Поколение')
 
     class Meta:
         abstract = True
@@ -160,7 +160,7 @@ class AbstractModification(BaseModel):
         REAR = 'Задний', _('Задний')
         FULL = 'Полный', _('Полный')
 
-    name = models.CharField(max_length=100, verbose_name="Название модификации")
+    name = models.CharField(max_length=100, verbose_name="Модификация")
 
     years_from = models.IntegerField(validators=[MinValueValidator(1900), MaxValueValidator(datetime.now().year)],
                                      verbose_name="Годы от")
@@ -198,7 +198,7 @@ class AbstractComplectation(BaseModel):
     Абстрактная базовая модель для комплектаций.
     """
     name = models.CharField(max_length=100, null=True, blank=True,
-                            verbose_name="Название комплектации")
+                            verbose_name="Комплектация")
 
     class Meta:
         abstract = True
@@ -226,6 +226,10 @@ class Model(AbstractModel, BaseField):
     class Meta:
         verbose_name = 'Модель'
         verbose_name_plural = 'Модели'
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(fields=['mark', 'name'], name='unique_mark_model2'),
+        ]
 
     def __str__(self): return self.name
 

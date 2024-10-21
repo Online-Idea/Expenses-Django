@@ -635,9 +635,9 @@ def procces_modification(**kwargs) -> AutoruModification:
         'Механика': 'MT'
     }
     transmission = transmission_mapping[modification_dict['transmission']]
-    kwargs['short_name'] = (f'{modification_dict['engine_volume']} {modification_dict['power']} л.с. '
-                            f'{process_drive(kwargs['drive'])} {modification_dict['engine_type']} '
-                            f'{transmission}')
+    kwargs['short_name'] = (f"{modification_dict['engine_volume']} {modification_dict['power']} л.с. "
+                            f"{process_drive(kwargs['drive'])} {modification_dict['engine_type']} "
+                            f"{transmission}")
     kwargs['clients_name'] = process_name(kwargs['name'])
     kwargs['name'] = process_name(kwargs['name'])
     body_type_dict = process_body_type(kwargs['body_type'])

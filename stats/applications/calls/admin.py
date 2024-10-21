@@ -3,7 +3,7 @@ from django.utils.html import format_html
 
 from applications.calls.models import ClientPrimatelMark, ClientPrimatel, CallPriceSetting, ChargeTypeChoice, \
     ModerationChoice, CalltouchSetting, Plan, Call
-from libs.services.models import Model, Mark
+from applications.mainapp.models import Mark, Model
 
 
 # Register your models here.

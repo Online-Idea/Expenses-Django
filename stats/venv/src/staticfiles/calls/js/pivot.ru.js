@@ -16,6 +16,7 @@
     nf = $.pivotUtilities.numberFormat;
     tpl = $.pivotUtilities.aggregatorTemplates;
     frFmt = nf({
+      digitsAfterDecimal: 0,
       thousandsSep: " ",
       decimalSep: ","
     });
@@ -42,7 +43,9 @@
         filterResults: "Возможные значения",
         totals: "Всего",
         vs: "на",
-        by: "с"
+        by: "с",
+        apply: "Применить",
+        cancel: "Отмена"
       },
       aggregators: {
         "Кол-во": tpl.count(frFmtInt),
@@ -68,7 +71,8 @@
         "График столбцы": $.pivotUtilities.renderers["Table Barchart"],
         "Тепловая карта": $.pivotUtilities.renderers["Heatmap"],
         "Тепловая карта по строке": $.pivotUtilities.renderers["Row Heatmap"],
-        "Тепловая карта по столбцу": $.pivotUtilities.renderers["Col Heatmap"]
+        "Тепловая карта по столбцу": $.pivotUtilities.renderers["Col Heatmap"],
+        "TSV Экспорт": $.pivotUtilities.export_renderers["TSV Export"]
       }
     };
   });

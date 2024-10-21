@@ -109,7 +109,7 @@ class AutoruMark(AbstractMark):
                                         verbose_name='Значение атрибута "name" у тега <mark> из xml-файла')
 
     class Meta:
-        db_table = 'autoru_marks'
+        db_table = 'autoru_mark'
         verbose_name = 'Марка'
         verbose_name_plural = 'Марки'
         ordering = ['name']
@@ -127,7 +127,7 @@ class AutoruModel(AbstractModel):
                              verbose_name='Ссылка на соответствующую марку автомобиля.')
 
     class Meta:
-        db_table = 'autoru_models'
+        db_table = 'autoru_model'
         verbose_name = 'Модель'
         verbose_name_plural = 'Модели'
 
@@ -143,7 +143,7 @@ class AutoruGeneration(AbstractGeneration):
                               verbose_name="Ссылка на соответствующую модель автомобиля.")
 
     class Meta:
-        db_table = 'autoru_generations'
+        db_table = 'autoru_generation'
         verbose_name = 'Поколение'
         verbose_name_plural = 'Поколения'
 
@@ -165,7 +165,7 @@ class AutoruModification(AbstractModification):
                                    verbose_name="Поколение, к которой относится модификация")
 
     class Meta:
-        db_table = 'autoru_modifications'
+        db_table = 'autoru_modification'
         verbose_name = 'Модификация'
         verbose_name_plural = 'Модификации'
 
@@ -187,7 +187,7 @@ class AutoruComplectation(AbstractComplectation):
                                      verbose_name="Ссылка на соответствующую модификацию автомобиля.", default=1)
 
     class Meta:
-        db_table = 'autoru_complectations'
+        db_table = 'autoru_complectation'
         verbose_name = 'Комплектация'
         verbose_name_plural = 'Комплектации'
 

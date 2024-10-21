@@ -80,6 +80,7 @@ class AvitoModification(AbstractModification):
                                             verbose_name="Модель к которой относится модификация")
     generation = models.ForeignKey(AvitoGeneration, on_delete=models.CASCADE, related_name='modifications',
                                                  verbose_name="Поколение к которой относится модификация")
+    mainapp_modification = models.ForeignKey(Modification, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Модификация')
 
     class Meta:
         db_table = 'avito_modification'

@@ -17,7 +17,7 @@ from applications.auction.forms import AuctionChooseForm
 from applications.auction.models import AutoruAuctionHistory
 from libs.autoru.models import AutoruRegion
 from libs.autoru.refactor_autoru import AutoruLogic
-from libs.services.models import Mark, Model
+from applications.mainapp.models import Mark, Model
 from libs.services.utils import xlsx_column_width, split_daterange
 
 
@@ -86,7 +86,7 @@ def get_auction_data(request):
 def plot_auction(data: QuerySet):
     df = pd.DataFrame.from_records(data)
 
-    df = df.rename(columns={"mark__mark": "mark", "model__model": "model", "client__name": "client"})
+    df = df.rename(columns={"mark__name": "mark", "model__name": "model", "client__name": "client"})
 
     # Только первая позиция
     df = df[df['position'] == 1]
@@ -189,7 +189,7 @@ def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame,
 
     # Марки как объекты из базы
     unique_marks_names = new_df['context.mark_name'].unique()
-    marks = Mark.objects.filter(mark__in=unique_marks_names)
+    marks = Mark.objects.filter(name__in=unique_marks_names)
 
     # Добавляю марки которых нет в базе
     if len(unique_marks_names) != len(marks):
@@ -198,37 +198,37 @@ def prepare_auction_history(data: dict, datetime_: datetime) -> Union[DataFrame,
 
         for mark in unique_marks_names:
             if mark not in marks_str:
-                new_marks.append(Mark(mark=mark, teleph=mark, autoru=mark, avito=mark, drom=mark, human_name=mark))
+                new_marks.append(Mark(name=mark, teleph=mark, autoru=mark, avito=mark, drom=mark, human_name=mark))
         Mark.objects.bulk_create(new_marks)
-        marks = Mark.objects.filter(mark__in=unique_marks_names)
+        marks = Mark.objects.filter(name__in=unique_marks_names)
 
     # Подставляю
     unique_marks_objs = {}
     for mark_name in unique_marks_names:
-        unique_marks_objs[mark_name] = marks.filter(mark=mark_name)[0]
+        unique_marks_objs[mark_name] = marks.filter(name=mark_name)[0]
     new_df['mark_obj'] = new_df['context.mark_name'].replace(unique_marks_objs)
 
     # Модели как объекты из базы
     unique_marks_models_names = new_df[['context.mark_name', 'context.model_name']].drop_duplicates()
-    models = Model.objects.filter(mark__mark__in=unique_marks_names)
+    models = Model.objects.filter(mark__name__in=unique_marks_names)
 
     # Добавляю модели которых нет в базе
     new_models = []
     for _, row in unique_marks_models_names.iterrows():
         curr_mark = row['context.mark_name']
         curr_model = row['context.model_name']
-        if not models.filter(mark__mark=curr_mark, model=curr_model):
-            new_models.append(Model(mark=marks.filter(mark=curr_mark)[0], model=curr_model, teleph=curr_model,
+        if not models.filter(mark__name=curr_mark, name=curr_model):
+            new_models.append(Model(mark=marks.filter(name=curr_mark)[0], name=curr_model, teleph=curr_model,
                                     autoru=curr_model, avito=curr_model, drom=curr_model, human_name=curr_model))
     Model.objects.bulk_create(new_models)
 
     # Подставляю
-    models = Model.objects.filter(mark__mark__in=unique_marks_names)
+    models = Model.objects.filter(mark__name__in=unique_marks_names)
     models_objs = []
     for _, row in new_df.iterrows():
         models_objs.append(models.filter(
-            mark__mark=row['context.mark_name'],
-            model=row['context.model_name'])[0])
+            mark__name=row['context.mark_name'],
+            name=row['context.model_name'])[0])
 
     new_df['model_obj'] = models_objs
 
@@ -260,8 +260,8 @@ def auction_history_drop_unknown(all_bids: DataFrame) -> DataFrame:
     :return: обработанный df
     """
     # Поля для сортировок
-    all_bids['mark_value'] = all_bids['mark'].apply(lambda x: x.mark)
-    all_bids['model_value'] = all_bids['model'].apply(lambda x: x.model)
+    all_bids['mark_value'] = all_bids['mark'].apply(lambda x: x.name)
+    all_bids['model_value'] = all_bids['model'].apply(lambda x: x.name)
 
     # Тут дропаю неизвестных дилеров, заменяя их нашими клиентами.
     # Всех наших клиентов сортирую в верх таблицы чтобы удалялись строки-дубли где клиентов нет

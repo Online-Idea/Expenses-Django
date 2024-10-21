@@ -11,7 +11,7 @@ class AutoruParsedAdSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
-        rep['mark'] = instance.mark.mark
-        rep['model'] = instance.model.model
+        rep['mark'] = instance.mark.name
+        rep['model'] = instance.model.name
         return rep
 

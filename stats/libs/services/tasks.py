@@ -151,7 +151,6 @@ def get_and_delete_autoru_ads(autoru_id: int):
 
 @shared_task
 def get_primatel_data(from_: str = None, to: str = None, download_records: bool = True):
-    # TODO если to минус from_ больше 10 то разбивать на несколько запросов по 10 дней каждый
     if not from_ or not to:
         from_ = datetime.today() - timedelta(days=1)
         to = datetime.today()

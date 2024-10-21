@@ -36,8 +36,8 @@ class CallDatatableView(AjaxDatatableView):
             {'name': 'num_from', 'title': 'Исходящий', 'orderable': True, 'searchable': True},
             {'name': 'num_to', 'title': 'Входящий', 'orderable': True, 'searchable': True},
             {'name': 'duration', 'title': 'Длительность', 'orderable': True},
-            {'name': 'mark', 'title': 'Марка', 'foreign_field': 'mark__mark', 'orderable': True, 'searchable': True},
-            {'name': 'model', 'title': 'Модель', 'foreign_field': 'model__model', 'orderable': True, 'searchable': True},
+            {'name': 'mark', 'title': 'Марка', 'foreign_field': 'mark__name', 'orderable': True, 'searchable': True},
+            {'name': 'model', 'title': 'Модель', 'foreign_field': 'model__name', 'orderable': True, 'searchable': True},
             {'name': 'target', 'title': 'Целевой', 'orderable': True, 'choices': True, 'autofilter': True},
             {'name': 'call_price', 'title': 'Стоимость звонка', 'orderable': True, },
             {'name': 'moderation', 'title': 'М', 'orderable': True, 'choices': True, 'autofilter': True},
@@ -157,7 +157,9 @@ class CallDatatableView(AjaxDatatableView):
         }
 
         record = self.model.objects.get(pk=pk)
-        field_verbose_names = {field.name: field.verbose_name for field in record._meta.get_fields()}
+        field_verbose_names = {
+            field.name: field.verbose_name for field in record._meta.get_fields() if field.name in fields
+        }
 
         rows = []
         current_row = []

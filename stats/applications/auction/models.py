@@ -1,6 +1,7 @@
 from django.db import models
 
-from libs.services.models import BaseModel, Mark, Model
+from libs.services.models import BaseModel
+from applications.mainapp.models import Mark, Model
 from applications.accounts.models import Client
 
 
@@ -16,7 +17,7 @@ class AutoruAuctionHistory(BaseModel):
     dealer = models.CharField(max_length=500, null=True, blank=True, verbose_name='Дилер')
 
     def __str__(self):
-        return f'{self.datetime} | {self.autoru_region} | {self.mark.mark} | {self.model.model} | {self.position} | {self.bid}'
+        return f'{self.datetime} | {self.autoru_region} | {self.mark.name} | {self.model.name} | {self.position} | {self.bid}'
 
     class Meta:
         db_table = 'auction_autoru_auction_history'

@@ -89,7 +89,7 @@ def download_parsed_ads(request):
         filter_params['datetime__lte'] = context['dateto_dt']
         filter_params.pop('daterange', None)
 
-        columns = ['datetime', 'region', 'mark__mark', 'model__model', 'complectation', 'modification', 'year',
+        columns = ['datetime', 'region', 'mark__name', 'model__name', 'complectation', 'modification', 'year',
                    'dealer', 'price_with_discount', 'price_no_discount', 'with_nds', 'position_actual',
                    'position_total', 'link', 'condition', 'in_stock', 'services', 'tags', 'photos']
 
@@ -105,7 +105,7 @@ def download_parsed_ads(request):
 
         # Заголовки
         verbose_names = get_all_fields_verbose_names(AutoruParsedAd)
-        headers = ['datetime', 'region', 'mark__mark', 'model__model', 'complectation', 'modification', 'year',
+        headers = ['datetime', 'region', 'mark__name', 'model__name', 'complectation', 'modification', 'year',
                    'dealer',
                    'price_with_discount', 'price_no_discount', 'with_nds', 'position_actual',
                    'position_total', 'link', 'condition', 'in_stock', 'services', 'tags', 'photos']
@@ -170,8 +170,8 @@ def download_comparison(request):
         filter_params['autoru_parsed_ad__datetime__lte'] = context['dateto_dt']
         filter_params.pop('daterange', None)
 
-        columns = ['autoru_parsed_ad__datetime', 'autoru_parsed_ad__region', 'autoru_parsed_ad__mark__mark',
-                   'autoru_parsed_ad__model__model', 'autoru_parsed_ad__complectation',
+        columns = ['autoru_parsed_ad__datetime', 'autoru_parsed_ad__region', 'autoru_parsed_ad__mark__name',
+                   'autoru_parsed_ad__model__name', 'autoru_parsed_ad__complectation',
                    'autoru_parsed_ad__modification', 'autoru_parsed_ad__year', 'autoru_parsed_ad__dealer',
                    'autoru_parsed_ad__price_with_discount', 'autoru_parsed_ad__price_no_discount',
                    'price_with_discount_diff', 'price_no_discount_diff',
@@ -197,7 +197,7 @@ def download_comparison(request):
         df = pd.DataFrame.from_records(queryset)
         lookup_df = df[df['autoru_parsed_ad__dealer'] == context['dealer_for_comparison']]
         merged_df = pd.merge(df, lookup_df, on=[
-            'autoru_parsed_ad__mark__mark', 'autoru_parsed_ad__model__model', 'autoru_parsed_ad__complectation',
+            'autoru_parsed_ad__mark__name', 'autoru_parsed_ad__model__name', 'autoru_parsed_ad__complectation',
             'autoru_parsed_ad__modification', 'autoru_parsed_ad__year'
         ], suffixes=('_data', '_lookup'), how='left')
 
@@ -213,8 +213,8 @@ def download_comparison(request):
         merged_df.columns = merged_df.columns.str.replace('_data', '')
 
         # Меняю столбцы местами
-        merged_df = merged_df[['autoru_parsed_ad__datetime', 'autoru_parsed_ad__region', 'autoru_parsed_ad__mark__mark',
-                               'autoru_parsed_ad__model__model', 'autoru_parsed_ad__complectation',
+        merged_df = merged_df[['autoru_parsed_ad__datetime', 'autoru_parsed_ad__region', 'autoru_parsed_ad__mark__name',
+                               'autoru_parsed_ad__model__name', 'autoru_parsed_ad__complectation',
                                'autoru_parsed_ad__modification', 'autoru_parsed_ad__year', 'autoru_parsed_ad__dealer',
                                'autoru_parsed_ad__price_with_discount', 'autoru_parsed_ad__price_no_discount',
                                'price_with_discount_diff', 'price_no_discount_diff',

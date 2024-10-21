@@ -1,6 +1,6 @@
 from django.db import models
 
-from libs.services.models import BaseModel, Mark, Model, CustomBooleanField
+from applications.mainapp.models import BaseModel, Mark, Model
 from applications.accounts.models import Client
 
 

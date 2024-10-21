@@ -3,7 +3,7 @@ from django.core.cache import cache
 
 from applications.srav.models import (AutoruParsedAd, UniqueAutoruParsedAdMark, UniqueAutoruParsedAdRegion,
                                       UniqueAutoruParsedAdDealer)
-from libs.services.models import Mark
+from applications.mainapp.models import Mark
 
 
 class AutoruParsedAdChooseForm(forms.Form):

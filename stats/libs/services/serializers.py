@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from applications.accounts.models import Client
-from libs.services.models import Mark
+from applications.mainapp.models import Mark
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -13,5 +13,5 @@ class ClientSerializer(serializers.ModelSerializer):
 class MarkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Mark
-        fields = ['mark']
+        fields = ['name']
 

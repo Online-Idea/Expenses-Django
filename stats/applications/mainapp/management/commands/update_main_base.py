@@ -1,4 +1,6 @@
 from time import time
+
+from django.core.exceptions import MultipleObjectsReturned
 from django.db import transaction
 from django.core.management.base import BaseCommand
 
@@ -22,13 +24,13 @@ class Command(BaseCommand):
 def fill_main_database() -> None:
 
 
-    with transaction.atomic():
-        Ad.objects.all().delete()
-        Complectation.objects.all().delete()
-        Modification.objects.all().delete()
-        Generation.objects.all().delete()
-        Model.objects.all().delete()
-        Mark.objects.all().delete()
+    # with transaction.atomic():
+        # Ad.objects.all().delete()
+        # Complectation.objects.all().delete()
+        # Modification.objects.all().delete()
+        # Generation.objects.all().delete()
+        # Model.objects.all().delete()
+        # Mark.objects.all().delete()
 
     logger.white('База данных очищена')
 
@@ -49,29 +51,37 @@ def fill_main_database() -> None:
 
             avito_modifications = AvitoModification.objects.filter(generation=avito_generation)
             for avito_modification in avito_modifications:
-                modification_instance, _ = Modification.objects.get_or_create(
-                    years_from=avito_modification.years_from,
-                    years_to=avito_modification.years_to,
-                    engine_type=avito_modification.engine_type,
-                    transmission=avito_modification.transmission,
-                    power_hp=avito_modification.power_hp,
-                    power_kw=avito_modification.power_kw,
-                    engine_volume=avito_modification.engine_volume,
-                    mark=mark_instance,
-                    model=model_instance,
-                    generation=generation_instance,
-                    drive=avito_modification.drive,
-                    doors=avito_modification.doors,
-                    defaults={
-                        'name': avito_modification.name.strip(),
-                        'clients_name': avito_modification.clients_name.strip(),
-                        'body_type': avito_modification.body_type,
-                        'doors': avito_modification.doors,
-                        'battery_capacity': avito_modification.battery_capacity,
-                        'load_capacity': avito_modification.load_capacity,
-                    }
-                )
-
+                filters = {
+                    'name': avito_modification.name,
+                    'years_from': avito_modification.years_from,
+                    'years_to': avito_modification.years_to,
+                    'body_type': avito_modification.body_type,
+                    'engine_type': avito_modification.engine_type,
+                    'transmission': avito_modification.transmission,
+                    'power_hp': avito_modification.power_hp,
+                    'power_kw': avito_modification.power_kw,
+                    'engine_volume': avito_modification.engine_volume,
+                    'mark': mark_instance,
+                    'model': model_instance,
+                    'generation': generation_instance,
+                    'drive': avito_modification.drive,
+                }
+                try:
+                    modification_instance, _ = Modification.objects.get_or_create(
+                        **filters,
+                        defaults={
+                            'name': avito_modification.name.strip(),
+                            'clients_name': avito_modification.clients_name.strip(),
+                            'body_type': avito_modification.body_type,
+                            'doors': avito_modification.doors,
+                            'battery_capacity': avito_modification.battery_capacity,
+                            'load_capacity': avito_modification.load_capacity,
+                        }
+                    )
+                # На случай если в каталоге авито также есть дубли
+                except MultipleObjectsReturned:
+                    modification_instance = Modification.objects.filter(**filters).first()
+                avito_modifications.modification = modification_instance.id
                 avito_complectations = AvitoComplectation.objects.filter(modification=avito_modification)
                 for avito_complectation in avito_complectations:
                     Complectation.objects.get_or_create(
@@ -79,11 +89,12 @@ def fill_main_database() -> None:
                         modification=modification_instance
                     )
         print(f'Отработало Авито {mark_name} - {model_name}')
+
     for autoru_model in autoru_models:
         mark_name = autoru_model.mark.name.strip()
         model_name = autoru_model.name.strip()
 
-        mark_instance, _ = Mark.objects.get_or_create(name=mark_name)
+        mark_instance, _ = Mark.objects.get_or_create(name=mark_name, autoru=mark_name)
         model_instance, _ = Model.objects.get_or_create(name=model_name, mark=mark_instance)
 
         autoru_generations = AutoruGeneration.objects.filter(model=autoru_model)
@@ -93,28 +104,37 @@ def fill_main_database() -> None:
 
             autoru_modifications = AutoruModification.objects.filter(generation=autoru_generation)
             for autoru_modification in autoru_modifications:
-                modification_instance, _ = Modification.objects.get_or_create(
-                    years_from=autoru_modification.years_from,
-                    years_to=autoru_modification.years_to,
-                    engine_type=autoru_modification.engine_type,
-                    transmission=autoru_modification.transmission,
-                    power_hp=autoru_modification.power_hp,
-                    power_kw=autoru_modification.power_kw,
-                    engine_volume=autoru_modification.engine_volume,
-                    mark=mark_instance,
-                    model=model_instance,
-                    generation=generation_instance,
-                    drive=autoru_modification.drive,
-                    defaults={
-                        'name': autoru_modification.name.strip(),
-                        'clients_name': autoru_modification.clients_name.strip(),
-                        'body_type': autoru_modification.body_type,
-                        'doors': autoru_modification.doors,
-                        'battery_capacity': autoru_modification.battery_capacity,
-                        'load_capacity': autoru_modification.load_capacity,
-                    }
-                )
-
+                filters = {
+                    'name': autoru_modification.name,
+                    'years_from': autoru_modification.years_from,
+                    'years_to': autoru_modification.years_to,
+                    # 'body_type': autoru_modification.body_type,
+                    'engine_type': autoru_modification.engine_type,
+                    'transmission': autoru_modification.transmission,
+                    'power_hp': autoru_modification.power_hp,
+                    'power_kw': autoru_modification.power_kw,
+                    'engine_volume': autoru_modification.engine_volume,
+                    'mark': mark_instance,
+                    'model': model_instance,
+                    'generation': generation_instance,
+                    'drive': autoru_modification.drive,
+                }
+                try:
+                    modification_instance, _ = Modification.objects.get_or_create(
+                        **filters,
+                        defaults={
+                            'name': autoru_modification.name.strip(),
+                            'clients_name': autoru_modification.clients_name.strip(),
+                            'body_type': autoru_modification.body_type,
+                            'doors': autoru_modification.doors,
+                            'battery_capacity': autoru_modification.battery_capacity,
+                            'load_capacity': autoru_modification.load_capacity,
+                        }
+                    )
+                # В каталоге авто.ру есть дубли с разным id модификации
+                except MultipleObjectsReturned:
+                    modification_instance = Modification.objects.filter(**filters).first()
+                autoru_modifications.modification = modification_instance
                 autoru_complectations = AutoruComplectation.objects.filter(modification=autoru_modification)
                 for autoru_complectation in autoru_complectations:
                     Complectation.objects.get_or_create(

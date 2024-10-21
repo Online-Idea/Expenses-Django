@@ -102,7 +102,7 @@ class Model(BaseModel):
         verbose_name_plural = 'Модели'
         ordering = ['model']
         constraints = [
-            models.UniqueConstraint(fields=['mark', 'model'], name='unique_mark_model'),
+            models.UniqueConstraint(fields=['mark', 'model'], name='old_unique_mark_model'),
         ]
 
 

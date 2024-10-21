@@ -19,6 +19,7 @@ import requests
 from django.db.models import QuerySet
 from openpyxl import Workbook
 from pandas import DataFrame
+from telebot.apihelper import ApiTelegramException
 from telebot.types import InputFile
 
 from applications.ads.models import Ad
@@ -990,12 +991,10 @@ def bot_messages(logs, logs_xlsx, price, task):
     for chat_id in chat_ids:
         split_message = break_message_to_parts(logs)
         for message in split_message:
-            bot.send_message(chat_id.chat_id, message)
-        # if len(logs) > 4095:  # У телеграма ограничение на 4096 символов в сообщении
-        #     for x in range(0, len(logs), 4095):
-        #         bot.send_message(chat_id.chat_id, logs[x:x + 4095])
-        # else:
-        #     bot.send_message(chat_id.chat_id, logs)
+            try:
+                bot.send_message(chat_id.chat_id, message)
+            except ApiTelegramException:
+                chat_id.delete()
         if logs_xlsx:
             bot.send_document(chat_id.chat_id, InputFile(logs_xlsx))
         bot.send_document(chat_id.chat_id, InputFile(price_save_path))

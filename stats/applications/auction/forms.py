@@ -2,7 +2,7 @@ from django import forms
 from django.core.cache import cache
 
 from applications.auction.models import AutoruAuctionHistory
-from libs.services.models import Mark
+from applications.mainapp.models import Mark
 
 
 class AuctionChooseForm(forms.Form):

@@ -5,7 +5,7 @@ from django.forms.widgets import DateTimeInput
 from django.utils import timezone
 
 from applications.calls.models import Call, ClientPrimatel, ClientPrimatelMark
-from libs.services.models import Mark, Model
+from applications.mainapp.models import Mark, Model
 
 
 class LocalDatetimeInput(DateTimeInput):

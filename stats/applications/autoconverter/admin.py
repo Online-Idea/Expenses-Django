@@ -131,7 +131,9 @@ class ConverterExtraProcessingAdmin(admin.ModelAdmin):
     list_display = ('active', 'id', 'converter_task', 'conditionals', 'new_changes')
     list_display_links = ('id', 'converter_task')
     list_editable = ('active', )
-    search_fields = ('converter_task__name', 'conditional__value', 'converterextraprocessingnewchanges__new_value')
+    search_fields = ('converter_task__name', 'conditional__value', 'conditional__field',
+                     'converterextraprocessingnewchanges__price_column_to_change',
+                     'converterextraprocessingnewchanges__new_value')
     list_filter = ('active', ActiveConverterTaskFilter,)
     fields = ('active', 'id', 'converter_task', 'note')
     readonly_fields = ('id',)

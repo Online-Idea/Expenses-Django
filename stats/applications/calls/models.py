@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from applications.accounts.models import Client
 from libs.services.choices import DriveTypes, EngineTypes
-from libs.services.models import BaseModel, Mark, Model, Colors, BodyTypes, ChoiceArrayField
+from applications.mainapp.models import BaseModel, Mark, Model, Colors, BodyTypes, ChoiceArrayField
 
 
 # Create your models here.
@@ -82,7 +82,7 @@ class ClientPrimatelMark(BaseModel):
     mark = models.ForeignKey(Mark, on_delete=models.CASCADE, verbose_name='Марка')
 
     def __str__(self):
-        return f'{self.client_primatel.name} - {self.mark.mark}'
+        return f'{self.client_primatel.name} - {self.mark.name}'
 
     class Meta:
         db_table = 'calls_client_primatel_mark'
@@ -311,7 +311,7 @@ class CalltouchSetting(BaseModel):
     token = models.CharField(max_length=500, verbose_name='token')
 
     def __str__(self):
-        return f'{self.client_primatel.name} | {self.mark.mark} | {self.site_id}'
+        return f'{self.client_primatel.name} | {self.mark.name} | {self.site_id}'
 
     class Meta:
         db_table = 'calls_calltouch_setting'

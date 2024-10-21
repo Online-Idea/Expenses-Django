@@ -279,7 +279,7 @@ class AutoruLogic:
                 record_exists = AutoruProduct.objects.filter(ad_id=ad_id, date=date, product=product).exists()
                 if not record_exists:
                     new_records.append(AutoruProduct(
-                        ad_id=ad_id, vin=vin, client_id=client, date=date, mark=mark, model=model, product=product,
+                        ad_id=ad_id, vin=vin, client=client, date=date, mark=mark, model=model, product=product,
                         sum=sum_, count=count
                     ))
 
@@ -385,7 +385,7 @@ class AutoruLogic:
 
             record_exists = AutoruCall.objects.filter(num_from=num_from, num_to=num_to, datetime=datetime_).exists()
             if not record_exists:
-                new_calls.append(AutoruCall(ad_id=ad_id, vin=vin, client_id=client, num_from=num_from, num_to=num_to,
+                new_calls.append(AutoruCall(ad_id=ad_id, vin=vin, client=client, num_from=num_from, num_to=num_to,
                                             datetime=datetime_, duration=duration, mark=mark, model=model,
                                             billing_state=billing_state, billing_cost=billing_cost))
         if new_calls:

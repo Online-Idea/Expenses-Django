@@ -236,9 +236,9 @@ class CalltouchLogic:
         if call.status:
             tags.append(call.status)
         if call.mark:
-            tags.append(call.mark.mark)
+            tags.append(call.mark.name)
         if call.model:
-            tags.append(call.model.model)
+            tags.append(call.model.name)
         if call.moderation:
             tags.append(ModerationChoice.get_site_name_by_choice(choice=call.moderation))
         return tags

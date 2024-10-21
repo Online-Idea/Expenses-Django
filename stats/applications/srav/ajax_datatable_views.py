@@ -28,8 +28,8 @@ class AutoruParsedAdAjaxDatatableView(AjaxDatatableView):
         {'name': 'id', 'visible': False, },
         {'name': 'datetime', 'visible': False, 'orderable': True, 'title': 'Дата и время'},
         {'name': 'region', 'visible': False, 'orderable': True, 'title': 'Регион'},
-        {'name': 'mark', 'foreign_field': 'mark__mark', 'title': 'Марка'},
-        {'name': 'model', 'foreign_field': 'model__model', 'title': 'Модель'},
+        {'name': 'mark', 'foreign_field': 'mark__name', 'title': 'Марка'},
+        {'name': 'model', 'foreign_field': 'model__name', 'title': 'Модель'},
         {'name': 'complectation', 'title': 'Комплектация'},
         {'name': 'modification', 'visible': False, 'orderable': True, 'title': 'Модификация'},
         {'name': 'year', 'title': 'Год'},
@@ -87,8 +87,8 @@ class ComparisonDatatableView(AjaxDatatableView):
             'visible': False, 'orderable': True, 'title': 'Дата и время'},
         {'name': 'region', 'foreign_field': 'autoru_parsed_ad__region',
             'visible': False, 'orderable': True, 'title': 'Регион'},
-        {'name': 'mark', 'foreign_field': 'autoru_parsed_ad__mark__mark', 'title': 'Марка', },
-        {'name': 'model', 'foreign_field': 'autoru_parsed_ad__model__model', 'title': 'Модель', },
+        {'name': 'mark', 'foreign_field': 'autoru_parsed_ad__mark__name', 'title': 'Марка', },
+        {'name': 'model', 'foreign_field': 'autoru_parsed_ad__model__name', 'title': 'Модель', },
         {'name': 'complectation', 'foreign_field': 'autoru_parsed_ad__complectation', 'title': 'Комплектация', },
         {'name': 'modification', 'foreign_field': 'autoru_parsed_ad__modification',
             'visible': False, 'orderable': True, 'title': 'Модификация', },
@@ -133,8 +133,8 @@ class ComparisonDatatableView(AjaxDatatableView):
     def customize_row(self, row, obj):
         # Расчет столбцов Разница цены со скидками и Разница цены без скидок
         dealers_row = self.qs.filter(
-            autoru_parsed_ad__mark__mark=row['mark'],
-            autoru_parsed_ad__model__model=row['model'],
+            autoru_parsed_ad__mark__name=row['mark'],
+            autoru_parsed_ad__model__name=row['model'],
             autoru_parsed_ad__complectation=row['complectation'],
             autoru_parsed_ad__modification=row['modification'],
             autoru_parsed_ad__year=row['year'],

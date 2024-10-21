@@ -1,9 +1,9 @@
 def marks_mark(obj):
-    return obj.mark.mark
+    return obj.mark.name
 
 
 def models_model(obj):
-    return obj.model.model
+    return obj.model.name
 
 
 def generations_generation(obj):

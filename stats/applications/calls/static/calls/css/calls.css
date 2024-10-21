@@ -1,0 +1,86 @@
+/*----------------------Звонки--------------*/
+/* Карточка звонка */
+.card-call-detail {
+    box-shadow: rgba(42, 53, 64, 0.1) 10px 12px 12px;
+    transition: box-shadow 250ms ease-in-out 0s, background-color 250ms ease-in-out 0s, border-color 250ms ease-in-out 0s;
+    border-radius: 15px;
+    --bs-border-color-translucent: none;
+}
+
+.card-call-detail:hover {
+    box-shadow: 15px 18px 15px rgba(27, 37, 47, 0.1);
+    background-color: rgba(241, 241, 241, 0.4);
+}
+
+.card-call-body {
+    padding: 15px;
+}
+
+/* Аудио плеер */
+#audio-player {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    z-index: 2000;
+}
+
+#audio-element {
+    width: 100%;
+    display: inline-block;
+}
+
+/* Чтобы модальное окно было ниже аудио плеера */
+.modal {
+    z-index: 1500;
+}
+
+.modal-backdrop {
+    z-index: 1400;
+}
+
+/* Кабинеты авто.ру */
+.agency-autoru-links {
+    margin-bottom: 20px;
+}
+
+
+/*----------------------Звонки настраиваемая--------------*/
+.rotate-135 {
+    transform: rotate(135deg) !important;
+}
+
+/* Подсказки для кнопок */
+.button-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.hover-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.hover-text {
+    position: absolute;
+    top: 100%;
+    left: 0; /* Align left side of hover text with the button */
+    padding: 10px;
+    background-color: #333;
+    color: #fff;
+    border-radius: 5px;
+    white-space: nowrap;
+    z-index: 1000; /* Ensure the text is on top */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Optional: add shadow for better visibility */
+}
+
+.hidden {
+    display: none;
+}
+
+/*---------------------------------------------------*/
+

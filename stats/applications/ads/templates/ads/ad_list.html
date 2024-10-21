@@ -1,6 +1,12 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
+{% block headcontent %}
+
+  <link rel="stylesheet" href="{% static 'ads/css/ads.css' %}">
+
+{% endblock %}
+
 {% block content %}
 <h1>Салон {{ salon.name }}</h1>
 <a href="{% url 'ads_app:export-ads-xml' %}">

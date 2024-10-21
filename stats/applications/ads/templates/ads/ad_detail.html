@@ -1,6 +1,12 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
+{% block headcontent %}
+
+  <link rel="stylesheet" href="{% static 'ads/css/ads.css' %}">
+
+{% endblock %}
+
 {% block content %}
 <div class="detail-page">
     <!-- Левая часть - галерея -->

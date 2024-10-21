@@ -131,6 +131,22 @@ def fetch_catalog_structure(param: str, session_id: Dict[str, str], retries: int
                     f"Не удалось получить данные после {retries} попыток. Последний статус-код: {status_code}. Ошибка: {e}")
                 raise RuntimeError(f"Не удалось получить данные с API auto.ru: {e}")
 
+def map_body_type(gear_type: str) -> str:
+    """
+    Преобразует тип привода из английского обозначения в русское.
+
+    :param gear_type: Тип кузова (например, 'ALL_WHEEL_DRIVE')
+    :return: Преобразованное название привода на русском (например, 'Полный')
+    """
+    # Маппинг типов привода на русский язык
+    mapping = {
+        'Внедорожник': 'Внедорожник',
+        'FORWARD_CONTROL': 'Передний',
+        'REAR_DRIVE': 'Задний'
+    }
+    # Возвращаем соответствующий тип привода или 'Unknown', если тип не найден
+    return mapping.get(gear_type, 'Unknown')
+
 
 def map_drive_type(gear_type: str) -> str:
     """
@@ -333,7 +349,10 @@ def process_modification_element(modification_el: etree.Element, mark_instance: 
         transmission_type = map_transmission_type(tech_params['tech_params']['transmission'])
         transmission_type_short = map_transmission_type_short(transmission_type)
         engine_volume_liters = round(tech_params['tech_params'].get('displacement', 0) / 1000, 1)
-        doors = int(tech_params['tech_params'].get('doors_count', 4))  # По умолчанию 4 двери
+
+        configuration = next(item for item in api_result['breadcrumbs'][1]['entities']
+                             if item['id'] == modification_el.find('configuration_id').text)
+        doors = configuration['configuration']['doors_count']
 
         # Формируем короткое название модификации
         short_name = (f"{engine_volume_liters} "

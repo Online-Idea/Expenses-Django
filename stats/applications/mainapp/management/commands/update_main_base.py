@@ -11,10 +11,6 @@ from utils.colored_logger import ColoredLogger
 logger = ColoredLogger(__name__)
 
 
-def count_values_list_2(iter) -> list:
-    return [mod for mark, model, mod in iter if mark == 'Acura' and model == 'MDX']
-
-
 class Command(BaseCommand):
     help = 'Объединение каталогов Avito и Autoru'
 
